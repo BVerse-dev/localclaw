@@ -1,3 +1,4 @@
+"use client";
 // build: 2026-03-20-v3
 import React, { useState, useEffect, useRef } from "react";
 import {
