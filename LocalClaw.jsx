@@ -1,8 +1,7 @@
 import {
   Mail, Calendar, Zap, MessageSquare, BarChart2, Shield,
   MapPin, Home, Activity, Scale, Coffee, TrendingUp, Briefcase, Wrench,
-  CheckCircle, ArrowRight, Clock, Users, Lock, Eye, AlertTriangle, RefreshCw,
-  ChevronRight, Building2
+  CheckCircle, Users, Lock, Eye, RefreshCw, Building2
 } from "lucide-react";
 
 const ICON_URL = "https://media.base44.com/images/public/69b2ee3113ccfbf0b800b1d9/d0b95b560_generated_image.png";
@@ -22,11 +21,26 @@ const GOLD_BORDER = "rgba(201,146,42,0.2)";
 const sans = { fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" };
 const serif = { fontFamily: "'Georgia','Times New Roman',serif" };
 
+// Real brand logo URLs from official sources / CDNs
+const INTEGRATIONS = [
+  { name: "Gmail",            src: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" },
+  { name: "Google Calendar",  src: "https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" },
+  { name: "Outlook",          src: "https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg" },
+  { name: "Slack",            src: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Slack_icon_2019.svg" },
+  { name: "WhatsApp",         src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
+  { name: "Notion",           src: "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png" },
+  { name: "Google Drive",     src: "https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" },
+  { name: "Zoom",             src: "https://upload.wikimedia.org/wikipedia/commons/1/11/Zoom_Logo_2022.svg" },
+  { name: "HubSpot",         src: "https://upload.wikimedia.org/wikipedia/commons/3/3f/HubSpot_Logo.svg" },
+  { name: "GitHub",           src: "https://upload.wikimedia.org/wikipedia/commons/9/91/Octicons-mark-github.svg" },
+  { name: "Google Sheets",    src: "https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" },
+  { name: "Telegram",         src: "https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo.svg" },
+];
+
 export default function LocalClaw() {
   return (
     <div style={{ ...serif, background: BG, color: CREAM, minHeight: "100vh", overflowX: "hidden" }}>
 
-      {/* GOOGLE FONTS */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,13 +53,18 @@ export default function LocalClaw() {
         .btn-primary:hover { opacity: 0.88; }
         .btn-secondary { background: transparent; color: #F5F0E8; padding: 16px 36px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.85rem; letter-spacing: 0.08em; text-decoration: none; border-radius: 1px; border: 1px solid rgba(245,240,232,0.18); display: inline-block; transition: border-color 0.2s; }
         .btn-secondary:hover { border-color: rgba(245,240,232,0.4); }
+        .integration-icon { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.07); border: 1.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; overflow: hidden; transition: transform 0.2s, border-color 0.2s; flex-shrink: 0; }
+        .integration-icon:hover { transform: scale(1.12); border-color: rgba(201,146,42,0.5); }
+        .integration-icon img { width: 20px; height: 20px; object-fit: contain; }
+        .notion-icon img { filter: invert(1); }
+        .github-icon img { filter: invert(1); }
         @media (max-width: 768px) {
           .nav-links { display: none !important; }
-          .hero-grid { grid-template-columns: 1fr !important; }
           .two-col { grid-template-columns: 1fr !important; }
           .three-col { grid-template-columns: 1fr !important; }
           .four-col { grid-template-columns: repeat(2,1fr) !important; }
           .step-row { flex-direction: column !important; gap: 1rem !important; }
+          .connects-strip { flex-wrap: wrap !important; }
         }
       `}</style>
 
@@ -66,32 +85,76 @@ export default function LocalClaw() {
 
       {/* HERO */}
       <section style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "160px 6% 100px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "15%", right: "5%", width: "700px", height: "700px", background: `radial-gradient(circle, rgba(201,146,42,0.05) 0%, transparent 65%)`, pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "10%", left: "-5%", width: "500px", height: "500px", background: `radial-gradient(circle, rgba(201,146,42,0.03) 0%, transparent 65%)`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "15%", right: "5%", width: "700px", height: "700px", background: "radial-gradient(circle, rgba(201,146,42,0.05) 0%, transparent 65%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "10%", left: "-5%", width: "500px", height: "500px", background: "radial-gradient(circle, rgba(201,146,42,0.03) 0%, transparent 65%)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: "920px", position: "relative", zIndex: 1 }}>
+          {/* Badge */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: GOLD_MID, border: `1px solid ${GOLD_BORDER}`, borderRadius: "100px", padding: "6px 18px", marginBottom: "2.8rem" }}>
             <div style={{ width: "5px", height: "5px", background: GOLD, borderRadius: "50%" }} />
             <span style={{ ...sans, fontSize: "0.7rem", letterSpacing: "0.18em", color: GOLD, fontWeight: "600" }}>LOCALCLAW AGENT ENGINE</span>
           </div>
 
+          {/* Headline */}
           <h1 style={{ fontSize: "clamp(3rem, 7.5vw, 6.5rem)", lineHeight: "1.02", fontWeight: "700", marginBottom: "2rem", letterSpacing: "-0.025em", fontFamily: "'Cormorant Garamond', Georgia, serif" }}>
             We deploy AI agents<br />
             <em style={{ color: GOLD, fontStyle: "italic" }}>for local businesses</em><br />
             that never sleep.
           </h1>
 
+          {/* Subtext */}
           <p style={{ ...sans, fontSize: "1.1rem", color: MUTED, maxWidth: "580px", lineHeight: "1.75", marginBottom: "3.5rem", fontWeight: "400" }}>
             LocalClaw combines OpenClaw's autonomous agent framework with NVIDIA NemoClaw enterprise security — deployed and managed for your business. No technical knowledge required.
           </p>
 
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+          {/* CTAs */}
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center", marginBottom: "3.5rem" }}>
             <a href="#book" className="btn-primary">BOOK A FREE 15-MIN CALL</a>
             <a href="#how" className="btn-secondary">SEE HOW IT WORKS</a>
           </div>
 
-          <div style={{ display: "flex", gap: "2.5rem", marginTop: "4rem", flexWrap: "wrap" }}>
-            {[["OpenClaw Powered", "Open-source agent framework"], ["NVIDIA NemoClaw", "Enterprise security layer"], ["Same-Day Deployment", "Live in under 24 hours"]].map(([title, sub], i) => (
+          {/* CONNECTS TO strip */}
+          <div style={{ display: "flex", alignItems: "center", gap: "1.2rem", flexWrap: "wrap" }} className="connects-strip">
+            <span style={{ ...sans, fontSize: "0.68rem", letterSpacing: "0.18em", color: DIM, fontWeight: "600", whiteSpace: "nowrap" }}>CONNECTS TO</span>
+
+            {/* Overlapping icon stack */}
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {INTEGRATIONS.map((app, i) => (
+                <div
+                  key={i}
+                  className={`integration-icon ${app.name === "Notion" ? "notion-icon" : ""} ${app.name === "GitHub" ? "github-icon" : ""}`}
+                  title={app.name}
+                  style={{ marginLeft: i === 0 ? 0 : "-8px", zIndex: INTEGRATIONS.length - i }}
+                >
+                  <img src={app.src} alt={app.name} />
+                </div>
+              ))}
+              {/* +10,000 bubble */}
+              <div style={{
+                marginLeft: "-8px",
+                zIndex: 0,
+                height: "36px",
+                minWidth: "68px",
+                borderRadius: "100px",
+                background: "rgba(255,255,255,0.07)",
+                border: "1.5px solid rgba(255,255,255,0.1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 12px"
+              }}>
+                <span style={{ ...sans, fontSize: "0.72rem", fontWeight: "700", color: CREAM, letterSpacing: "0.02em" }}>+10,000</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Trust tags */}
+          <div style={{ display: "flex", gap: "2.5rem", marginTop: "3rem", flexWrap: "wrap" }}>
+            {[
+              ["OpenClaw Powered", "Open-source agent framework"],
+              ["NVIDIA NemoClaw", "Enterprise security layer"],
+              ["Same-Day Deployment", "Live in under 24 hours"]
+            ].map(([title, sub], i) => (
               <div key={i}>
                 <div style={{ ...sans, fontSize: "0.88rem", fontWeight: "600", color: CREAM, marginBottom: "0.2rem" }}>{title}</div>
                 <div style={{ ...sans, fontSize: "0.78rem", color: DIM }}>{sub}</div>
@@ -104,7 +167,7 @@ export default function LocalClaw() {
       {/* STATS BAR */}
       <section style={{ background: GOLD_MID, borderTop: `1px solid ${GOLD_BORDER}`, borderBottom: `1px solid ${GOLD_BORDER}`, padding: "2.2rem 6%" }}>
         <div className="four-col" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "1rem", maxWidth: "960px", margin: "0 auto", textAlign: "center" }}>
-          {[["24 Hours", "SETUP WINDOW"], ["NemoClaw™", "SECURITY LAYER"], ["24 / 7", "AGENT UPTIME"], ["Telegram", "INTERFACE"]].map(([val, label], i) => (
+          {[["24 Hours","SETUP WINDOW"],["NemoClaw™","SECURITY LAYER"],["24 / 7","AGENT UPTIME"],["Telegram","INTERFACE"]].map(([val, label], i) => (
             <div key={i}>
               <div style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "clamp(1.6rem,3vw,2.2rem)", fontWeight: "700", color: GOLD, marginBottom: "0.25rem" }}>{val}</div>
               <div style={{ ...sans, fontSize: "0.65rem", letterSpacing: "0.18em", color: DIM }}>{label}</div>
@@ -122,19 +185,19 @@ export default function LocalClaw() {
 
           <div className="three-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: GOLD_BORDER }}>
             {[
-              { Icon: Mail, time: "Every 30 min", title: "Inbox Triage", desc: "Scans your email, flags urgent messages, drafts replies for your review — never miss a lead or client query again." },
-              { Icon: Calendar, time: "9:00 AM Daily", title: "Morning Briefing", desc: "Sends a Telegram summary of today's meetings, attendee backgrounds, priorities, and action items before your day starts." },
-              { Icon: Zap, time: "On Demand", title: "Instant Actions", desc: "\"Running 10 min late\" — your agent emails your next meeting and reschedules. Talk to it like a human assistant." },
-              { Icon: MessageSquare, time: "Ongoing", title: "Comms Monitor", desc: "Watches Slack, WhatsApp, and CRM threads. Surfaces what matters and filters what doesn't, keeping you in control." },
-              { Icon: BarChart2, time: "Weekly", title: "Performance Reports", desc: "Automated KPI summaries delivered to Telegram — campaign results, lead counts, follow-up status, and action items." },
-              { Icon: Shield, time: "Always", title: "NemoClaw Security", desc: "NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
+              { Icon: Mail,           time: "Every 30 min",  title: "Inbox Triage",         desc: "Scans your email, flags urgent messages, drafts replies for your review — never miss a lead or client query again." },
+              { Icon: Calendar,       time: "9:00 AM Daily", title: "Morning Briefing",      desc: "Sends a Telegram summary of today's meetings, attendee backgrounds, priorities, and action items before your day starts." },
+              { Icon: Zap,            time: "On Demand",     title: "Instant Actions",       desc: "\"Running 10 min late\" — your agent emails your next meeting and reschedules. Talk to it like a human assistant." },
+              { Icon: MessageSquare,  time: "Ongoing",       title: "Comms Monitor",         desc: "Watches Slack, WhatsApp, and CRM threads. Surfaces what matters and filters what doesn't, keeping you in control." },
+              { Icon: BarChart2,      time: "Weekly",        title: "Performance Reports",   desc: "Automated KPI summaries delivered to Telegram — campaign results, lead counts, follow-up status, and action items." },
+              { Icon: Shield,         time: "Always",        title: "NemoClaw Security",     desc: "NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
             ].map(({ Icon, time, title, desc }, i) => (
               <div key={i} style={{ background: BG2, padding: "2.8rem 2.2rem" }}>
                 <div style={{ width: "42px", height: "42px", background: GOLD_MID, border: `1px solid ${GOLD_BORDER}`, borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.5rem" }}>
                   <Icon size={18} color={GOLD} strokeWidth={1.5} />
                 </div>
                 <div style={{ ...sans, fontSize: "0.68rem", letterSpacing: "0.18em", color: GOLD, marginBottom: "0.6rem", fontWeight: "600" }}>{time}</div>
-                <div style={{ fontSize: "1.05rem", fontWeight: "700", marginBottom: "0.8rem", fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "1.3rem" }}>{title}</div>
+                <div style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontWeight: "700", marginBottom: "0.8rem", fontSize: "1.3rem" }}>{title}</div>
                 <div style={{ ...sans, color: DIM, fontSize: "0.88rem", lineHeight: "1.65" }}>{desc}</div>
               </div>
             ))}
@@ -150,15 +213,15 @@ export default function LocalClaw() {
 
           <div className="three-col" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: GOLD_BORDER }}>
             {[
-              { Icon: MapPin, label: "Local Businesses", desc: "Any business, any size, any industry. If you operate locally, your agent works harder than your competition's team." },
-              { Icon: Home, label: "Realtors & Brokers", desc: "Lead follow-up, listing updates, client briefings, and appointment scheduling — all automated." },
-              { Icon: Activity, label: "Clinics & Practices", desc: "Appointment triage, patient communications, staff coordination, and supplier follow-ups streamlined." },
-              { Icon: Scale, label: "Law Firms", desc: "Case status tracking, client follow-up, document summaries, and deadline alerts managed autonomously." },
-              { Icon: Coffee, label: "Restaurants & Hospitality", desc: "Reservation management, supplier comms, daily ops reports, and promotion scheduling automated." },
-              { Icon: Building2, label: "Property Managers", desc: "Tenant communications, maintenance request triage, lease renewals, and contractor coordination handled automatically." },
-              { Icon: TrendingUp, label: "Agencies & Studios", desc: "Client reporting, project management, billing follow-ups, and creative workflows running in parallel." },
-              { Icon: Briefcase, label: "Investors & VCs", desc: "Deal flow tracking, portfolio updates, LP communications, and meeting prep — all on autopilot." },
-              { Icon: Wrench, label: "Contractors & Trades", desc: "Quote follow-ups, job scheduling, supplier coordination, and invoice reminders — zero manual overhead." },
+              { Icon: MapPin,      label: "Local Businesses",        desc: "Any business, any size, any industry. If you operate locally, your agent works harder than your competition's team." },
+              { Icon: Home,        label: "Realtors & Brokers",      desc: "Lead follow-up, listing updates, client briefings, and appointment scheduling — all automated." },
+              { Icon: Activity,    label: "Clinics & Practices",     desc: "Appointment triage, patient communications, staff coordination, and supplier follow-ups streamlined." },
+              { Icon: Scale,       label: "Law Firms",               desc: "Case status tracking, client follow-up, document summaries, and deadline alerts managed autonomously." },
+              { Icon: Coffee,      label: "Restaurants & Hospitality",desc: "Reservation management, supplier comms, daily ops reports, and promotion scheduling automated." },
+              { Icon: Building2,   label: "Property Managers",       desc: "Tenant communications, maintenance request triage, lease renewals, and contractor coordination handled automatically." },
+              { Icon: TrendingUp,  label: "Agencies & Studios",      desc: "Client reporting, project management, billing follow-ups, and creative workflows running in parallel." },
+              { Icon: Briefcase,   label: "Investors & VCs",         desc: "Deal flow tracking, portfolio updates, LP communications, and meeting prep — all on autopilot." },
+              { Icon: Wrench,      label: "Contractors & Trades",    desc: "Quote follow-ups, job scheduling, supplier coordination, and invoice reminders — zero manual overhead." },
             ].map(({ Icon, label, desc }, i) => (
               <div key={i} className="card-hover" style={{ background: BG, padding: "2.2rem 2rem", border: "1px solid transparent", cursor: "default" }}>
                 <div style={{ width: "38px", height: "38px", background: GOLD_MID, border: `1px solid ${GOLD_BORDER}`, borderRadius: "3px", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1.2rem" }}>
@@ -179,9 +242,9 @@ export default function LocalClaw() {
           <h2 style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "clamp(2.2rem,4.5vw,3.2rem)", fontWeight: "700", marginBottom: "4.5rem", lineHeight: "1.08" }}>Go live same day.<br />No technical knowledge needed.</h2>
 
           {[
-            { num: "01", Icon: Users, title: "Kickoff Call", duration: "20–45 min", desc: "We map your integrations — email, calendar, CRM, Slack — identify your highest-leverage workflows, and plan your agent configuration. You tell us what to automate. We handle everything else." },
-            { num: "02", Icon: Lock, title: "Deploy & Secure", duration: "Same Day", desc: "We provision your infrastructure, install OpenClaw, layer NVIDIA NemoClaw security guardrails, configure Composio OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included. You go live the same day." },
-            { num: "03", Icon: RefreshCw, title: "14-Day Hypercare", duration: "Full Support", desc: "You get a dedicated Slack channel with direct access to our team. We tune workflows, expand agent permissions as trust builds, fix edge cases, and make sure your agent is earning its keep from day one." },
+            { num: "01", Icon: Users,      title: "Kickoff Call",      duration: "20–45 min",  desc: "We map your integrations — email, calendar, CRM, Slack — identify your highest-leverage workflows, and plan your agent configuration. You tell us what to automate. We handle everything else." },
+            { num: "02", Icon: Lock,       title: "Deploy & Secure",   duration: "Same Day",   desc: "We provision your infrastructure, install OpenClaw, layer NVIDIA NemoClaw security guardrails, configure Composio OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included. You go live the same day." },
+            { num: "03", Icon: RefreshCw,  title: "14-Day Hypercare",  duration: "Full Support",desc: "You get a dedicated Slack channel with direct access to our team. We tune workflows, expand agent permissions as trust builds, fix edge cases, and make sure your agent is earning its keep from day one." },
           ].map((step, i) => (
             <div key={i} className="step-row" style={{ display: "flex", gap: "3.5rem", padding: "3.5rem 0", borderBottom: i < 2 ? `1px solid ${BORDER}` : "none", alignItems: "flex-start" }}>
               <div style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "clamp(3.5rem,6vw,5.5rem)", fontWeight: "700", color: GOLD_DIM, lineHeight: "1", flexShrink: 0, minWidth: "80px" }}>{step.num}</div>
@@ -279,7 +342,7 @@ export default function LocalClaw() {
             ].map((plan, i) => (
               <div key={i} style={{ background: plan.highlight ? "#100E06" : BG2, padding: "3rem 2.5rem", position: "relative", borderTop: `2px solid ${plan.highlight ? GOLD : "transparent"}` }}>
                 {plan.highlight && (
-                  <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%) translateY(-50%)", background: GOLD, color: BG, ...sans, fontSize: "0.62rem", letterSpacing: "0.18em", fontWeight: "700", padding: "4px 16px" }}>MOST POPULAR</div>
+                  <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%) translateY(-50%)", background: GOLD, color: BG, ...sans, fontSize: "0.62rem", letterSpacing: "0.18em", fontWeight: "700", padding: "4px 16px", whiteSpace: "nowrap" }}>MOST POPULAR</div>
                 )}
                 <div style={{ ...sans, fontSize: "0.68rem", letterSpacing: "0.18em", color: GOLD, marginBottom: "0.8rem", fontWeight: "600" }}>{plan.tag}</div>
                 <div style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "1.6rem", fontWeight: "700", marginBottom: "0.5rem" }}>{plan.name}</div>
@@ -322,9 +385,9 @@ export default function LocalClaw() {
               { quote: "I was skeptical about AI agents for our restaurant group. Three months in, our supplier communications are fully automated. I have not missed a single renewal.", name: "VICTOR E.", title: "Restaurant Group Owner" },
             ].map((t, i) => (
               <div key={i} style={{ background: BG, padding: "2.8rem 2.5rem" }}>
-                <div style={{ display: "flex", gap: "2px", marginBottom: "1.5rem" }}>
+                <div style={{ display: "flex", gap: "3px", marginBottom: "1.5rem" }}>
                   {[...Array(5)].map((_, j) => (
-                    <div key={j} style={{ width: "12px", height: "12px", background: GOLD, clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" }} />
+                    <div key={j} style={{ width: "11px", height: "11px", background: GOLD, clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" }} />
                   ))}
                 </div>
                 <div style={{ ...sans, color: "#D4C5B0", fontStyle: "italic", lineHeight: "1.75", marginBottom: "1.8rem", fontSize: "0.92rem" }}>"{t.quote}"</div>
@@ -338,7 +401,7 @@ export default function LocalClaw() {
 
       {/* CTA */}
       <section id="book" style={{ padding: "130px 6%", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "900px", height: "900px", background: `radial-gradient(circle, rgba(201,146,42,0.07) 0%, transparent 60%)`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "900px", height: "900px", background: "radial-gradient(circle, rgba(201,146,42,0.07) 0%, transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "relative", zIndex: 1 }}>
           <p style={{ ...sans, fontSize: "0.7rem", letterSpacing: "0.22em", color: GOLD, marginBottom: "1.5rem", fontWeight: "600" }}>GET STARTED TODAY</p>
           <h2 style={{ fontFamily: "'Cormorant Garamond',Georgia,serif", fontSize: "clamp(2.8rem,7vw,5.5rem)", fontWeight: "700", marginBottom: "1.5rem", lineHeight: "1.02" }}>Your agent is<br /><em style={{ color: GOLD, fontStyle: "italic" }}>ready to deploy.</em></h2>
