@@ -551,28 +551,28 @@ export default function LocalClaw() {
 
           {/* Left — copy */}
           <div>
-            <div}} transition={{ duration:0.6, ease:[0.22,1,0.36,1] }} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
               <div style={{ width:5, height:5, background:GOLD, borderRadius:"50%" }} />
               <span style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600" }}>LOCALCLAW AGENT ENGINE</span>
             </div>
 
-            <h1}} transition={{ duration:0.75, delay:0.15, ease:[0.22,1,0.36,1] }} style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
+            <h1 style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
               We deploy AI agents<br />
               <em style={{ color:GOLD, fontStyle:"italic" }}>for local businesses</em><br />
               that never sleep.
             </h1>
 
-            <p}} transition={{ duration:0.7, delay:0.28, ease:[0.22,1,0.36,1] }} style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
+            <p style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
               LocalClaw combines OpenClaw's autonomous agent framework with NVIDIA NemoClaw enterprise security — deployed and managed for your business. No technical knowledge required.
             </p>
 
-            <div}} transition={{ duration:0.7, delay:0.4, ease:[0.22,1,0.36,1] }} className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
+            <div className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
               <a href="#book" className="btn-primary" style={{ padding:"16px 32px" }}>BOOK A FREE 15-MIN CALL</a>
               <a href="#how" className="btn-secondary" style={{ padding:"16px 32px" }}>SEE HOW IT WORKS</a>
             </div>
 
             {/* Connects To */}
-            <div}} transition={{ duration:0.9, delay:0.55 }} className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
+            <div className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
               <span style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.2em", color:DIM, fontWeight:"600", whiteSpace:"nowrap" }}>CONNECTS TO</span>
               <div style={{ display:"flex", alignItems:"center" }}>
                 {INTEGRATIONS.map((app, i) => (
@@ -600,7 +600,7 @@ export default function LocalClaw() {
           </div>
 
           {/* Right — dashboard */}
-          <div}} transition={{ duration:0.85, delay:0.3, ease:[0.22,1,0.36,1] }} className="dashboard-col">
+          <div className="dashboard-col">
             <DashboardMock />
           </div>
         </div>
