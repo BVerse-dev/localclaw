@@ -8,7 +8,6 @@ import {
   Inbox, Clock, BotMessageSquare, Wifi, WifiOff,
   Phone, Megaphone, Gift, Sparkles, MousePointerClick, Repeat2, Target
 } from "lucide-react";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 
 // v2 ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
 const SI = (name) => `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${name}.svg`;
@@ -47,46 +46,7 @@ const BLUE        = "#3B82F6";
 const sans    = { fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" };
 const display = { fontFamily: "'Cormorant Garamond',Georgia,serif" };
 
-// ── Animation helpers ──
-const fadeUp = {
-  hidden: { opacity: 0, y: 36 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.65, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] } }),
-};
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: (i = 0) => ({ opacity: 1, transition: { duration: 0.6, delay: i * 0.08 } }),
-};
-const slideLeft = {
-  hidden: { opacity: 0, x: -40 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
-const slideRight = {
-  hidden: { opacity: 0, x: 40 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-};
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.92 },
-  visible: (i = 0) => ({ opacity: 1, scale: 1, transition: { duration: 0.55, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] } }),
-};
 
-function FadeUp({ children, delay = 0, className, style }) {
-  const ref = React.useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <motion.div ref={ref} variants={fadeUp} initial="hidden" animate={inView ? "visible" : "hidden"} custom={delay} className={className} style={style}>
-      {children}
-    </motion.div>
-  );
-}
-function FadeIn({ children, delay = 0, style }) {
-  const ref = React.useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  return (
-    <motion.div ref={ref} variants={fadeIn} initial="hidden" animate={inView ? "visible" : "hidden"} custom={delay} style={style}>
-      {children}
-    </motion.div>
-  );
-}
 
 // ── Claw SVG icon (inline, no image dependency) ──
 function ClawIcon({ size = 36, color = GOLD }) {
@@ -285,6 +245,194 @@ function DashboardMock() {
 export default function LocalClaw() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    // Load GSAP + ScrollTrigger from CDN
+    const loadGSAP = () => {
+      return new Promise((resolve) => {
+        if (window.gsap && window.ScrollTrigger) { resolve(); return; }
+        const s1 = document.createElement("script");
+        s1.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js";
+        s1.onload = () => {
+          const s2 = document.createElement("script");
+          s2.src = "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js";
+          s2.onload = resolve;
+          document.head.appendChild(s2);
+        };
+        document.head.appendChild(s1);
+      });
+    };
+
+    loadGSAP().then(() => {
+      const { gsap } = window;
+      const { ScrollTrigger } = window;
+      gsap.registerPlugin(ScrollTrigger);
+
+      // ── HERO: stagger in on load ──
+      gsap.fromTo("[data-hero-badge]",
+        { opacity: 0, y: -18 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.1 }
+      );
+      gsap.fromTo("[data-hero-h1]",
+        { opacity: 0, y: 32 },
+        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out", delay: 0.22 }
+      );
+      gsap.fromTo("[data-hero-sub]",
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.75, ease: "power3.out", delay: 0.38 }
+      );
+      gsap.fromTo("[data-hero-btns]",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.52 }
+      );
+      gsap.fromTo("[data-hero-connects]",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.8, ease: "power2.out", delay: 0.68 }
+      );
+      gsap.fromTo("[data-hero-trust]",
+        { opacity: 0 },
+        { opacity: 1, duration: 0.8, ease: "power2.out", delay: 0.78 }
+      );
+      gsap.fromTo("[data-hero-dashboard]",
+        { opacity: 0, x: 55, scale: 0.96 },
+        { opacity: 1, x: 0, scale: 1, duration: 1, ease: "power3.out", delay: 0.3 }
+      );
+
+      // ── STATS BAR ──
+      gsap.fromTo("[data-stat]",
+        { opacity: 0, y: 28 },
+        {
+          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.1,
+          scrollTrigger: { trigger: "[data-stats-bar]", start: "top 85%", once: true }
+        }
+      );
+
+      // ── WHAT IT DOES: heading ──
+      gsap.fromTo("[data-what-head]",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+          scrollTrigger: { trigger: "[data-what-head]", start: "top 88%", once: true }
+        }
+      );
+
+      // ── Big 3 revenue cards ──
+      gsap.fromTo("[data-big3-card]",
+        { opacity: 0, y: 44, scale: 0.94 },
+        {
+          opacity: 1, y: 0, scale: 1, duration: 0.75, ease: "power3.out", stagger: 0.13,
+          scrollTrigger: { trigger: "[data-big3]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── Separator line animate width ──
+      gsap.fromTo("[data-separator]",
+        { scaleX: 0, opacity: 0 },
+        {
+          scaleX: 1, opacity: 1, duration: 0.9, ease: "power2.out",
+          scrollTrigger: { trigger: "[data-separator]", start: "top 90%", once: true }
+        }
+      );
+
+      // ── Supporting 6 agent cards ──
+      gsap.fromTo("[data-agent-card]",
+        { opacity: 0, y: 36 },
+        {
+          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.09,
+          scrollTrigger: { trigger: "[data-agents-grid]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── Bottom CTA strip ──
+      gsap.fromTo("[data-bottom-cta]",
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+          scrollTrigger: { trigger: "[data-bottom-cta]", start: "top 88%", once: true }
+        }
+      );
+
+      // ── WHO IT'S FOR section ──
+      gsap.fromTo("[data-for-head]",
+        { opacity: 0, y: 28 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+          scrollTrigger: { trigger: "[data-for-head]", start: "top 88%", once: true }
+        }
+      );
+      gsap.fromTo("[data-for-card]",
+        { opacity: 0, y: 32 },
+        {
+          opacity: 1, y: 0, duration: 0.6, ease: "power3.out", stagger: 0.07,
+          scrollTrigger: { trigger: "[data-for-grid]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── HOW IT WORKS steps ──
+      gsap.fromTo("[data-step]",
+        { opacity: 0, x: -40 },
+        {
+          opacity: 1, x: 0, duration: 0.75, ease: "power3.out", stagger: 0.15,
+          scrollTrigger: { trigger: "[data-steps]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── SECURITY section ──
+      gsap.fromTo("[data-security-left]",
+        { opacity: 0, x: -36 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: "[data-security]", start: "top 80%", once: true }
+        }
+      );
+      gsap.fromTo("[data-security-right]",
+        { opacity: 0, x: 36 },
+        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out", delay: 0.1,
+          scrollTrigger: { trigger: "[data-security]", start: "top 80%", once: true }
+        }
+      );
+
+      // ── PRICING cards ──
+      gsap.fromTo("[data-pricing-card]",
+        { opacity: 0, y: 44, scale: 0.93 },
+        {
+          opacity: 1, y: 0, scale: 1, duration: 0.75, ease: "power3.out", stagger: 0.12,
+          scrollTrigger: { trigger: "[data-pricing]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── TESTIMONIALS ──
+      gsap.fromTo("[data-testimonial]",
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.1,
+          scrollTrigger: { trigger: "[data-testimonials]", start: "top 82%", once: true }
+        }
+      );
+
+      // ── CTA SECTION ──
+      gsap.fromTo("[data-cta-head]",
+        { opacity: 0, y: 36 },
+        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out",
+          scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
+        }
+      );
+      gsap.fromTo("[data-cta-sub]",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.15,
+          scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
+        }
+      );
+      gsap.fromTo("[data-cta-btn]",
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)", delay: 0.28,
+          scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
+        }
+      );
+    });
+
+    return () => {
+      // cleanup: remove ScrollTrigger instances if component unmounts
+      if (window.ScrollTrigger) window.ScrollTrigger.getAll().forEach(t => t.kill());
+    };
+  }, []);
+
   return (
     <div style={{ fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif", background:BG, color:CREAM, minHeight:"100vh", overflowX:"hidden" }}>
 
@@ -307,6 +455,22 @@ export default function LocalClaw() {
         .btn-secondary:hover { border-color:rgba(245,240,232,0.45); }
         .card-hover { transition:border-color 0.25s, background 0.25s; }
         .card-hover:hover { border-color:rgba(201,146,42,0.4) !important; background:rgba(201,146,42,0.04) !important; }
+
+        /* GSAP initial hidden states — revealed by JS */
+        [data-hero-badge],[data-hero-h1],[data-hero-sub],[data-hero-btns],[data-hero-connects],[data-hero-trust],[data-hero-dashboard] { opacity:0; }
+        [data-stat] { opacity:0; }
+        [data-what-head] { opacity:0; }
+        [data-big3-card] { opacity:0; }
+        [data-separator] { opacity:0; transform-origin:center; }
+        [data-agent-card] { opacity:0; }
+        [data-bottom-cta] { opacity:0; }
+        [data-for-head] { opacity:0; }
+        [data-for-card] { opacity:0; }
+        [data-step] { opacity:0; }
+        [data-security-left],[data-security-right] { opacity:0; }
+        [data-pricing-card] { opacity:0; }
+        [data-testimonial] { opacity:0; }
+        [data-cta-head],[data-cta-sub],[data-cta-btn] { opacity:0; }
 
         .int-icon { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; overflow:hidden; transition:transform 0.2s, border-color 0.2s; flex-shrink:0; }
         .int-icon:hover { transform:scale(1.14); border-color:rgba(201,146,42,0.55); }
@@ -386,28 +550,28 @@ export default function LocalClaw() {
 
           {/* Left — copy */}
           <div>
-            <motion.div initial={{ opacity:0, y:-16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.6, ease:[0.22,1,0.36,1] }} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
+            <div}} transition={{ duration:0.6, ease:[0.22,1,0.36,1] }} style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
               <div style={{ width:5, height:5, background:GOLD, borderRadius:"50%" }} />
               <span style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600" }}>LOCALCLAW AGENT ENGINE</span>
-            </motion.div>
+            </div>
 
-            <motion.h1 initial={{ opacity:0, y:28 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.75, delay:0.15, ease:[0.22,1,0.36,1] }} style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
+            <h1}} transition={{ duration:0.75, delay:0.15, ease:[0.22,1,0.36,1] }} style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
               We deploy AI agents<br />
               <em style={{ color:GOLD, fontStyle:"italic" }}>for local businesses</em><br />
               that never sleep.
             </h1>
 
-            <motion.p initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.28, ease:[0.22,1,0.36,1] }} style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
+            <p}} transition={{ duration:0.7, delay:0.28, ease:[0.22,1,0.36,1] }} style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
               LocalClaw combines OpenClaw's autonomous agent framework with NVIDIA NemoClaw enterprise security — deployed and managed for your business. No technical knowledge required.
-            </motion.p>
+            </p>
 
-            <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.7, delay:0.4, ease:[0.22,1,0.36,1] }} className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
+            <div}} transition={{ duration:0.7, delay:0.4, ease:[0.22,1,0.36,1] }} className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
               <a href="#book" className="btn-primary" style={{ padding:"16px 32px" }}>BOOK A FREE 15-MIN CALL</a>
               <a href="#how" className="btn-secondary" style={{ padding:"16px 32px" }}>SEE HOW IT WORKS</a>
-            </motion.div>
+            </div>
 
             {/* Connects To */}
-            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ duration:0.9, delay:0.55 }} className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
+            <div}} transition={{ duration:0.9, delay:0.55 }} className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
               <span style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.2em", color:DIM, fontWeight:"600", whiteSpace:"nowrap" }}>CONNECTS TO</span>
               <div style={{ display:"flex", alignItems:"center" }}>
                 {INTEGRATIONS.map((app, i) => (
@@ -421,7 +585,7 @@ export default function LocalClaw() {
                   <span style={{ ...sans, fontSize:"0.7rem", fontWeight:"700", color:CREAM }}>+10,000</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Trust tags */}
             <div className="hero-trust" style={{ display:"flex", gap:"2.5rem", flexWrap:"wrap" }}>
@@ -435,20 +599,20 @@ export default function LocalClaw() {
           </div>
 
           {/* Right — dashboard */}
-          <motion.div initial={{ opacity:0, x:50 }} animate={{ opacity:1, x:0 }} transition={{ duration:0.85, delay:0.3, ease:[0.22,1,0.36,1] }} className="dashboard-col">
+          <div}} transition={{ duration:0.85, delay:0.3, ease:[0.22,1,0.36,1] }} className="dashboard-col">
             <DashboardMock />
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ── STATS BAR ── */}
       <section style={{ background:GOLD_MID, borderTop:`1px solid ${GOLD_BORDER}`, borderBottom:`1px solid ${GOLD_BORDER}`, padding:"2.2rem 6%" }}>
-        <div className="stats-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"1rem", maxWidth:"960px", margin:"0 auto", textAlign:"center" }}>
+        <div data-stats-bar className="stats-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"1rem", maxWidth:"960px", margin:"0 auto", textAlign:"center" }}>
           {[["24 Hours","SETUP WINDOW"],["NemoClaw™","SECURITY LAYER"],["24 / 7","AGENT UPTIME"],["Telegram","INTERFACE"]].map(([val,label],i) => (
-            <FadeUp key={i} delay={i}>
+            <div>
               <div style={{ ...display, fontSize:"clamp(1.4rem,3vw,2rem)", fontWeight:"700", color:GOLD, marginBottom:"0.25rem" }}>{val}</div>
               <div style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.18em", color:DIM }}>{label}</div>
-            </FadeUp>
+            </div>
           ))}
         </div>
       </section>
@@ -456,7 +620,7 @@ export default function LocalClaw() {
       {/* ── WHAT IT DOES ── */}
       <section id="what" style={{ padding:"100px 6%", background:BG }}>
         <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
-          <FadeUp delay={0}><p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>WHAT YOUR AGENT DOES</p></FadeUp>
+          <div data-what-head><p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>WHAT YOUR AGENT DOES</p></div>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap", gap:"2rem", marginBottom:"4rem" }}>
             <div>
               <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.3rem)", fontWeight:"700", lineHeight:"1.1" }}>Not another chatbot.<br /><em style={{ color:GOLD, fontStyle:"italic" }}>A full operating system</em><br />for your business.</h2>
@@ -465,7 +629,7 @@ export default function LocalClaw() {
           </div>
 
           {/* BIG 3 — Revenue agents */}
-          <div className="features-big" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER, marginBottom:"1px" }}>
+          <div data-big3 className="features-big" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER, marginBottom:"1px" }}>
             {[
               {
                 Icon: Gift,
@@ -492,7 +656,7 @@ export default function LocalClaw() {
                 bullets: ["Daily content creation & posting","DM responses & engagement","Ad campaign monitoring","Conversion tracking & reporting"],
               },
             ].map(({ Icon, tag, color, title, desc, bullets }, i) => (
-              <motion.div key={i} variants={scaleIn} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-50px" }} custom={i} style={{ background:"#0E0C08", padding:"2.8rem 2.4rem", borderTop:`3px solid ${color}`, position:"relative", overflow:"hidden" }}>
+              <div data-big3-card key={i} style={{ background:"#0E0C08", padding:"2.8rem 2.4rem", borderTop:`3px solid ${color}`, position:"relative", overflow:"hidden" }}>
                 <div style={{ position:"absolute", top:0, right:0, width:"130px", height:"130px", background:`radial-gradient(circle at top right, ${color}15 0%, transparent 70%)`, pointerEvents:"none" }} />
                 <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1.6rem" }}>
                   <div style={{ width:44, height:44, borderRadius:"8px", background:`${color}18`, border:`1px solid ${color}35`, display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -510,15 +674,15 @@ export default function LocalClaw() {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           {/* ── Gold separator between the two grids ── */}
-          <div style={{ height:"1px", background:`linear-gradient(90deg, transparent 0%, ${GOLD_BORDER} 20%, ${GOLD} 50%, ${GOLD_BORDER} 80%, transparent 100%)`, margin:"0" }} />
+          <div data-separator style={{ height:"2px", background:`linear-gradient(90deg, transparent 0%, ${GOLD_BORDER} 10%, ${GOLD} 50%, ${GOLD_BORDER} 90%, transparent 100%)`, margin:"0" }} />
 
           {/* Supporting 6 agents */}
-          <div className="features-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+          <div data-agents-grid className="features-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
             {[
               { Icon:Mail,          time:"Every 30 min",  title:"Inbox Triage",        desc:"Scans your email, flags urgent messages, drafts replies for review — never miss a lead or client query again." },
               { Icon:Calendar,      time:"9:00 AM Daily", title:"Morning Briefing",    desc:"Sends a Telegram summary of today's meetings, attendee backgrounds, priorities, and action items before your day starts." },
@@ -527,19 +691,19 @@ export default function LocalClaw() {
               { Icon:BarChart2,     time:"Weekly",        title:"Performance Reports", desc:"Automated KPI summaries to Telegram — campaign results, lead counts, follow-up status, and action items." },
               { Icon:Shield,        time:"Always",        title:"NemoClaw Security",   desc:"NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
             ].map(({ Icon,time,title,desc },i) => (
-              <motion.div key={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-40px" }} custom={i} style={{ background:BG2, padding:"2.2rem 2rem" }}>
+              <div data-agent-card key={i} style={{ background:BG2, padding:"2.2rem 2rem" }}>
                 <div style={{ width:38, height:38, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"4px", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"1.2rem" }}>
                   <Icon size={16} color={GOLD} strokeWidth={1.5} />
                 </div>
                 <div style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.18em", color:GOLD, marginBottom:"0.45rem", fontWeight:"600" }}>{time}</div>
                 <div style={{ ...display, fontWeight:"700", marginBottom:"0.6rem", fontSize:"1.18rem" }}>{title}</div>
                 <div style={{ ...sans, color:DIM, fontSize:"0.86rem", lineHeight:"1.65" }}>{desc}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
           {/* Bottom CTA strip */}
-          <div style={{ marginTop:"1px", background:"linear-gradient(135deg, rgba(201,146,42,0.07) 0%, rgba(201,146,42,0.03) 100%)", border:`1px solid ${GOLD_BORDER}`, borderTop:"none", padding:"2rem 2.4rem", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
+          <div data-bottom-cta style={{ marginTop:"1px", background:"linear-gradient(135deg, rgba(201,146,42,0.07) 0%, rgba(201,146,42,0.03) 100%)", border:`1px solid ${GOLD_BORDER}`, borderTop:"none", padding:"2rem 2.4rem", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
             <div>
               <div style={{ ...display, fontSize:"1.15rem", fontWeight:"700", marginBottom:"0.3rem" }}>Every agent, fully managed by us.</div>
               <div style={{ ...sans, color:DIM, fontSize:"0.85rem" }}>You pick which agents you need. We deploy, tune, and maintain them.</div>
@@ -553,8 +717,8 @@ export default function LocalClaw() {
       <section style={{ padding:"90px 6%", background:BG2 }}>
         <div style={{ maxWidth:"1100px", margin:"0 auto" }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>BUILT FOR</p>
-          <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"3.5rem", lineHeight:"1.08" }}>Any business that needs leverage.</h2>
-          <div className="for-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+          <h2 data-for-head style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"3.5rem", lineHeight:"1.08" }}>Any business that needs leverage.</h2>
+          <div data-for-grid className="for-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
             {[
               { Icon:MapPin,     label:"Local Businesses",         desc:"Any business, any size, any industry. If you operate locally, your agent works harder than your competition's team." },
               { Icon:Home,       label:"Realtors & Brokers",       desc:"Lead follow-up, listing updates, client briefings, and appointment scheduling — all automated." },
@@ -566,13 +730,13 @@ export default function LocalClaw() {
               { Icon:Briefcase,  label:"Investors & VCs",          desc:"Deal flow tracking, portfolio updates, LP communications, and meeting prep — all on autopilot." },
               { Icon:Wrench,     label:"Contractors & Trades",     desc:"Quote follow-ups, job scheduling, supplier coordination, and invoice reminders — zero manual overhead." },
             ].map(({ Icon,label,desc },i) => (
-              <motion.div key={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-40px" }} custom={i} className="card-hover" style={{ background:BG, padding:"2rem 1.8rem", border:"1px solid transparent", cursor:"default" }}>
+              <div data-for-card key={i} className="card-hover" style={{ background:BG, padding:"2rem 1.8rem", border:"1px solid transparent", cursor:"default" }}>
                 <div style={{ width:36, height:36, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"3px", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"1.1rem" }}>
                   <Icon size={15} color={GOLD} strokeWidth={1.5} />
                 </div>
                 <div style={{ ...display, fontWeight:"700", marginBottom:"0.5rem", fontSize:"1.1rem" }}>{label}</div>
                 <div style={{ ...sans, color:DIM, fontSize:"0.84rem", lineHeight:"1.6" }}>{desc}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -588,7 +752,7 @@ export default function LocalClaw() {
             { num:"02", Icon:Lock,      title:"Deploy & Secure", duration:"Same Day",    desc:"We provision your infrastructure, install OpenClaw, layer NVIDIA NemoClaw guardrails, configure Composio OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included." },
             { num:"03", Icon:RefreshCw, title:"14-Day Hypercare",duration:"Full Support",desc:"You get a dedicated Slack channel with direct access to our team. We tune workflows, expand permissions as trust builds, fix edge cases, and make sure your agent earns its keep from day one." },
           ].map((step,i) => (
-            <motion.div key={i} variants={slideLeft} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-40px" }} className="step-row" style={{ display:"flex", gap:"3rem", padding:"3rem 0", borderBottom: i<2 ? `1px solid ${BORDER}` : "none", alignItems:"flex-start" }}>
+            <div data-step key={i} className="step-row" style={{ display:"flex", gap:"3rem", padding:"3rem 0", borderBottom: i<2 ? `1px solid ${BORDER}` : "none", alignItems:"flex-start" }}>
               <div style={{ ...display, fontSize:"clamp(3rem,6vw,5rem)", fontWeight:"700", color:GOLD_DIM, lineHeight:"1", flexShrink:0, minWidth:"72px" }}>{step.num}</div>
               <div style={{ flex:1 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"0.9rem", marginBottom:"1rem", flexWrap:"wrap" }}>
@@ -600,19 +764,19 @@ export default function LocalClaw() {
                 </div>
                 <div style={{ ...sans, color:MUTED, lineHeight:"1.78", fontSize:"0.92rem" }}>{step.desc}</div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </section>
 
       {/* ── SECURITY ── */}
       <section id="security" style={{ padding:"100px 6%", background:BG2 }}>
-        <div className="security-grid" style={{ maxWidth:"1100px", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6rem", alignItems:"center" }}>
+        <div data-security className="security-grid" style={{ maxWidth:"1100px", margin:"0 auto", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6rem", alignItems:"center" }}>
           <div>
             <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>ENTERPRISE SECURITY</p>
-            <motion.h2 variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once:true }} style={{ ...display, fontSize:"clamp(2rem,4vw,3.2rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.08" }}>
+            <h2 data-security-left style={{ ...display, fontSize:"clamp(2rem,4vw,3.2rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.08" }}>
               Secured with<br /><em style={{ color:GOLD, fontStyle:"italic" }}>NVIDIA NemoClaw</em>
-            </motion.h2>
+            </h2>
             <p style={{ ...sans, color:MUTED, lineHeight:"1.78", marginBottom:"2.2rem", fontSize:"0.92rem" }}>
               Most OpenClaw deployments have security gaps — exposed credentials, no audit trail, no sandbox. Every LocalClaw deployment ships with NVIDIA's NemoClaw guardrails baked in from day one.
             </p>
@@ -649,13 +813,13 @@ export default function LocalClaw() {
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600", textAlign:"center" }}>PLANS & PRICING</p>
           <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"0.8rem", textAlign:"center", lineHeight:"1.08" }}>Choose your deployment.</h2>
           <p style={{ ...sans, color:MUTED, textAlign:"center", marginBottom:"4rem", fontSize:"0.92rem" }}>One-time setup fee. Monthly retainer keeps your agent tuned, updated, and running.</p>
-          <div className="pricing-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+          <div data-pricing className="pricing-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
             {[
               { name:"Starter Agent",  tag:"SOLO OPERATORS", setup:"$997",   monthly:"$149/mo", highlight:false, desc:"One agent for one operator. Email triage, calendar management, daily briefings via Telegram.", features:["1 Executive Agent","Email + Calendar integration","Daily morning briefing","Telegram interface","NemoClaw security layer","14-day hypercare","Dedicated Slack channel"] },
               { name:"Business Engine",tag:"MOST POPULAR",   setup:"$1,997", monthly:"$299/mo", highlight:true,  desc:"Two to three agents for your core team — Owner, Sales, and Ops running in parallel with shared context.", features:["2–3 Executive Agents","CRM + Email + Calendar","Sales follow-up automation","Slack + WhatsApp interface","NemoClaw security layer","14-day hypercare","Priority support channel"] },
               { name:"Full Stack",     tag:"ENTERPRISE",     setup:"$3,500", monthly:"$499/mo", highlight:false, desc:"Full agent deployment for multi-location businesses, law firms, clinics, and growing teams.", features:["5+ Executive Agents","Full integration stack","Custom workflow engineering","KPI dashboard setup","NemoClaw enterprise layer","30-day hypercare","Dedicated account manager"] },
             ].map((plan,i) => (
-              <motion.div key={i} variants={scaleIn} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-40px" }} custom={i} style={{ background: plan.highlight ? "#100E06" : BG2, padding:"2.8rem 2.2rem", position:"relative", borderTop:`2px solid ${plan.highlight ? GOLD : "transparent"}` }}>
+              <div data-pricing-card key={i} style={{ background: plan.highlight ? "#100E06" : BG2, padding:"2.8rem 2.2rem", position:"relative", borderTop:`2px solid ${plan.highlight ? GOLD : "transparent"}` }}>
                 {plan.highlight && <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%) translateY(-50%)", background:GOLD, color:BG, ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", fontWeight:"700", padding:"4px 14px", whiteSpace:"nowrap" }}>MOST POPULAR</div>}
                 <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:GOLD, marginBottom:"0.7rem", fontWeight:"600" }}>{plan.tag}</div>
                 <div style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.5rem" }}>{plan.name}</div>
@@ -673,7 +837,7 @@ export default function LocalClaw() {
                   ))}
                 </div>
                 <a href="#book" className={plan.highlight ? "btn-primary" : "btn-secondary"} style={{ display:"block", textAlign:"center" }}>{plan.highlight ? "GET STARTED" : "BOOK A CALL"}</a>
-              </motion.div>
+              </div>
             ))}
           </div>
           <p style={{ ...sans, textAlign:"center", color:DIM, fontSize:"0.79rem", marginTop:"1.8rem" }}>Additional agents: +$1,500 each. VPS hosting ~$5–10/mo (we handle setup). 100% satisfaction guarantee.</p>
@@ -685,7 +849,7 @@ export default function LocalClaw() {
         <div style={{ maxWidth:"1100px", margin:"0 auto" }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600", textAlign:"center" }}>CLIENT RESULTS</p>
           <h2 style={{ ...display, fontSize:"clamp(1.8rem,4vw,3rem)", fontWeight:"700", marginBottom:"3.5rem", textAlign:"center" }}>Results, not vanity metrics.</h2>
-          <div className="testimonials-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+          <div data-testimonials className="testimonials-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
             {[
               { quote:"My agent handles my inbox before I wake up. By 9am I know exactly what needs attention. It feels like an EA that works overnight.", name:"DANIEL K.", title:"Real Estate Broker" },
               { quote:"We deployed the Business Engine for our clinic. Appointment follow-ups run automatically. Our no-show rate dropped in the first two weeks.", name:"AMARA T.", title:"Clinic Director" },
@@ -694,7 +858,7 @@ export default function LocalClaw() {
               { quote:"LocalClaw gave us an operating layer we did not know we needed. Our team runs leaner and responds faster than we ever did manually.", name:"NAOMI A.", title:"Operations Director" },
               { quote:"Three months in, our supplier communications are fully automated. I have not missed a single renewal since we deployed.", name:"VICTOR E.", title:"Restaurant Group Owner" },
             ].map((t,i) => (
-              <motion.div key={i} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once:true, margin:"-40px" }} custom={i} style={{ background:BG, padding:"2.5rem 2.2rem" }}>
+              <div data-testimonial key={i} style={{ background:BG, padding:"2.5rem 2.2rem" }}>
                 <div style={{ display:"flex", gap:"3px", marginBottom:"1.4rem" }}>
                   {[...Array(5)].map((_,j) => (
                     <div key={j} style={{ width:10, height:10, background:GOLD, clipPath:"polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)" }} />
@@ -703,24 +867,24 @@ export default function LocalClaw() {
                 <div style={{ ...sans, color:"#D4C5B0", fontStyle:"italic", lineHeight:"1.78", marginBottom:"1.6rem", fontSize:"0.91rem" }}>"{t.quote}"</div>
                 <div style={{ ...sans, fontWeight:"700", fontSize:"0.76rem", letterSpacing:"0.12em", color:CREAM }}>{t.name}</div>
                 <div style={{ ...sans, color:DIM, fontSize:"0.74rem", marginTop:"0.2rem" }}>{t.title}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── CTA ── */}
-      <section id="book" style={{ padding:"120px 6%", textAlign:"center", position:"relative", overflow:"hidden" }}>
+      <section id="book" data-cta style={{ padding:"120px 6%", textAlign:"center", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"900px", height:"900px", background:"radial-gradient(circle, rgba(201,146,42,0.07) 0%, transparent 60%)", pointerEvents:"none" }} />
         <div style={{ position:"relative", zIndex:1 }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1.4rem", fontWeight:"600" }}>GET STARTED TODAY</p>
-          <motion.h2 variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once:true }} style={{ ...display, fontSize:"clamp(2.5rem,7vw,5.5rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.04" }}>
+          <h2 data-cta-head style={{ ...display, fontSize:"clamp(2.5rem,7vw,5.5rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.04" }}>
             Your agent is<br /><em style={{ color:GOLD, fontStyle:"italic" }}>ready to deploy.</em>
-          </motion.h2>
-          <p style={{ ...sans, color:MUTED, maxWidth:"460px", margin:"0 auto 3rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
+          </h2>
+          <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"460px", margin:"0 auto 3rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
             Book a free 15-minute strategy call. We scope your deployment and you go live same day.
           </p>
-          <div className="cta-btns" style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
+          <div data-cta-btn className="cta-btns" style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
             <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>BOOK A FREE CALL</a>
             <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>DM @Th3Alch3mist_</a>
           </div>
