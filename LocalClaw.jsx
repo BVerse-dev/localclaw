@@ -4,7 +4,8 @@ import {
   MapPin, Home, Activity, Scale, Coffee, TrendingUp, Briefcase, Wrench,
   CheckCircle, Users, Lock, Eye, RefreshCw, Building2, Menu, X,
   Bell, Settings, ChevronUp, ChevronDown, Circle, ArrowUpRight,
-  Inbox, Clock, BotMessageSquare, Wifi, WifiOff
+  Inbox, Clock, BotMessageSquare, Wifi, WifiOff,
+  Phone, Megaphone, Gift, Sparkles, MousePointerClick, Repeat2, Target
 } from "lucide-react";
 
 // ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
@@ -283,6 +284,7 @@ export default function LocalClaw() {
           .hero-layout { grid-template-columns:1fr !important; gap:3rem !important; }
           .dashboard-col { justify-content:center !important; }
           .stats-grid { grid-template-columns:repeat(2,1fr) !important; }
+          .features-big { grid-template-columns:1fr !important; }
           .features-grid { grid-template-columns:repeat(2,1fr) !important; }
           .for-grid { grid-template-columns:repeat(2,1fr) !important; }
           .pricing-grid { grid-template-columns:1fr !important; max-width:460px !important; margin-left:auto !important; margin-right:auto !important; }
@@ -292,6 +294,7 @@ export default function LocalClaw() {
 
         /* Mobile (≤768px) */
         @media (max-width:768px) {
+          .features-big { grid-template-columns:1fr !important; }
           .features-grid { grid-template-columns:1fr !important; }
           .for-grid { grid-template-columns:1fr !important; }
           .testimonials-grid { grid-template-columns:1fr !important; }
