@@ -8,7 +8,7 @@ import {
   Phone, Megaphone, Gift, Sparkles, MousePointerClick, Repeat2, Target
 } from "lucide-react";
 
-// ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
+// v2 ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
 const SI = (name) => `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${name}.svg`;
 
 const INTEGRATIONS = [
@@ -411,29 +411,94 @@ export default function LocalClaw() {
       </section>
 
       {/* ── WHAT IT DOES ── */}
-      <section id="what" style={{ padding:"100px 6%" }}>
-        <div style={{ maxWidth:"1100px", margin:"0 auto" }}>
+      <section id="what" style={{ padding:"100px 6%", background:BG }}>
+        <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>WHAT YOUR AGENT DOES</p>
-          <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.3rem)", fontWeight:"700", marginBottom:"1rem", lineHeight:"1.08" }}>Not another chatbot.<br />A working digital employee.</h2>
-          <p style={{ ...sans, color:MUTED, maxWidth:"500px", marginBottom:"4rem", lineHeight:"1.78", fontSize:"0.94rem" }}>Your agent runs on dedicated infrastructure, checking your inbox, calendar, and tools every 30 minutes — taking action without you asking.</p>
-          <div className="features-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap", gap:"2rem", marginBottom:"4rem" }}>
+            <div>
+              <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.3rem)", fontWeight:"700", lineHeight:"1.1" }}>Not another chatbot.<br /><em style={{ color:GOLD, fontStyle:"italic" }}>A full operating system</em><br />for your business.</h2>
+            </div>
+            <p style={{ ...sans, color:MUTED, maxWidth:"360px", lineHeight:"1.78", fontSize:"0.93rem" }}>Nine specialised agents working in parallel — handling your inbox, closing leads, making calls, posting content, and marketing your brand 24 hours a day.</p>
+          </div>
+
+          {/* BIG 3 — Revenue agents */}
+          <div className="features-big" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER, marginBottom:"1px" }}>
             {[
-              { Icon:Mail,          time:"Every 30 min",  title:"Inbox Triage",       desc:"Scans your email, flags urgent messages, drafts replies for your review — never miss a lead or client query again." },
-              { Icon:Calendar,      time:"9:00 AM Daily", title:"Morning Briefing",   desc:"Sends a Telegram summary of today's meetings, attendee backgrounds, priorities, and action items before your day starts." },
-              { Icon:Zap,           time:"On Demand",     title:"Instant Actions",    desc:"\"Running 10 min late\" — your agent emails your next meeting and reschedules. Talk to it like a human assistant." },
-              { Icon:MessageSquare, time:"Ongoing",       title:"Comms Monitor",      desc:"Watches Slack, WhatsApp, and CRM threads. Surfaces what matters and filters what doesn't." },
-              { Icon:BarChart2,     time:"Weekly",        title:"Performance Reports",desc:"Automated KPI summaries to Telegram — campaign results, lead counts, follow-up status, and action items." },
-              { Icon:Shield,        time:"Always",        title:"NemoClaw Security",  desc:"NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
-            ].map(({ Icon,time,title,desc },i) => (
-              <div key={i} style={{ background:BG2, padding:"2.5rem 2rem" }}>
-                <div style={{ width:40, height:40, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"4px", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"1.4rem" }}>
-                  <Icon size={17} color={GOLD} strokeWidth={1.5} />
+              {
+                Icon: Gift,
+                tag: "LEAD MAGNET AGENT",
+                color: "#A855F7",
+                title: "Capture & Qualify Leads 24/7",
+                desc: "Deploys lead magnets, captures visitor info, qualifies prospects against your criteria, and routes hot leads directly to you on Telegram — while you sleep.",
+                bullets: ["Free resource delivery automation","Lead scoring & qualification","Instant Telegram alerts for hot leads","CRM auto-population"],
+              },
+              {
+                Icon: Phone,
+                tag: "CALLING AGENT",
+                color: "#22C55E",
+                title: "AI That Calls Your Leads",
+                desc: "Makes outbound calls to new leads, handles inbound enquiries, books appointments directly into your calendar, and logs every conversation automatically.",
+                bullets: ["Outbound follow-up calls","Inbound call handling","Auto-book to your calendar","Call summaries to Telegram"],
+              },
+              {
+                Icon: Megaphone,
+                tag: "SOCIAL & MARKETING AGENT",
+                color: "#3B82F6",
+                title: "Posts, Markets & Drives Conversions",
+                desc: "Creates and schedules content across Instagram, TikTok, X, and LinkedIn. Runs targeted campaigns, responds to DMs, and tracks what converts — all on autopilot.",
+                bullets: ["Daily content creation & posting","DM responses & engagement","Ad campaign monitoring","Conversion tracking & reporting"],
+              },
+            ].map(({ Icon, tag, color, title, desc, bullets }, i) => (
+              <div key={i} style={{ background:"#0E0C08", padding:"2.8rem 2.4rem", borderTop:`3px solid ${color}`, position:"relative", overflow:"hidden" }}>
+                <div style={{ position:"absolute", top:0, right:0, width:"130px", height:"130px", background:`radial-gradient(circle at top right, ${color}15 0%, transparent 70%)`, pointerEvents:"none" }} />
+                <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1.6rem" }}>
+                  <div style={{ width:44, height:44, borderRadius:"8px", background:`${color}18`, border:`1px solid ${color}35`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <Icon size={20} color={color} strokeWidth={1.5} />
+                  </div>
+                  <span style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.18em", color:color, fontWeight:"700" }}>{tag}</span>
                 </div>
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:GOLD, marginBottom:"0.5rem", fontWeight:"600" }}>{time}</div>
-                <div style={{ ...display, fontWeight:"700", marginBottom:"0.7rem", fontSize:"1.25rem" }}>{title}</div>
-                <div style={{ ...sans, color:DIM, fontSize:"0.87rem", lineHeight:"1.65" }}>{desc}</div>
+                <div style={{ ...display, fontSize:"1.3rem", fontWeight:"700", marginBottom:"1rem", lineHeight:"1.2", color:CREAM }}>{title}</div>
+                <div style={{ ...sans, color:MUTED, fontSize:"0.87rem", lineHeight:"1.7", marginBottom:"1.6rem" }}>{desc}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
+                  {bullets.map((b, j) => (
+                    <div key={j} style={{ display:"flex", gap:"0.7rem", alignItems:"center" }}>
+                      <div style={{ width:5, height:5, borderRadius:"50%", background:color, flexShrink:0 }} />
+                      <span style={{ ...sans, fontSize:"0.82rem", color:MUTED }}>{b}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Supporting 6 agents */}
+          <div className="features-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+            {[
+              { Icon:Mail,          time:"Every 30 min",  title:"Inbox Triage",        desc:"Scans your email, flags urgent messages, drafts replies for review — never miss a lead or client query again." },
+              { Icon:Calendar,      time:"9:00 AM Daily", title:"Morning Briefing",    desc:"Sends a Telegram summary of today's meetings, attendee backgrounds, priorities, and action items before your day starts." },
+              { Icon:Zap,           time:"On Demand",     title:"Instant Actions",     desc:"Running 10 min late — your agent emails the next meeting and reschedules. Talk to it like a human assistant." },
+              { Icon:MessageSquare, time:"Ongoing",       title:"Comms Monitor",       desc:"Watches Slack, WhatsApp, and CRM threads. Surfaces what matters and filters what doesn't." },
+              { Icon:BarChart2,     time:"Weekly",        title:"Performance Reports", desc:"Automated KPI summaries to Telegram — campaign results, lead counts, follow-up status, and action items." },
+              { Icon:Shield,        time:"Always",        title:"NemoClaw Security",   desc:"NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
+            ].map(({ Icon,time,title,desc },i) => (
+              <div key={i} style={{ background:BG2, padding:"2.2rem 2rem" }}>
+                <div style={{ width:38, height:38, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"4px", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"1.2rem" }}>
+                  <Icon size={16} color={GOLD} strokeWidth={1.5} />
+                </div>
+                <div style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.18em", color:GOLD, marginBottom:"0.45rem", fontWeight:"600" }}>{time}</div>
+                <div style={{ ...display, fontWeight:"700", marginBottom:"0.6rem", fontSize:"1.18rem" }}>{title}</div>
+                <div style={{ ...sans, color:DIM, fontSize:"0.86rem", lineHeight:"1.65" }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom CTA strip */}
+          <div style={{ marginTop:"1px", background:"linear-gradient(135deg, rgba(201,146,42,0.07) 0%, rgba(201,146,42,0.03) 100%)", border:`1px solid ${GOLD_BORDER}`, borderTop:"none", padding:"2rem 2.4rem", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
+            <div>
+              <div style={{ ...display, fontSize:"1.15rem", fontWeight:"700", marginBottom:"0.3rem" }}>Every agent, fully managed by us.</div>
+              <div style={{ ...sans, color:DIM, fontSize:"0.85rem" }}>You pick which agents you need. We deploy, tune, and maintain them.</div>
+            </div>
+            <a href="#pricing" className="btn-primary" style={{ padding:"12px 28px", fontSize:"0.8rem" }}>SEE PRICING</a>
           </div>
         </div>
       </section>
