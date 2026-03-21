@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { BLOG_POSTS, formatDate } from "./blogData";
-import { ArrowRight, Clock, Tag, Menu, X, ChevronRight } from "lucide-react";
+import { BLOG_POSTS, POSTS_PER_PAGE, formatDate } from "./blogData";
+import { ArrowRight, ArrowLeft, Clock, Menu, X, ChevronRight, ChevronLeft } from "lucide-react";
 
 const GOLD = "#C9922A";
 const GOLD_MID = "rgba(201,146,42,0.08)";
@@ -34,6 +33,7 @@ const CATEGORIES = ["ALL", ...Array.from(new Set(BLOG_POSTS.map((p) => p.categor
 
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -41,13 +41,49 @@ export default function BlogPage() {
     setMounted(true);
   }, []);
 
-  const filtered =
-    activeCategory === "ALL"
-      ? BLOG_POSTS
-      : BLOG_POSTS.filter((p) => p.category === activeCategory);
+  // Reset to page 1 when category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory]);
 
-  const featured = BLOG_POSTS[0];
-  const rest = filtered.filter((p) => p.slug !== featured.slug || activeCategory !== "ALL");
+  // Filtered posts
+  const allFiltered =
+    activeCategory === "ALL" ? BLOG_POSTS : BLOG_POSTS.filter((p) => p.category === activeCategory);
+
+  // For "ALL" category: first post is featured, rest are paginated
+  // For specific category: all posts are in the grid (no featured)
+  const isAll = activeCategory === "ALL";
+  const featured = isAll ? BLOG_POSTS[0] : null;
+  const gridPosts = isAll ? allFiltered.slice(1) : allFiltered;
+
+  // Pagination
+  const totalPages = Math.ceil(gridPosts.length / POSTS_PER_PAGE);
+  const startIdx = (currentPage - 1) * POSTS_PER_PAGE;
+  const paginatedPosts = gridPosts.slice(startIdx, startIdx + POSTS_PER_PAGE);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to grid section
+    const el = document.getElementById("blog-grid");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Generate page numbers with ellipsis
+  const getPageNumbers = () => {
+    const pages: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push("...");
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div style={{ ...sans, background: BG, color: CREAM, minHeight: "100vh" }}>
@@ -229,8 +265,8 @@ export default function BlogPage() {
         </div>
       </section>
 
-      {/* ── FEATURED POST (only show on ALL) ── */}
-      {activeCategory === "ALL" && (
+      {/* ── FEATURED POST (only show on ALL + page 1) ── */}
+      {featured && currentPage === 1 && (
         <section style={{ padding: "0 6% 4rem" }}>
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <Link
@@ -238,7 +274,7 @@ export default function BlogPage() {
               style={{ textDecoration: "none", color: "inherit", display: "block" }}
             >
               <div
-                className="card-hover"
+                className="card-hover featured-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
@@ -319,7 +355,7 @@ export default function BlogPage() {
       )}
 
       {/* ── POST GRID ── */}
-      <section style={{ padding: "0 6% 6rem" }}>
+      <section id="blog-grid" style={{ padding: "0 6% 3rem", scrollMarginTop: "100px" }}>
         <div
           style={{
             maxWidth: "1100px", margin: "0 auto",
@@ -328,7 +364,7 @@ export default function BlogPage() {
             gap: "2rem",
           }}
         >
-          {(activeCategory === "ALL" ? BLOG_POSTS.slice(1) : filtered).map((post, i) => (
+          {paginatedPosts.map((post, i) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
@@ -414,6 +450,102 @@ export default function BlogPage() {
           ))}
         </div>
       </section>
+
+      {/* ── PAGINATION ── */}
+      {totalPages > 1 && (
+        <section style={{ padding: "0 6% 5rem" }}>
+          <div
+            style={{
+              maxWidth: "1100px", margin: "0 auto",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              gap: "0.5rem", flexWrap: "wrap",
+            }}
+          >
+            {/* Previous button */}
+            <button
+              onClick={() => currentPage > 1 && goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              style={{
+                ...sans,
+                display: "flex", alignItems: "center", gap: "6px",
+                background: "transparent",
+                color: currentPage === 1 ? "rgba(122,110,98,0.4)" : DIM,
+                border: `1px solid ${currentPage === 1 ? "rgba(201,146,42,0.08)" : GOLD_BORDER}`,
+                borderRadius: "8px",
+                padding: "10px 18px",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+                letterSpacing: "0.05em",
+              }}
+            >
+              <ChevronLeft size={14} /> PREV
+            </button>
+
+            {/* Page numbers */}
+            {getPageNumbers().map((page, i) =>
+              page === "..." ? (
+                <span
+                  key={`dots-${i}`}
+                  style={{ color: DIM, fontSize: "0.85rem", padding: "0 4px", userSelect: "none" }}
+                >
+                  ...
+                </span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page as number)}
+                  style={{
+                    ...sans,
+                    width: "42px", height: "42px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: currentPage === page ? GOLD : "transparent",
+                    color: currentPage === page ? BG : DIM,
+                    border: `1px solid ${currentPage === page ? GOLD : GOLD_BORDER}`,
+                    borderRadius: "8px",
+                    fontSize: "0.82rem",
+                    fontWeight: currentPage === page ? 700 : 500,
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            {/* Next button */}
+            <button
+              onClick={() => currentPage < totalPages && goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              style={{
+                ...sans,
+                display: "flex", alignItems: "center", gap: "6px",
+                background: "transparent",
+                color: currentPage === totalPages ? "rgba(122,110,98,0.4)" : DIM,
+                border: `1px solid ${currentPage === totalPages ? "rgba(201,146,42,0.08)" : GOLD_BORDER}`,
+                borderRadius: "8px",
+                padding: "10px 18px",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                transition: "all 0.3s ease",
+                letterSpacing: "0.05em",
+              }}
+            >
+              NEXT <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Page indicator */}
+          <div style={{ textAlign: "center", marginTop: "1rem" }}>
+            <span style={{ fontSize: "0.72rem", color: DIM }}>
+              Page {currentPage} of {totalPages} &middot; {allFiltered.length} article{allFiltered.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </section>
+      )}
 
       {/* ── NEWSLETTER CTA ── */}
       <section style={{ padding: "0 6% 6rem" }}>
