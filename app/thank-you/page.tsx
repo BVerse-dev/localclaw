@@ -218,7 +218,7 @@ export default function ThankYouPage() {
                   <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.22em", color:GOLD, fontWeight:"700", marginBottom:"1.4rem" }}>
                     {s.num}
                   </div>
-                  <div style={{ ...display, fontSize:"1.3rem", fontWeight:"700", lineHeight:"1.18", color:CREAM, marginBottom:"0.9rem" }}>
+                  <div style={{ ...display, fontSize:"1.2rem", fontWeight:"700", lineHeight:"1.18", color:CREAM, marginBottom:"0.9rem", whiteSpace:"nowrap" }}>
                     {s.title}
                   </div>
                   <div style={{ ...sans, color:MUTED, fontSize:"0.86rem", lineHeight:"1.78" }}>
