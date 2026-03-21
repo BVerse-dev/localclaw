@@ -513,69 +513,104 @@ export default function AdminPage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        .admin-row { transition: background 0.15s; cursor: pointer; }
-        .admin-row:hover { background: rgba(201,146,42,0.04) !important; }
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(201,146,42,0.18); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(201,146,42,0.35); }
+        * { scrollbar-width: thin; scrollbar-color: rgba(201,146,42,0.18) transparent; }
+
+        /* ── Selection ── */
+        ::selection { background: rgba(201,146,42,0.25); color: ${CREAM}; }
+
+        /* ── Smooth transitions ── */
+        .admin-row { transition: background 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .admin-row:hover { background: rgba(201,146,42,0.04) !important; box-shadow: inset 3px 0 0 ${GOLD}; }
         .admin-status-pill {
           display: inline-flex; align-items: center; gap: 5px;
           padding: 3px 10px; border-radius: 100px; font-size: 0.7rem;
           font-weight: 600; letter-spacing: 0.06em; font-family: 'Inter', sans-serif;
-          white-space: nowrap;
+          white-space: nowrap; transition: transform 0.15s;
         }
+        .admin-status-pill:hover { transform: scale(1.03); }
         .admin-filter {
           padding: 6px 14px; border-radius: 100px; font-size: 0.72rem;
           font-weight: 500; letter-spacing: 0.06em; font-family: 'Inter', sans-serif;
           cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
           background: transparent; color: ${DIM};
         }
-        .admin-filter:hover { color: ${CREAM}; }
+        .admin-filter:hover { color: ${CREAM}; background: rgba(245,240,232,0.03); }
         .admin-filter.active {
           border-color: ${GOLD}; background: rgba(201,146,42,0.1); color: ${GOLD};
+          box-shadow: 0 0 12px rgba(201,146,42,0.08);
         }
         .admin-detail-label {
           font-size: 0.65rem; letter-spacing: 0.18em; font-weight: 600;
           color: ${DIM}; margin-bottom: 0.3rem; font-family: 'Inter', sans-serif;
+          text-transform: uppercase;
         }
         .admin-detail-value {
           font-size: 0.88rem; color: ${CREAM}; font-family: 'Inter', sans-serif; line-height: 1.6;
         }
         .admin-tab {
-          padding: 10px 20px; font-size: 0.78rem; font-weight: 600;
-          letter-spacing: 0.08em; font-family: 'Inter', sans-serif;
+          padding: 12px 22px; font-size: 0.76rem; font-weight: 600;
+          letter-spacing: 0.1em; font-family: 'Inter', sans-serif;
           cursor: pointer; border: none; background: transparent;
-          color: ${DIM}; transition: all 0.2s; border-bottom: 2px solid transparent;
+          color: ${DIM}; transition: all 0.25s; border-bottom: 2px solid transparent;
+          position: relative;
         }
-        .admin-tab:hover { color: ${CREAM}; }
-        .admin-tab.active { color: ${GOLD}; border-bottom-color: ${GOLD}; }
+        .admin-tab:hover { color: ${CREAM}; background: rgba(201,146,42,0.03); }
+        .admin-tab.active {
+          color: ${GOLD}; border-bottom-color: ${GOLD};
+          background: rgba(201,146,42,0.04);
+        }
+        .admin-tab.active::after {
+          content: ''; position: absolute; bottom: -1px; left: 20%; right: 20%;
+          height: 2px; background: ${GOLD}; filter: blur(4px); opacity: 0.5;
+        }
         .stat-card {
-          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 4px;
-          padding: 1.2rem 1.4rem; flex: 1; min-width: 160px;
+          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 6px;
+          padding: 1.3rem 1.5rem; flex: 1; min-width: 160px;
+          transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+        }
+        .stat-card:hover {
+          border-color: ${GOLD_BORDER}; transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.2);
         }
         .stat-card-accent {
-          background: linear-gradient(135deg, rgba(201,146,42,0.08), rgba(201,146,42,0.02));
-          border: 1px solid ${GOLD_BORDER}; border-radius: 4px;
-          padding: 1.2rem 1.4rem; flex: 1; min-width: 160px;
+          background: linear-gradient(135deg, rgba(201,146,42,0.1), rgba(201,146,42,0.02));
+          border: 1px solid ${GOLD_BORDER}; border-radius: 6px;
+          padding: 1.3rem 1.5rem; flex: 1; min-width: 160px;
+          transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .stat-card-accent:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(201,146,42,0.1);
         }
         .pipeline-bar {
-          height: 32px; border-radius: 2px; display: flex; align-items: center;
-          padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.72rem;
+          height: 34px; border-radius: 4px; display: flex; align-items: center;
+          padding: 0 14px; font-family: 'Inter', sans-serif; font-size: 0.72rem;
           font-weight: 600; color: rgba(255,255,255,0.9); transition: all 0.3s;
           cursor: pointer; position: relative; min-width: 40px;
         }
-        .pipeline-bar:hover { opacity: 0.85; transform: translateX(2px); }
+        .pipeline-bar:hover { opacity: 0.85; transform: translateX(3px); box-shadow: 4px 0 12px rgba(0,0,0,0.15); }
         .overview-card {
-          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 4px;
-          padding: 1.4rem; overflow: hidden;
+          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 6px;
+          padding: 1.5rem; overflow: hidden;
+          transition: border-color 0.25s, box-shadow 0.25s;
         }
+        .overview-card:hover { border-color: rgba(201,146,42,0.12); }
         .activity-item {
           display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
-          border-bottom: 1px solid ${BORDER}; transition: background 0.15s;
+          border-bottom: 1px solid ${BORDER}; transition: background 0.15s, padding-left 0.2s;
         }
+        .activity-item:hover { padding-left: 4px; }
         .activity-item:last-child { border-bottom: none; }
         .booking-card {
-          background: ${BG3}; border: 1px solid ${BORDER}; border-radius: 4px;
-          padding: 1.2rem 1.4rem; transition: border-color 0.2s;
+          background: ${BG3}; border: 1px solid ${BORDER}; border-radius: 6px;
+          padding: 1.2rem 1.4rem; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
         }
-        .booking-card:hover { border-color: ${GOLD_BORDER}; }
+        .booking-card:hover { border-color: ${GOLD_BORDER}; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
         .booking-card.matched { border-left: 3px solid ${GOLD}; }
         .call-filter {
           padding: 6px 16px; border-radius: 100px; font-size: 0.72rem;
@@ -583,26 +618,34 @@ export default function AdminPage() {
           cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
           background: transparent; color: ${DIM};
         }
-        .call-filter:hover { color: ${CREAM}; }
+        .call-filter:hover { color: ${CREAM}; background: rgba(245,240,232,0.03); }
         .call-filter.active {
           border-color: ${GOLD}; background: rgba(201,146,42,0.1); color: ${GOLD};
         }
         .sync-btn {
-          padding: 8px 18px; border-radius: 2px; font-size: 0.72rem;
+          padding: 8px 18px; border-radius: 4px; font-size: 0.72rem;
           font-weight: 600; letter-spacing: 0.08em; font-family: 'Inter', sans-serif;
-          cursor: pointer; transition: all 0.2s; border: 1px solid ${GOLD_BORDER};
+          cursor: pointer; transition: all 0.25s; border: 1px solid ${GOLD_BORDER};
           background: rgba(201,146,42,0.08); color: ${GOLD};
         }
-        .sync-btn:hover { background: rgba(201,146,42,0.15); }
-        .sync-btn:disabled { opacity: 0.5; cursor: default; }
+        .sync-btn:hover { background: rgba(201,146,42,0.18); box-shadow: 0 0 16px rgba(201,146,42,0.1); transform: translateY(-1px); }
+        .sync-btn:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
         .action-btn {
-          padding: 6px 14px; border-radius: 2px; font-size: 0.7rem;
+          padding: 6px 14px; border-radius: 4px; font-size: 0.7rem;
           font-weight: 600; font-family: 'Inter', sans-serif;
           cursor: pointer; transition: all 0.2s; border: none;
           text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
         }
-        #cal-embed-container { width: 100%; min-height: 600px; overflow: hidden; border-radius: 4px; }
-        #cal-embed-container iframe { border-radius: 4px; }
+        .action-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        #cal-embed-container { width: 100%; min-height: 600px; overflow: hidden; border-radius: 6px; }
+        #cal-embed-container iframe { border-radius: 6px; }
+
+        /* ── Fade-in animation ── */
+        @keyframes admin-fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-fade { animation: admin-fade-in 0.35s cubic-bezier(.22,1,.36,1) both; }
       ` }} />
 
       <div style={{ minHeight:"100vh", background:BG, color:CREAM }}>
@@ -637,8 +680,14 @@ export default function AdminPage() {
           </div>
         </nav>
 
-        {/* ── TABS ── */}
-        <div style={{ paddingTop:"60px", borderBottom:`1px solid ${BORDER}`, display:"flex", paddingLeft:"5%" }}>
+        {/* ── TABS (sticky below nav) ── */}
+        <div style={{
+          position:"sticky", top:"60px", zIndex:190,
+          background:"rgba(8,7,4,0.98)", backdropFilter:"blur(12px)",
+          borderBottom:`1px solid ${BORDER}`,
+          display:"flex", paddingLeft:"5%",
+          marginTop:"60px",
+        }}>
           {(["overview","leads","payments","calls","calendar","settings"] as TabKey[]).map(t => (
             <button key={t} className={`admin-tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
               {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : t === "calendar" ? "CALENDAR" : "⚙ SETTINGS"}
@@ -656,7 +705,7 @@ export default function AdminPage() {
         {/* ── OVERVIEW TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "overview" && (
-          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
 
             {/* KPI Cards */}
             <div style={{ display:"flex", gap:"1rem", flexWrap:"wrap", marginBottom:"2rem" }}>
@@ -832,9 +881,9 @@ export default function AdminPage() {
         {/* ── LEADS TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "leads" && (
-          <div style={{ display:"flex", minHeight:"calc(100vh - 100px)" }}>
+          <div className="admin-fade" style={{ display:"flex", minHeight:"calc(100vh - 120px)" }}>
             <div style={{ flex:1, borderRight:`1px solid ${BORDER}`, display:"flex", flexDirection:"column" }}>
-              <div style={{ padding:"1.2rem 1.6rem", borderBottom:`1px solid ${BORDER}`, display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
+              <div style={{ position:"sticky", top:"104px", zIndex:100, background:"rgba(8,7,4,0.98)", backdropFilter:"blur(10px)", padding:"1.2rem 1.6rem", borderBottom:`1px solid ${BORDER}`, display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
                 {STATUSES.map(s => (
                   <button key={s.key} className={`admin-filter${filter === s.key ? " active" : ""}`} onClick={() => setFilter(s.key)}>
                     {s.label}
@@ -1029,7 +1078,7 @@ export default function AdminPage() {
         {/* ── PAYMENTS TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "payments" && (
-          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
 
             {/* Header */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
@@ -1232,7 +1281,7 @@ export default function AdminPage() {
         {/* ── CALLS TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "calls" && (
-          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
 
             {/* Header */}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
@@ -1369,7 +1418,7 @@ export default function AdminPage() {
         {/* ── CALENDAR TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "calendar" && (
-          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
               <div>
                 <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Booking Calendar</h2>
@@ -1390,7 +1439,7 @@ export default function AdminPage() {
         {/* ── SETTINGS TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "settings" && (
-          <div style={{ padding:"2rem 5%", maxWidth:"1100px", margin:"0 auto" }}>
+          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1100px", margin:"0 auto" }}>
             <div style={{ marginBottom:"2rem" }}>
               <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Settings & Integrations</h2>
               <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Manage all connected services and configuration</p>
