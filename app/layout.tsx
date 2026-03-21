@@ -4,6 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "LocalClaw — AI Agents for Local Businesses",
   description: "LocalClaw deploys autonomous AI agents that handle your inbox, close leads, book appointments, and post content — 24/7. No technical knowledge required.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-icon.svg",
+  },
   openGraph: {
     title: "LocalClaw — AI Agents for Local Businesses",
     description: "We deploy AI agents for local businesses that never sleep.",
