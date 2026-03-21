@@ -1,10 +1,11 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const BG         = "#080704";
 const BG2        = "#0D0B07";
+const BG3        = "#111009";
 const GOLD       = "#C9922A";
 const GOLD_BORDER= "rgba(201,146,42,0.22)";
 const GOLD_MID   = "rgba(201,146,42,0.07)";
@@ -28,6 +29,7 @@ const STATUSES = [
 ];
 
 const STATUS_OPTIONS = STATUSES.filter(s => s.key !== "all");
+const PIPELINE_STAGES = ["new","contacted","call_booked","onboarded","active"];
 
 function getStatusColor(status: string) {
   return STATUSES.find(s => s.key === status)?.color || MUTED;
@@ -67,6 +69,51 @@ interface Submission {
   admin_notes: string | null;
 }
 
+// ── Budget helpers ────────────────────────────────────────────────────────────
+function budgetLabel(b: string | null) {
+  if (b === "starter") return "Starter — $997 + $149/mo";
+  if (b === "business") return "Business — $1,997 + $299/mo";
+  if (b === "fullstack") return "Full Stack — $3,500 + $499/mo";
+  if (b === "unsure") return "Not sure yet";
+  return b || "—";
+}
+
+function budgetSetupValue(b: string | null): number {
+  if (b === "starter") return 997;
+  if (b === "business") return 1997;
+  if (b === "fullstack") return 3500;
+  return 0;
+}
+
+function budgetMonthlyValue(b: string | null): number {
+  if (b === "starter") return 149;
+  if (b === "business") return 299;
+  if (b === "fullstack") return 499;
+  return 0;
+}
+
+// ── Relative time ─────────────────────────────────────────────────────────────
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day:"numeric", month:"short" });
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" }) +
+    " · " + d.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" });
+}
+
+// ── Tab type ──────────────────────────────────────────────────────────────────
+type TabKey = "overview" | "leads" | "calendar";
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
@@ -78,6 +125,7 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<Submission | null>(null);
   const [editNotes, setEditNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<TabKey>("overview");
 
   // ── Auth ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -95,27 +143,26 @@ export default function AdminPage() {
     }
   };
 
-  // Check if already authed (cookie exists)
   useEffect(() => {
     fetch("/api/admin/submissions")
       .then(res => { if (res.ok) setAuthed(true); })
       .catch(() => {});
   }, []);
 
-  // ── Fetch submissions ──
+  // ── Fetch submissions (always fetch all for stats, filter client-side) ──
   const fetchSubmissions = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/admin/submissions?status=${filter}`);
+    const res = await fetch("/api/admin/submissions?status=all");
     if (res.ok) {
       const data = await res.json();
       setSubmissions(data.submissions || []);
     }
     setLoading(false);
-  }, [filter]);
+  }, []);
 
   useEffect(() => {
     if (authed) fetchSubmissions();
-  }, [authed, filter, fetchSubmissions]);
+  }, [authed, fetchSubmissions]);
 
   // ── Update submission ──
   const updateSubmission = async (id: string, updates: { status?: string; admin_notes?: string }) => {
@@ -132,11 +179,96 @@ export default function AdminPage() {
     setSaving(false);
   };
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" }) +
-      " · " + d.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" });
-  };
+  // ── Computed stats ──
+  const stats = useMemo(() => {
+    const total = submissions.length;
+    const byStatus: Record<string, number> = {};
+    STATUSES.forEach(s => { byStatus[s.key] = 0; });
+    submissions.forEach(s => { byStatus[s.status] = (byStatus[s.status] || 0) + 1; });
+    byStatus.all = total;
+
+    const pipelineValue = submissions
+      .filter(s => s.status !== "lost")
+      .reduce((sum, s) => sum + budgetSetupValue(s.budget), 0);
+
+    const monthlyRecurring = submissions
+      .filter(s => s.status === "active" || s.status === "onboarded")
+      .reduce((sum, s) => sum + budgetMonthlyValue(s.budget), 0);
+
+    const conversionRate = total > 0
+      ? Math.round(((byStatus.active || 0) + (byStatus.onboarded || 0)) / total * 100)
+      : 0;
+
+    const thisWeek = submissions.filter(s => {
+      const d = new Date(s.created_at);
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return d >= weekAgo;
+    }).length;
+
+    return { total, byStatus, pipelineValue, monthlyRecurring, conversionRate, thisWeek };
+  }, [submissions]);
+
+  // ── Filtered submissions for leads tab ──
+  const filteredSubmissions = useMemo(() => {
+    if (filter === "all") return submissions;
+    return submissions.filter(s => s.status === filter);
+  }, [submissions, filter]);
+
+  // ── Recent submissions (last 10) ──
+  const recentLeads = useMemo(() => submissions.slice(0, 10), [submissions]);
+
+  // ── Automation popularity ──
+  const automationStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    submissions.forEach(s => {
+      (s.automations || []).forEach(a => {
+        counts[a] = (counts[a] || 0) + 1;
+      });
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [submissions]);
+
+  // ── Cal.com embed ──
+  useEffect(() => {
+    if (!authed || tab !== "calendar") return;
+    const existing = document.getElementById("cal-embed-script");
+    if (existing) return;
+
+    const script = document.createElement("script");
+    script.id = "cal-embed-script";
+    script.type = "text/javascript";
+    script.innerHTML = `
+      (function (C, A, L) {
+        let p = function (a, ar) { a.q.push(ar); };
+        let d = C.document;
+        C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments;
+          if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A;
+            cal.loaded = true; }
+          if (ar[0] === L) { const api = function () { p(api, arguments); };
+            const namespace = ar[1]; api.q = api.q || [];
+            if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar);
+            return; }
+          p(cal, ar);
+        };
+      })(window, "https://app.cal.com/embed/embed.js", "init");
+
+      Cal("init", "15min", { origin: "https://cal.com" });
+      Cal.ns["15min"]("inline", {
+        elementOrSelector: "#cal-embed-container",
+        calLink: "bverse/15min",
+        layout: "month_view",
+        config: { theme: "dark" },
+      });
+      Cal.ns["15min"]("ui", {
+        theme: "dark",
+        styles: { branding: { brandColor: "#C9922A" } },
+        hideEventTypeDetails: false,
+        layout: "month_view",
+      });
+    `;
+    document.body.appendChild(script);
+  }, [authed, tab]);
 
   // ── LOGIN SCREEN ──
   if (!authed) {
@@ -176,67 +308,72 @@ export default function AdminPage() {
   }
 
   // ── DASHBOARD ──
-  const counts = {
-    all: submissions.length,
-    new: submissions.filter(s => s.status === "new").length,
-  };
-
   return (
     <>
-      <style>{`
-        .admin-row {
-          transition: background 0.15s;
-          cursor: pointer;
-        }
-        .admin-row:hover {
-          background: rgba(201,146,42,0.04) !important;
-        }
+      <style dangerouslySetInnerHTML={{ __html: `
+        .admin-row { transition: background 0.15s; cursor: pointer; }
+        .admin-row:hover { background: rgba(201,146,42,0.04) !important; }
         .admin-status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          padding: 3px 10px;
-          border-radius: 100px;
-          font-size: 0.7rem;
-          font-weight: 600;
-          letter-spacing: 0.06em;
-          font-family: 'Inter', sans-serif;
+          display: inline-flex; align-items: center; gap: 5px;
+          padding: 3px 10px; border-radius: 100px; font-size: 0.7rem;
+          font-weight: 600; letter-spacing: 0.06em; font-family: 'Inter', sans-serif;
           white-space: nowrap;
         }
         .admin-filter {
-          padding: 6px 14px;
-          border-radius: 100px;
-          font-size: 0.72rem;
-          font-weight: 500;
-          letter-spacing: 0.06em;
-          font-family: 'Inter', sans-serif;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: 1px solid transparent;
-          background: transparent;
-          color: ${DIM};
+          padding: 6px 14px; border-radius: 100px; font-size: 0.72rem;
+          font-weight: 500; letter-spacing: 0.06em; font-family: 'Inter', sans-serif;
+          cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+          background: transparent; color: ${DIM};
         }
         .admin-filter:hover { color: ${CREAM}; }
         .admin-filter.active {
-          border-color: ${GOLD};
-          background: rgba(201,146,42,0.1);
-          color: ${GOLD};
+          border-color: ${GOLD}; background: rgba(201,146,42,0.1); color: ${GOLD};
         }
         .admin-detail-label {
-          font-size: 0.65rem;
-          letter-spacing: 0.18em;
-          font-weight: 600;
-          color: ${DIM};
-          margin-bottom: 0.3rem;
-          font-family: 'Inter', sans-serif;
+          font-size: 0.65rem; letter-spacing: 0.18em; font-weight: 600;
+          color: ${DIM}; margin-bottom: 0.3rem; font-family: 'Inter', sans-serif;
         }
         .admin-detail-value {
-          font-size: 0.88rem;
-          color: ${CREAM};
-          font-family: 'Inter', sans-serif;
-          line-height: 1.6;
+          font-size: 0.88rem; color: ${CREAM}; font-family: 'Inter', sans-serif; line-height: 1.6;
         }
-      `}</style>
+        .admin-tab {
+          padding: 10px 20px; font-size: 0.78rem; font-weight: 600;
+          letter-spacing: 0.08em; font-family: 'Inter', sans-serif;
+          cursor: pointer; border: none; background: transparent;
+          color: ${DIM}; transition: all 0.2s; border-bottom: 2px solid transparent;
+        }
+        .admin-tab:hover { color: ${CREAM}; }
+        .admin-tab.active { color: ${GOLD}; border-bottom-color: ${GOLD}; }
+        .stat-card {
+          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 4px;
+          padding: 1.2rem 1.4rem; flex: 1; min-width: 180px;
+        }
+        .stat-card-accent {
+          background: linear-gradient(135deg, rgba(201,146,42,0.08), rgba(201,146,42,0.02));
+          border: 1px solid ${GOLD_BORDER}; border-radius: 4px;
+          padding: 1.2rem 1.4rem; flex: 1; min-width: 180px;
+        }
+        .pipeline-bar {
+          height: 32px; border-radius: 2px; display: flex; align-items: center;
+          padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.72rem;
+          font-weight: 600; color: rgba(255,255,255,0.9); transition: all 0.3s;
+          cursor: pointer; position: relative; min-width: 40px;
+        }
+        .pipeline-bar:hover { opacity: 0.85; transform: translateX(2px); }
+        .overview-card {
+          background: ${BG2}; border: 1px solid ${BORDER}; border-radius: 4px;
+          padding: 1.4rem; overflow: hidden;
+        }
+        .activity-item {
+          display: flex; align-items: flex-start; gap: 12px; padding: 10px 0;
+          border-bottom: 1px solid ${BORDER}; transition: background 0.15s;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        #cal-embed-container {
+          width: 100%; min-height: 600px; overflow: hidden; border-radius: 4px;
+        }
+        #cal-embed-container iframe { border-radius: 4px; }
+      ` }} />
 
       <div style={{ minHeight:"100vh", background:BG, color:CREAM }}>
 
@@ -245,230 +382,448 @@ export default function AdminPage() {
           position:"fixed", top:0, left:0, right:0, zIndex:200,
           background:"rgba(8,7,4,0.97)", borderBottom:`1px solid ${GOLD_BORDER}`,
           padding:"0 5%", display:"flex", alignItems:"center", justifyContent:"space-between",
-          height:"68px", backdropFilter:"blur(14px)",
+          height:"60px", backdropFilter:"blur(14px)",
         }}>
           <div style={{ display:"flex", alignItems:"center", gap:"16px" }}>
             <Link href="/" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:"10px" }}>
-              <ClawIcon size={30} color={GOLD} />
-              <span className="lc-logo-text">LocalClaw</span>
+              <ClawIcon size={28} color={GOLD} />
+              <span style={{ ...display, fontSize:"1.2rem", fontWeight:"700", color:CREAM }}>LocalClaw</span>
             </Link>
-            <span style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", background:GOLD_MID, border:`1px solid ${BORDER}`, borderRadius:"100px", padding:"4px 12px" }}>ADMIN</span>
+            <span style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", background:GOLD_MID, border:`1px solid ${BORDER}`, borderRadius:"100px", padding:"3px 10px" }}>COMMAND CENTRE</span>
           </div>
-          <div style={{ display:"flex", alignItems:"center", gap:"1.2rem" }}>
-            <span style={{ ...sans, color:DIM, fontSize:"0.78rem" }}>
-              {counts.new > 0 && <span style={{ color:"#22C55E", fontWeight:"700" }}>{counts.new} new</span>}
-              {counts.new > 0 && " · "}
-              {submissions.length} total
-            </span>
+          <div style={{ display:"flex", alignItems:"center", gap:"1.5rem" }}>
+            {stats.byStatus.new > 0 && (
+              <span style={{ ...sans, fontSize:"0.75rem", color:"#22C55E", fontWeight:"600", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.2)", borderRadius:"100px", padding:"3px 12px" }}>
+                {stats.byStatus.new} new lead{stats.byStatus.new > 1 ? "s" : ""}
+              </span>
+            )}
+            <span style={{ ...sans, color:DIM, fontSize:"0.78rem" }}>{stats.total} total</span>
             <Link href="/" style={{ ...sans, color:DIM, fontSize:"0.78rem", textDecoration:"none" }}>← Site</Link>
           </div>
         </nav>
 
-        <div style={{ paddingTop:"68px", display:"flex", minHeight:"calc(100vh - 68px)" }}>
+        {/* ── TABS ── */}
+        <div style={{ paddingTop:"60px", borderBottom:`1px solid ${BORDER}`, display:"flex", paddingLeft:"5%" }}>
+          {(["overview","leads","calendar"] as TabKey[]).map(t => (
+            <button key={t} className={`admin-tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
+              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : "CALENDAR"}
+            </button>
+          ))}
+        </div>
 
-          {/* ── LEFT: TABLE ── */}
-          <div style={{ flex:1, borderRight:`1px solid ${BORDER}`, display:"flex", flexDirection:"column" }}>
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ── OVERVIEW TAB ── */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {tab === "overview" && (
+          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
 
-            {/* Filters */}
-            <div style={{ padding:"1.2rem 1.6rem", borderBottom:`1px solid ${BORDER}`, display:"flex", gap:"0.5rem", flexWrap:"wrap" }}>
-              {STATUSES.map(s => (
-                <button
-                  key={s.key}
-                  className={`admin-filter${filter === s.key ? " active" : ""}`}
-                  onClick={() => setFilter(s.key)}
-                >
-                  {s.label}
-                </button>
-              ))}
+            {/* ── KPI Cards ── */}
+            <div style={{ display:"flex", gap:"1rem", flexWrap:"wrap", marginBottom:"2rem" }}>
+              <div className="stat-card-accent">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:GOLD, fontWeight:"600", marginBottom:"0.5rem" }}>TOTAL LEADS</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>{stats.total}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>{stats.thisWeek} this week</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>NEW / UNCONTACTED</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#22C55E", lineHeight:1 }}>{stats.byStatus.new || 0}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>awaiting outreach</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>CONVERSION RATE</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>{stats.conversionRate}%</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>onboarded + active</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>PIPELINE VALUE</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:GOLD, lineHeight:1 }}>${stats.pipelineValue.toLocaleString()}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>setup fees (excl. lost)</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>MONTHLY RECURRING</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#10B981", lineHeight:1 }}>${stats.monthlyRecurring.toLocaleString()}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>active + onboarded MRR</div>
+              </div>
             </div>
 
-            {/* Table */}
-            <div style={{ flex:1, overflowY:"auto" }}>
-              {loading ? (
-                <div style={{ padding:"3rem", textAlign:"center" }}>
-                  <p style={{ ...sans, color:DIM, fontSize:"0.88rem" }}>Loading...</p>
+            {/* ── Main grid: Pipeline + Activity + Popular Automations ── */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.5rem" }}>
+
+              {/* Pipeline Funnel */}
+              <div className="overview-card">
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1.2rem" }}>LEAD PIPELINE</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                  {PIPELINE_STAGES.map(stage => {
+                    const count = stats.byStatus[stage] || 0;
+                    const maxCount = Math.max(...PIPELINE_STAGES.map(s => stats.byStatus[s] || 0), 1);
+                    const width = Math.max((count / maxCount) * 100, 8);
+                    const color = getStatusColor(stage);
+                    return (
+                      <div key={stage} style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+                        <div style={{ ...sans, fontSize:"0.7rem", color:DIM, width:"80px", textAlign:"right", fontWeight:"500" }}>
+                          {getStatusLabel(stage)}
+                        </div>
+                        <div style={{ flex:1 }}>
+                          <div
+                            className="pipeline-bar"
+                            style={{ width:`${width}%`, background:`${color}cc` }}
+                            onClick={() => { setFilter(stage); setTab("leads"); }}
+                          >
+                            {count}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Lost (separate, dimmed) */}
+                  <div style={{ display:"flex", alignItems:"center", gap:"12px", opacity:0.5, marginTop:"4px" }}>
+                    <div style={{ ...sans, fontSize:"0.7rem", color:DIM, width:"80px", textAlign:"right", fontWeight:"500" }}>Lost</div>
+                    <div style={{ flex:1 }}>
+                      <div
+                        className="pipeline-bar"
+                        style={{
+                          width:`${Math.max(((stats.byStatus.lost || 0) / Math.max(...PIPELINE_STAGES.map(s => stats.byStatus[s] || 0), 1)) * 100, 8)}%`,
+                          background:"rgba(239,68,68,0.6)",
+                        }}
+                        onClick={() => { setFilter("lost"); setTab("leads"); }}
+                      >
+                        {stats.byStatus.lost || 0}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ) : submissions.length === 0 ? (
-                <div style={{ padding:"4rem 2rem", textAlign:"center" }}>
-                  <p style={{ ...display, fontSize:"1.4rem", color:MUTED, marginBottom:"0.5rem" }}>No submissions yet.</p>
-                  <p style={{ ...sans, fontSize:"0.84rem", color:DIM }}>Intake form leads will appear here when clients submit.</p>
+              </div>
+
+              {/* Recent Activity Feed */}
+              <div className="overview-card">
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+                  <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600" }}>RECENT LEADS</div>
+                  <button onClick={() => setTab("leads")} style={{ ...sans, fontSize:"0.7rem", color:GOLD, background:"none", border:"none", cursor:"pointer" }}>View all →</button>
+                </div>
+                {recentLeads.length === 0 ? (
+                  <div style={{ ...sans, fontSize:"0.84rem", color:DIM, textAlign:"center", padding:"2rem 0" }}>No leads yet.</div>
+                ) : (
+                  <div>
+                    {recentLeads.map(s => (
+                      <div key={s.id} className="activity-item" style={{ cursor:"pointer" }} onClick={() => { setSelected(s); setEditNotes(s.admin_notes || ""); setTab("leads"); }}>
+                        <div style={{ width:8, height:8, borderRadius:"50%", background:getStatusColor(s.status), marginTop:"6px", flexShrink:0 }} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"8px" }}>
+                            <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"600", color:CREAM, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.name}</div>
+                            <div style={{ ...sans, fontSize:"0.68rem", color:DIM, whiteSpace:"nowrap", flexShrink:0 }}>{timeAgo(s.created_at)}</div>
+                          </div>
+                          <div style={{ ...sans, fontSize:"0.75rem", color:MUTED, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                            {s.business} · {getStatusLabel(s.status)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Popular Automations */}
+              <div className="overview-card">
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1.2rem" }}>TOP REQUESTED AUTOMATIONS</div>
+                {automationStats.length === 0 ? (
+                  <div style={{ ...sans, fontSize:"0.84rem", color:DIM, textAlign:"center", padding:"2rem 0" }}>No data yet.</div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+                    {automationStats.map(([name, count]) => {
+                      const maxCount = automationStats[0][1];
+                      const pct = (count / maxCount) * 100;
+                      return (
+                        <div key={name}>
+                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:"3px" }}>
+                            <span style={{ ...sans, fontSize:"0.76rem", color:CREAM }}>{name}</span>
+                            <span style={{ ...sans, fontSize:"0.72rem", color:DIM }}>{count}</span>
+                          </div>
+                          <div style={{ height:"4px", background:GOLD_MID, borderRadius:"2px", overflow:"hidden" }}>
+                            <div style={{ height:"100%", width:`${pct}%`, background:GOLD, borderRadius:"2px", transition:"width 0.4s" }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Quick Actions / Status Summary */}
+              <div className="overview-card">
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1.2rem" }}>STATUS BREAKDOWN</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.8rem" }}>
+                  {STATUS_OPTIONS.map(s => {
+                    const count = stats.byStatus[s.key] || 0;
+                    return (
+                      <div
+                        key={s.key}
+                        style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 12px", background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", cursor:"pointer" }}
+                        onClick={() => { setFilter(s.key); setTab("leads"); }}
+                      >
+                        <div style={{ width:10, height:10, borderRadius:"50%", background:s.color }} />
+                        <div>
+                          <div style={{ ...sans, fontSize:"1rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>{count}</div>
+                          <div style={{ ...sans, fontSize:"0.65rem", color:DIM, marginTop:"2px" }}>{s.label}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ── LEADS TAB ── */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {tab === "leads" && (
+          <div style={{ display:"flex", minHeight:"calc(100vh - 100px)" }}>
+
+            {/* LEFT: TABLE */}
+            <div style={{ flex:1, borderRight:`1px solid ${BORDER}`, display:"flex", flexDirection:"column" }}>
+
+              {/* Filters */}
+              <div style={{ padding:"1.2rem 1.6rem", borderBottom:`1px solid ${BORDER}`, display:"flex", gap:"0.5rem", flexWrap:"wrap", alignItems:"center" }}>
+                {STATUSES.map(s => (
+                  <button
+                    key={s.key}
+                    className={`admin-filter${filter === s.key ? " active" : ""}`}
+                    onClick={() => setFilter(s.key)}
+                  >
+                    {s.label}
+                    {s.key !== "all" && (stats.byStatus[s.key] || 0) > 0 && (
+                      <span style={{ marginLeft:"4px", opacity:0.6 }}>({stats.byStatus[s.key]})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Table */}
+              <div style={{ flex:1, overflowY:"auto" }}>
+                {loading ? (
+                  <div style={{ padding:"3rem", textAlign:"center" }}>
+                    <p style={{ ...sans, color:DIM, fontSize:"0.88rem" }}>Loading...</p>
+                  </div>
+                ) : filteredSubmissions.length === 0 ? (
+                  <div style={{ padding:"4rem 2rem", textAlign:"center" }}>
+                    <p style={{ ...display, fontSize:"1.4rem", color:MUTED, marginBottom:"0.5rem" }}>No submissions yet.</p>
+                    <p style={{ ...sans, fontSize:"0.84rem", color:DIM }}>Intake form leads will appear here when clients submit.</p>
+                  </div>
+                ) : (
+                  <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
+                        {["Date","Name","Business","Budget","Status"].map(h => (
+                          <th key={h} style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.16em", fontWeight:"600", color:DIM, padding:"12px 16px", textAlign:"left" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSubmissions.map(s => (
+                        <tr
+                          key={s.id}
+                          className="admin-row"
+                          onClick={() => { setSelected(s); setEditNotes(s.admin_notes || ""); }}
+                          style={{
+                            borderBottom:`1px solid ${BORDER}`,
+                            background: selected?.id === s.id ? "rgba(201,146,42,0.06)" : "transparent",
+                          }}
+                        >
+                          <td style={{ ...sans, fontSize:"0.8rem", color:DIM, padding:"14px 16px", whiteSpace:"nowrap" }}>
+                            {new Date(s.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}
+                          </td>
+                          <td style={{ padding:"14px 16px" }}>
+                            <div style={{ ...sans, fontSize:"0.86rem", fontWeight:"600", color:CREAM }}>{s.name}</div>
+                            <div style={{ ...sans, fontSize:"0.75rem", color:DIM }}>{s.email}</div>
+                          </td>
+                          <td style={{ ...sans, fontSize:"0.84rem", color:MUTED, padding:"14px 16px" }}>{s.business}</td>
+                          <td style={{ ...sans, fontSize:"0.8rem", color:MUTED, padding:"14px 16px" }}>
+                            {s.budget === "starter" ? "$997" : s.budget === "business" ? "$1,997" : s.budget === "fullstack" ? "$3,500" : s.budget || "—"}
+                          </td>
+                          <td style={{ padding:"14px 16px" }}>
+                            <span className="admin-status-pill" style={{ color:getStatusColor(s.status), background:`${getStatusColor(s.status)}15`, border:`1px solid ${getStatusColor(s.status)}30` }}>
+                              <span style={{ width:6, height:6, borderRadius:"50%", background:getStatusColor(s.status) }} />
+                              {getStatusLabel(s.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT: DETAIL PANEL */}
+            <div style={{ width:"420px", flexShrink:0, overflowY:"auto", background:BG2 }}>
+              {selected ? (
+                <div style={{ padding:"2rem 1.8rem" }}>
+                  {/* Header */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2rem" }}>
+                    <div>
+                      <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>{selected.name}</h2>
+                      <a href={`mailto:${selected.email}`} style={{ ...sans, fontSize:"0.84rem", color:GOLD, textDecoration:"none" }}>{selected.email}</a>
+                    </div>
+                    <button onClick={() => setSelected(null)} style={{ background:"none", border:"none", color:DIM, cursor:"pointer", fontSize:"1.2rem", padding:"4px" }}>×</button>
+                  </div>
+
+                  {/* Status changer */}
+                  <div style={{ marginBottom:"2rem" }}>
+                    <div className="admin-detail-label">STATUS</div>
+                    <div style={{ display:"flex", flexWrap:"wrap", gap:"0.4rem" }}>
+                      {STATUS_OPTIONS.map(s => (
+                        <button
+                          key={s.key}
+                          onClick={() => updateSubmission(selected.id, { status: s.key })}
+                          disabled={saving}
+                          style={{
+                            ...sans, fontSize:"0.72rem", fontWeight:"600", padding:"5px 12px",
+                            borderRadius:"100px", cursor:"pointer", border:"1px solid", transition:"all 0.2s",
+                            background: selected.status === s.key ? `${s.color}20` : "transparent",
+                            borderColor: selected.status === s.key ? s.color : BORDER,
+                            color: selected.status === s.key ? s.color : DIM,
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Details grid */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.4rem", marginBottom:"2rem" }}>
+                    <div>
+                      <div className="admin-detail-label">BUSINESS</div>
+                      <div className="admin-detail-value">{selected.business}</div>
+                    </div>
+                    <div>
+                      <div className="admin-detail-label">INDUSTRY</div>
+                      <div className="admin-detail-value">{selected.industry || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="admin-detail-label">TEAM SIZE</div>
+                      <div className="admin-detail-value">{selected.team_size || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="admin-detail-label">BUDGET</div>
+                      <div className="admin-detail-value">{budgetLabel(selected.budget)}</div>
+                    </div>
+                  </div>
+
+                  {/* Automations */}
+                  <div style={{ marginBottom:"2rem" }}>
+                    <div className="admin-detail-label">AUTOMATIONS REQUESTED</div>
+                    {selected.automations && selected.automations.length > 0 ? (
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:"0.4rem", marginTop:"0.4rem" }}>
+                        {selected.automations.map((a, i) => (
+                          <span key={i} style={{
+                            ...sans, fontSize:"0.75rem", color:MUTED, padding:"4px 10px",
+                            background:GOLD_MID, border:`1px solid ${BORDER}`, borderRadius:"2px",
+                          }}>{a}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="admin-detail-value">—</div>
+                    )}
+                  </div>
+
+                  {/* Additional details */}
+                  {selected.details && (
+                    <div style={{ marginBottom:"2rem" }}>
+                      <div className="admin-detail-label">ADDITIONAL DETAILS</div>
+                      <div className="admin-detail-value" style={{ whiteSpace:"pre-wrap", color:MUTED, fontSize:"0.85rem", lineHeight:"1.7" }}>{selected.details}</div>
+                    </div>
+                  )}
+
+                  {/* Admin notes */}
+                  <div style={{ marginBottom:"1.5rem" }}>
+                    <div className="admin-detail-label">YOUR NOTES</div>
+                    <textarea
+                      value={editNotes}
+                      onChange={e => setEditNotes(e.target.value)}
+                      placeholder="Add notes about this lead..."
+                      rows={4}
+                      style={{
+                        ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`,
+                        borderRadius:"2px", padding:"12px 14px", color:CREAM, fontSize:"0.85rem",
+                        outline:"none", boxSizing:"border-box", resize:"vertical", lineHeight:"1.65",
+                      }}
+                    />
+                    <button
+                      onClick={() => updateSubmission(selected.id, { admin_notes: editNotes })}
+                      disabled={saving || editNotes === (selected.admin_notes || "")}
+                      style={{
+                        ...sans, marginTop:"0.6rem", padding:"8px 20px", fontSize:"0.76rem",
+                        fontWeight:"600", letterSpacing:"0.06em", border:"none", borderRadius:"2px",
+                        cursor: editNotes === (selected.admin_notes || "") ? "default" : "pointer",
+                        background: editNotes === (selected.admin_notes || "") ? DIM : GOLD,
+                        color: BG, transition:"all 0.2s",
+                        opacity: editNotes === (selected.admin_notes || "") ? 0.4 : 1,
+                      }}
+                    >
+                      {saving ? "SAVING..." : "SAVE NOTES"}
+                    </button>
+                  </div>
+
+                  {/* Timestamp */}
+                  <div style={{ ...sans, fontSize:"0.73rem", color:DIM, paddingTop:"1rem", borderTop:`1px solid ${BORDER}` }}>
+                    Submitted {formatDate(selected.created_at)}
+                  </div>
                 </div>
               ) : (
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
-                      {["Date","Name","Business","Budget","Status"].map(h => (
-                        <th key={h} style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.16em", fontWeight:"600", color:DIM, padding:"12px 16px", textAlign:"left" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {submissions.map(s => (
-                      <tr
-                        key={s.id}
-                        className="admin-row"
-                        onClick={() => { setSelected(s); setEditNotes(s.admin_notes || ""); }}
-                        style={{
-                          borderBottom:`1px solid ${BORDER}`,
-                          background: selected?.id === s.id ? "rgba(201,146,42,0.06)" : "transparent",
-                        }}
-                      >
-                        <td style={{ ...sans, fontSize:"0.8rem", color:DIM, padding:"14px 16px", whiteSpace:"nowrap" }}>
-                          {new Date(s.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}
-                        </td>
-                        <td style={{ padding:"14px 16px" }}>
-                          <div style={{ ...sans, fontSize:"0.86rem", fontWeight:"600", color:CREAM }}>{s.name}</div>
-                          <div style={{ ...sans, fontSize:"0.75rem", color:DIM }}>{s.email}</div>
-                        </td>
-                        <td style={{ ...sans, fontSize:"0.84rem", color:MUTED, padding:"14px 16px" }}>{s.business}</td>
-                        <td style={{ ...sans, fontSize:"0.8rem", color:MUTED, padding:"14px 16px" }}>
-                          {s.budget === "starter" ? "$997" : s.budget === "business" ? "$1,997" : s.budget === "fullstack" ? "$3,500" : s.budget || "—"}
-                        </td>
-                        <td style={{ padding:"14px 16px" }}>
-                          <span className="admin-status-pill" style={{ color:getStatusColor(s.status), background:`${getStatusColor(s.status)}15`, border:`1px solid ${getStatusColor(s.status)}30` }}>
-                            <span style={{ width:6, height:6, borderRadius:"50%", background:getStatusColor(s.status) }} />
-                            {getStatusLabel(s.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div style={{ padding:"4rem 2rem", textAlign:"center" }}>
+                  <p style={{ ...display, fontSize:"1.2rem", color:MUTED, marginBottom:"0.5rem" }}>Select a lead</p>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Click any row to view full details.</p>
+                </div>
               )}
             </div>
           </div>
+        )}
 
-          {/* ── RIGHT: DETAIL PANEL ── */}
-          <div style={{ width:"420px", flexShrink:0, overflowY:"auto", background:BG2 }}>
-            {selected ? (
-              <div style={{ padding:"2rem 1.8rem" }}>
-                {/* Header */}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2rem" }}>
-                  <div>
-                    <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>{selected.name}</h2>
-                    <a href={`mailto:${selected.email}`} style={{ ...sans, fontSize:"0.84rem", color:GOLD, textDecoration:"none" }}>{selected.email}</a>
-                  </div>
-                  <button onClick={() => setSelected(null)} style={{ background:"none", border:"none", color:DIM, cursor:"pointer", fontSize:"1.2rem", padding:"4px" }}>×</button>
-                </div>
-
-                {/* Status changer */}
-                <div style={{ marginBottom:"2rem" }}>
-                  <div className="admin-detail-label">STATUS</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:"0.4rem" }}>
-                    {STATUS_OPTIONS.map(s => (
-                      <button
-                        key={s.key}
-                        onClick={() => updateSubmission(selected.id, { status: s.key })}
-                        disabled={saving}
-                        style={{
-                          ...sans, fontSize:"0.72rem", fontWeight:"600", padding:"5px 12px",
-                          borderRadius:"100px", cursor:"pointer", border:"1px solid", transition:"all 0.2s",
-                          background: selected.status === s.key ? `${s.color}20` : "transparent",
-                          borderColor: selected.status === s.key ? s.color : BORDER,
-                          color: selected.status === s.key ? s.color : DIM,
-                        }}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Details grid */}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.4rem", marginBottom:"2rem" }}>
-                  <div>
-                    <div className="admin-detail-label">BUSINESS</div>
-                    <div className="admin-detail-value">{selected.business}</div>
-                  </div>
-                  <div>
-                    <div className="admin-detail-label">INDUSTRY</div>
-                    <div className="admin-detail-value">{selected.industry || "—"}</div>
-                  </div>
-                  <div>
-                    <div className="admin-detail-label">TEAM SIZE</div>
-                    <div className="admin-detail-value">{selected.team_size || "—"}</div>
-                  </div>
-                  <div>
-                    <div className="admin-detail-label">BUDGET</div>
-                    <div className="admin-detail-value">
-                      {selected.budget === "starter" ? "Starter — $997 + $149/mo" :
-                       selected.budget === "business" ? "Business — $1,997 + $299/mo" :
-                       selected.budget === "fullstack" ? "Full Stack — $3,500 + $499/mo" :
-                       selected.budget === "unsure" ? "Not sure yet" :
-                       selected.budget || "—"}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Automations */}
-                <div style={{ marginBottom:"2rem" }}>
-                  <div className="admin-detail-label">AUTOMATIONS REQUESTED</div>
-                  {selected.automations && selected.automations.length > 0 ? (
-                    <div style={{ display:"flex", flexWrap:"wrap", gap:"0.4rem", marginTop:"0.4rem" }}>
-                      {selected.automations.map((a, i) => (
-                        <span key={i} style={{
-                          ...sans, fontSize:"0.75rem", color:MUTED, padding:"4px 10px",
-                          background:GOLD_MID, border:`1px solid ${BORDER}`, borderRadius:"2px",
-                        }}>{a}</span>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="admin-detail-value">—</div>
-                  )}
-                </div>
-
-                {/* Additional details */}
-                {selected.details && (
-                  <div style={{ marginBottom:"2rem" }}>
-                    <div className="admin-detail-label">ADDITIONAL DETAILS</div>
-                    <div className="admin-detail-value" style={{ whiteSpace:"pre-wrap", color:MUTED, fontSize:"0.85rem", lineHeight:"1.7" }}>{selected.details}</div>
-                  </div>
-                )}
-
-                {/* Admin notes */}
-                <div style={{ marginBottom:"1.5rem" }}>
-                  <div className="admin-detail-label">YOUR NOTES</div>
-                  <textarea
-                    value={editNotes}
-                    onChange={e => setEditNotes(e.target.value)}
-                    placeholder="Add notes about this lead..."
-                    rows={4}
-                    style={{
-                      ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`,
-                      borderRadius:"2px", padding:"12px 14px", color:CREAM, fontSize:"0.85rem",
-                      outline:"none", boxSizing:"border-box", resize:"vertical", lineHeight:"1.65",
-                    }}
-                  />
-                  <button
-                    onClick={() => updateSubmission(selected.id, { admin_notes: editNotes })}
-                    disabled={saving || editNotes === (selected.admin_notes || "")}
-                    style={{
-                      ...sans, marginTop:"0.6rem", padding:"8px 20px", fontSize:"0.76rem",
-                      fontWeight:"600", letterSpacing:"0.06em", border:"none", borderRadius:"2px",
-                      cursor: editNotes === (selected.admin_notes || "") ? "default" : "pointer",
-                      background: editNotes === (selected.admin_notes || "") ? DIM : GOLD,
-                      color: BG, transition:"all 0.2s",
-                      opacity: editNotes === (selected.admin_notes || "") ? 0.4 : 1,
-                    }}
-                  >
-                    {saving ? "SAVING..." : "SAVE NOTES"}
-                  </button>
-                </div>
-
-                {/* Timestamp */}
-                <div style={{ ...sans, fontSize:"0.73rem", color:DIM, paddingTop:"1rem", borderTop:`1px solid ${BORDER}` }}>
-                  Submitted {formatDate(selected.created_at)}
-                </div>
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ── CALENDAR TAB ── */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {tab === "calendar" && (
+          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
+              <div>
+                <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Booking Calendar</h2>
+                <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Cal.com — 15-minute discovery calls · All bookings sync here automatically</p>
               </div>
-            ) : (
-              <div style={{ padding:"4rem 2rem", textAlign:"center" }}>
-                <p style={{ ...display, fontSize:"1.2rem", color:MUTED, marginBottom:"0.5rem" }}>Select a lead</p>
-                <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Click any row to view full details.</p>
+              <a
+                href="https://app.cal.com/bookings"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ ...sans, fontSize:"0.75rem", fontWeight:"600", color:BG, background:GOLD, padding:"8px 18px", borderRadius:"2px", textDecoration:"none", letterSpacing:"0.06em" }}
+              >
+                MANAGE IN CAL.COM →
+              </a>
+            </div>
+
+            {/* Stats row above calendar */}
+            <div style={{ display:"flex", gap:"1rem", marginBottom:"1.5rem" }}>
+              <div style={{ ...sans, fontSize:"0.75rem", color:MUTED, background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"10px 16px", display:"flex", alignItems:"center", gap:"8px" }}>
+                <span style={{ width:8, height:8, borderRadius:"50%", background:"#A855F7" }} />
+                <span><strong style={{ color:CREAM }}>{stats.byStatus.call_booked || 0}</strong> calls booked</span>
               </div>
-            )}
+              <div style={{ ...sans, fontSize:"0.75rem", color:MUTED, background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"10px 16px", display:"flex", alignItems:"center", gap:"8px" }}>
+                <span style={{ width:8, height:8, borderRadius:"50%", background:"#22C55E" }} />
+                <span><strong style={{ color:CREAM }}>{stats.byStatus.new || 0}</strong> awaiting outreach</span>
+              </div>
+              <div style={{ ...sans, fontSize:"0.75rem", color:MUTED, background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"10px 16px", display:"flex", alignItems:"center", gap:"8px" }}>
+                <span style={{ width:8, height:8, borderRadius:"50%", background:GOLD }} />
+                <span><strong style={{ color:CREAM }}>{stats.byStatus.onboarded || 0}</strong> onboarded</span>
+              </div>
+            </div>
+
+            {/* Cal.com Embed */}
+            <div style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", overflow:"hidden" }}>
+              <div id="cal-embed-container" />
+            </div>
           </div>
+        )}
 
-        </div>
       </div>
     </>
   );
