@@ -12,7 +12,7 @@ import {
 
 // ── Stripe Payment Links ─────────────────────────────────────────────────────
 const STRIPE = {
-  DISCOVERY:          "https://buy.stripe.com/00wdRb3uW3t0fQjaBI0sU00", // $97 discovery deposit
+  DISCOVERY:          "https://buy.stripe.com/dRm28tc1s3t0gUnaBI0sU02", // $97 discovery deposit
   STARTER_FULL:       "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04", // Starter setup $997
   STARTER_MONTHLY:    "https://buy.stripe.com/6oUdRbd5we7E6fJ25c0sU01", // Starter monthly $149/mo
   BUSINESS_FULL:      "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05", // Business setup $1,997
