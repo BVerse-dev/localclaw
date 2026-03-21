@@ -297,7 +297,7 @@ export default function LocalClaw() {
           <a href="#how" className="nav-link">HOW IT WORKS</a>
           <a href="#pricing" className="nav-link">PRICING</a>
           <a href="#security" className="nav-link">SECURITY</a>
-          <a href="#book" className="btn-primary" style={{ padding:"10px 20px", fontSize:"0.75rem" }}>BOOK A CALL</a>
+          <a href="/intake" className="btn-primary" style={{ padding:"10px 20px", fontSize:"0.75rem" }}>BOOK A CALL</a>
         </div>
         <button className="nav-mobile-toggle" onClick={() => setMobileOpen(o => !o)} style={{ background:"none", border:"none", cursor:"pointer", color:CREAM, padding:"8px", display:"none" }}>
           {mobileOpen ? <X size={22}/> : <Menu size={22}/>}
@@ -311,7 +311,7 @@ export default function LocalClaw() {
             {["WHAT IT DOES","HOW IT WORKS","PRICING","SECURITY"][i]}
           </a>
         ))}
-        <a href="#book" className="btn-primary" onClick={() => setMobileOpen(false)} style={{ textAlign:"center", marginTop:"0.5rem" }}>BOOK A FREE CALL</a>
+        <a href="/intake" className="btn-primary" onClick={() => setMobileOpen(false)} style={{ textAlign:"center", marginTop:"0.5rem" }}>BOOK A CALL</a>
       </div>
 
       {/* ── HERO ── */}
