@@ -10,6 +10,17 @@ import {
   Phone, Megaphone, Gift
 } from "lucide-react";
 
+// ── Stripe Payment Links ─────────────────────────────────────────────────────
+// Replace each "#" with your Stripe Payment Link URL after creating them at
+// https://dashboard.stripe.com/payment-links
+const STRIPE = {
+  DISCOVERY:     "#book",  // $97 discovery deposit (all plans) — add Stripe link
+  STARTER_FULL:  "#book",  // Starter: $997 setup + $149/mo     — add Stripe link
+  BUSINESS_FULL: "#book",  // Business: $1,997 setup + $299/mo  — add Stripe link
+  ENTERPRISE:    "#book",  // Full Stack: $3,500 setup + $499/mo — add Stripe link
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 // v2 ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
 const SI = (name) => `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${name}.svg`;
 
@@ -328,7 +339,7 @@ export default function LocalClaw() {
             </p>
 
             <div data-hero-btns className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
-              <a href="#book" className="btn-primary" style={{ padding:"16px 32px" }}>BOOK A FREE 15-MIN CALL</a>
+              <a href={STRIPE.DISCOVERY} className="btn-primary" style={{ padding:"16px 32px" }}>START WITH $97 DEPOSIT</a>
               <a href="#how" className="btn-secondary" style={{ padding:"16px 32px" }}>SEE HOW IT WORKS</a>
             </div>
 
@@ -602,11 +613,41 @@ export default function LocalClaw() {
                     </div>
                   ))}
                 </div>
-                <a href="#book" className={plan.highlight ? "btn-primary" : "btn-secondary"} style={{ display:"block", textAlign:"center" }}>{plan.highlight ? "GET STARTED" : "BOOK A CALL"}</a>
+                {/* Dual-path CTAs */}
+                {plan.tag === "ENTERPRISE" ? (
+                  <a href={STRIPE.ENTERPRISE} className="btn-secondary" style={{ display:"block", textAlign:"center" }}>TALK TO US →</a>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
+                    <a href={STRIPE.DISCOVERY} className={plan.highlight ? "btn-primary" : "btn-secondary"} style={{ display:"block", textAlign:"center" }}>
+                      BOOK DISCOVERY CALL · $97
+                    </a>
+                    <a
+                      href={plan.tag === "SOLO OPERATORS" ? STRIPE.STARTER_FULL : STRIPE.BUSINESS_FULL}
+                      style={{ ...sans, display:"block", textAlign:"center", color:DIM, fontSize:"0.77rem", textDecoration:"none", padding:"0.35rem 0", letterSpacing:"0.04em", transition:"color 0.2s" }}
+                      onMouseEnter={e => e.currentTarget.style.color = GOLD}
+                      onMouseLeave={e => e.currentTarget.style.color = DIM}
+                    >
+                      Ready to go? Pay {plan.setup} + {plan.monthly} upfront →
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
-          <p style={{ ...sans, textAlign:"center", color:DIM, fontSize:"0.79rem", marginTop:"1.8rem" }}>Additional agents: +$1,500 each. VPS hosting ~$5–10/mo (we handle setup). 100% satisfaction guarantee.</p>
+          {/* Trust strip */}
+          <div style={{ display:"flex", justifyContent:"center", gap:"2.5rem", flexWrap:"wrap", marginTop:"2.2rem", paddingTop:"2rem", borderTop:`1px solid ${BORDER}` }}>
+            {[
+              "$97 deposit credited to your setup fee",
+              "30-day satisfaction guarantee",
+              "Cancel before kickoff — full refund",
+              "Additional agents +$1,500 each",
+            ].map((t,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                <CheckCircle size={13} color={GOLD} strokeWidth={2} style={{ flexShrink:0 }} />
+                <span style={{ ...sans, color:DIM, fontSize:"0.79rem" }}>{t}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -648,14 +689,24 @@ export default function LocalClaw() {
           <h2 data-cta-head style={{ ...display, fontSize:"clamp(2.5rem,7vw,5.5rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.04" }}>
             Your agent is<br /><em className="shimmer-text" style={{ fontStyle:"italic" }}>ready to deploy.</em>
           </h2>
-          <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"460px", margin:"0 auto 3rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
-            Book a free 15-minute strategy call. We scope your deployment and you go live same day.
+          <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"500px", margin:"0 auto 1.2rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
+            Reserve your spot with a $97 discovery deposit. We scope your deployment on a 20-minute call and go live within 24 hours.
+          </p>
+          <p style={{ ...sans, color:DIM, maxWidth:"420px", margin:"0 auto 2.8rem", lineHeight:"1.7", fontSize:"0.83rem" }}>
+            Your $97 is credited in full toward your setup fee. If we're not the right fit, you get it back — no questions asked.
           </p>
           <div data-cta-btn className="cta-btns" style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
-            <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>BOOK A FREE CALL</a>
-            <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>DM @Th3Alch3mist_</a>
+            <a href={STRIPE.DISCOVERY} className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>CLAIM YOUR SPOT · $97</a>
+            <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>QUESTIONS? DM US</a>
           </div>
-          <p style={{ ...sans, color:DIM, fontSize:"0.79rem", marginTop:"1.8rem" }}>We schedule across all time zones. DM us on X if you cannot find a slot.</p>
+          <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"2rem" }}>
+            {["$97 credited to setup fee", "30-day money-back guarantee", "Live in under 24 hours"].map((t,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
+                <CheckCircle size={12} color={GOLD} strokeWidth={2} />
+                <span style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>{t}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
