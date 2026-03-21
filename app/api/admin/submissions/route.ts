@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 // Middleware check
 function isAuthed(req: NextRequest): boolean {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status");
 
-  let query = supabase
+  let query = getSupabase()
     .from("intake_submissions")
     .select("*")
     .order("created_at", { ascending: false });
@@ -51,7 +51,7 @@ export async function PATCH(req: NextRequest) {
     if (status) updates.status = status;
     if (admin_notes !== undefined) updates.admin_notes = admin_notes;
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from("intake_submissions")
       .update(updates)
       .eq("id", id);
