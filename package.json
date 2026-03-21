@@ -10,6 +10,7 @@
   "dependencies": {
     "@remotion/media-utils": "^4.0.438",
     "@remotion/player": "^4.0.438",
+    "@supabase/supabase-js": "^2.99.3",
     "lucide-react": "^0.344.0",
     "next": "14.2.3",
     "react": "18.3.1",

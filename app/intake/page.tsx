@@ -140,10 +140,13 @@ export default function IntakePage() {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, send form data to your backend / email service / webhook
-    // For now, log and redirect to Calendly
+    if (submitting) return;
+    setSubmitting(true);
+
     const formData = new FormData(formRef.current!);
     const data = {
       name: formData.get("name"),
@@ -155,13 +158,26 @@ export default function IntakePage() {
       automations,
       details: formData.get("details"),
     };
-    console.log("Intake form submission:", data);
 
-    // TODO: Send to your backend/webhook (e.g. Zapier, Make, or API route)
-    // fetch("/api/intake", { method: "POST", body: JSON.stringify(data) });
+    try {
+      const res = await fetch("/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
+      if (!res.ok) {
+        console.error("Intake submission failed:", await res.text());
+      }
+    } catch (err) {
+      console.error("Intake submission error:", err);
+    }
+
+    // Always show success + redirect (even if API call had issues,
+    // the Calendly booking is what matters most)
     setSubmitted(true);
     setCountdown(5);
+    setSubmitting(false);
   };
 
   return (
@@ -558,8 +574,8 @@ export default function IntakePage() {
 
                 {/* ── Submit ── */}
                 <div data-form-section style={{ paddingTop:"0.5rem" }}>
-                  <button type="submit" className="intake-submit">
-                    SUBMIT & SCHEDULE YOUR CALL →
+                  <button type="submit" className="intake-submit" disabled={submitting}>
+                    {submitting ? "SUBMITTING..." : "SUBMIT & SCHEDULE YOUR CALL →"}
                   </button>
                   <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"1.6rem" }}>
                     {["No commitment required", "We respond within 2 hours", "100% confidential"].map((t,i) => (
