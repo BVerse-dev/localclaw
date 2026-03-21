@@ -1,13 +1,13 @@
 "use client";
-// build: 2026-03-20-v3
+// build: 2026-03-21-v4
 import React, { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
+const DashboardPlayer = dynamic(() => import("./DashboardPlayer"), { ssr: false });
 import {
   Mail, Calendar, Zap, MessageSquare, BarChart2, Shield,
   MapPin, Home, Activity, Scale, Coffee, TrendingUp, Briefcase, Wrench,
   CheckCircle, Users, Lock, Eye, RefreshCw, Building2, Menu, X,
-  Bell, Settings, ChevronUp, ChevronDown, Circle, ArrowUpRight,
-  Inbox, Clock, BotMessageSquare, Wifi, WifiOff,
-  Phone, Megaphone, Gift, Sparkles, MousePointerClick, Repeat2, Target
+  Phone, Megaphone, Gift
 } from "lucide-react";
 
 // v2 ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
@@ -37,12 +37,8 @@ const MUTED       = "#A89880";
 const DIM         = "#7A6E62";
 const BG          = "#0A0A0A";
 const BG2         = "#0D0D0D";
-const BG3         = "#111111";
 const BORDER      = "rgba(245,240,232,0.06)";
 const GREEN       = "#22C55E";
-const AMBER       = "#F59E0B";
-const RED         = "#EF4444";
-const BLUE        = "#3B82F6";
 
 const sans    = { fontFamily: "'Inter','Helvetica Neue',Arial,sans-serif" };
 const display = { fontFamily: "'Cormorant Garamond',Georgia,serif" };
@@ -62,184 +58,6 @@ function ClawIcon({ size = 36, color = GOLD }) {
       <path d="M18 4 C19 1, 22 1, 22 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
       <path d="M26 6 C27 3, 30 3, 29 5" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
     </svg>
-  );
-}
-
-// ── Agent status pill ──
-function StatusPill({ active }) {
-  return (
-    <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
-      <div style={{ width:6, height:6, borderRadius:"50%", background: active ? GREEN : RED,
-        boxShadow: active ? `0 0 6px ${GREEN}` : "none" }} />
-      <span style={{ ...sans, fontSize:"0.65rem", color: active ? GREEN : RED, fontWeight:600, letterSpacing:"0.08em" }}>
-        {active ? "ACTIVE" : "OFFLINE"}
-      </span>
-    </div>
-  );
-}
-
-// ── Mini sparkline ──
-function Sparkline({ data, color = GOLD }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const w = 80, h = 28;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / range) * h;
-    return `${x},${y}`;
-  }).join(" ");
-  return (
-    <svg width={w} height={h} style={{ overflow:"visible" }}>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
-      <polyline points={`0,${h} ${pts} ${w},${h}`}
-        fill={`url(#sg${color.replace("#","")})`} stroke="none" />
-      <defs>
-        <linearGradient id={`sg${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-// ── Dashboard mock ──
-function DashboardMock() {
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 2800);
-    return () => clearInterval(id);
-  }, []);
-
-  const agents = [
-    { name:"CEO Agent",   role:"Email + Calendar",   actions: 47 + (tick % 3), status:true,  lastAction:"Drafted reply to J. Mensah",  ago:"2m ago",   color:GOLD  },
-    { name:"Sales Agent", role:"CRM + Outreach",     actions: 31 + (tick % 2), status:true,  lastAction:"Followed up with 3 leads",    ago:"8m ago",   color:BLUE  },
-    { name:"Ops Agent",   role:"Slack + Suppliers",  actions: 19 + (tick % 4), status:true,  lastAction:"Summarised #team-updates",    ago:"12m ago",  color:GREEN },
-    { name:"Finance Bot", role:"Invoices + Reports", actions: 8,               status:false, lastAction:"Report sent to owner",        ago:"3h ago",   color:AMBER },
-  ];
-
-  const feed = [
-    { icon:Mail,        label:"Email triaged",              detail:"Re: Partnership inquiry",   time:"just now", color:GOLD  },
-    { icon:Calendar,    label:"Meeting rescheduled",        detail:"2pm → 3:30pm confirmed",    time:"4m",       color:BLUE  },
-    { icon:MessageSquare,label:"Slack thread summarised",   detail:"#sales — 14 messages",      time:"9m",       color:GREEN },
-    { icon:BarChart2,   label:"Daily brief delivered",      detail:"7 action items flagged",    time:"1h",       color:AMBER },
-    { icon:Shield,      label:"Security check passed",      detail:"All tokens valid",           time:"2h",       color:GREEN },
-  ];
-
-  const sparkData = [12,18,14,22,19,28,24,31,27,34,29,38];
-
-  return (
-    <div style={{
-      background:"#0D0D0D",
-      border:`1px solid ${GOLD_BORDER}`,
-      borderRadius:"12px",
-      overflow:"hidden",
-      width:"100%",
-      maxWidth:"520px",
-      boxShadow:`0 0 80px rgba(201,146,42,0.08), 0 0 0 1px rgba(201,146,42,0.1)`,
-      position:"relative",
-    }}>
-      {/* Top bar */}
-      <div style={{ background:"#0A0A0A", borderBottom:`1px solid ${BORDER}`, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-          <ClawIcon size={20} color={GOLD} />
-          <span style={{ ...sans, fontSize:"0.78rem", fontWeight:600, color:CREAM, letterSpacing:"0.04em" }}>LocalClaw</span>
-          <span style={{ ...sans, fontSize:"0.65rem", color:DIM }}>/ dashboard</span>
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"4px" }}>
-            <Wifi size={11} color={GREEN} />
-            <span style={{ ...sans, fontSize:"0.6rem", color:GREEN, fontWeight:600 }}>LIVE</span>
-          </div>
-          <Bell size={13} color={DIM} />
-          <Settings size={13} color={DIM} />
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:BORDER, borderBottom:`1px solid ${BORDER}` }}>
-        {[
-          { label:"Active Agents", value:"3 / 4", delta:"+1",   up:true,  color:GREEN },
-          { label:"Actions Today", value: String(105 + tick % 5), delta:"+12", up:true,  color:GOLD  },
-          { label:"Emails Handled",value:"38",    delta:"−2",   up:false, color:MUTED },
-        ].map((s,i) => (
-          <div key={i} style={{ background:BG2, padding:"12px 14px" }}>
-            <div style={{ ...sans, fontSize:"0.6rem", color:DIM, letterSpacing:"0.12em", marginBottom:"4px" }}>{s.label.toUpperCase()}</div>
-            <div style={{ ...sans, fontSize:"1.15rem", fontWeight:700, color:s.color, lineHeight:1 }}>{s.value}</div>
-            <div style={{ display:"flex", alignItems:"center", gap:"3px", marginTop:"4px" }}>
-              {s.up ? <ChevronUp size={10} color={GREEN}/> : <ChevronDown size={10} color={RED}/>}
-              <span style={{ ...sans, fontSize:"0.6rem", color:s.up ? GREEN : RED }}>{s.delta} today</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Agents list */}
-      <div style={{ padding:"14px 16px 0" }}>
-        <div style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.15em", color:DIM, marginBottom:"10px" }}>AGENT STATUS</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-          {agents.map((a, i) => (
-            <div key={i} style={{
-              background:"#111",
-              border:`1px solid ${a.status ? "rgba(201,146,42,0.12)" : BORDER}`,
-              borderRadius:"6px",
-              padding:"10px 12px",
-              display:"flex", alignItems:"center", justifyContent:"space-between", gap:"8px"
-            }}>
-              <div style={{ display:"flex", alignItems:"center", gap:"10px", flex:1, minWidth:0 }}>
-                <div style={{ width:28, height:28, borderRadius:"50%", background:`${a.color}18`, border:`1px solid ${a.color}40`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                  <BotMessageSquare size={12} color={a.color} />
-                </div>
-                <div style={{ minWidth:0 }}>
-                  <div style={{ ...sans, fontSize:"0.75rem", fontWeight:600, color:CREAM, marginBottom:"1px" }}>{a.name}</div>
-                  <div style={{ ...sans, fontSize:"0.62rem", color:DIM, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{a.lastAction}</div>
-                </div>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"4px", flexShrink:0 }}>
-                <StatusPill active={a.status} />
-                <span style={{ ...sans, fontSize:"0.6rem", color:DIM }}>{a.ago}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Sparkline + activity */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1px", background:BORDER, margin:"14px 0 0", borderTop:`1px solid ${BORDER}` }}>
-        {/* Chart */}
-        <div style={{ background:BG2, padding:"14px 16px" }}>
-          <div style={{ ...sans, fontSize:"0.6rem", color:DIM, letterSpacing:"0.12em", marginBottom:"8px" }}>ACTIONS / HOUR</div>
-          <Sparkline data={sparkData} color={GOLD} />
-          <div style={{ ...sans, fontSize:"0.62rem", color:MUTED, marginTop:"6px" }}>
-            <span style={{ color:GOLD, fontWeight:700 }}>↑ 24%</span> vs yesterday
-          </div>
-        </div>
-
-        {/* Live feed */}
-        <div style={{ background:BG2, padding:"14px 16px" }}>
-          <div style={{ ...sans, fontSize:"0.6rem", color:DIM, letterSpacing:"0.12em", marginBottom:"8px" }}>LIVE FEED</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:"7px" }}>
-            {feed.slice(0, 4).map((f, i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-                <f.icon size={9} color={f.color} strokeWidth={2} style={{ flexShrink:0 }} />
-                <span style={{ ...sans, fontSize:"0.58rem", color: i===0 ? CREAM : MUTED, flex:1, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{f.label}</span>
-                <span style={{ ...sans, fontSize:"0.56rem", color:DIM, flexShrink:0 }}>{f.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Morning brief banner */}
-      <div style={{ background:`linear-gradient(135deg, rgba(201,146,42,0.1) 0%, rgba(201,146,42,0.04) 100%)`, borderTop:`1px solid ${GOLD_BORDER}`, padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-          <div style={{ width:6, height:6, borderRadius:"50%", background:GOLD, boxShadow:`0 0 6px ${GOLD}` }} />
-          <span style={{ ...sans, fontSize:"0.65rem", color:MUTED }}>Morning brief delivered to Telegram</span>
-        </div>
-        <span style={{ ...sans, fontSize:"0.6rem", color:GOLD, fontWeight:600 }}>9:00 AM</span>
-      </div>
-    </div>
   );
 }
 
@@ -268,164 +86,183 @@ export default function LocalClaw() {
       const { ScrollTrigger } = window;
       gsap.registerPlugin(ScrollTrigger);
 
-      // ── HERO: stagger in on load ──
-      gsap.fromTo("[data-hero-badge]",
-        { opacity: 0, y: -18 },
-        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.1 }
-      );
-      gsap.fromTo("[data-hero-h1]",
-        { opacity: 0, y: 32 },
-        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out", delay: 0.22 }
-      );
-      gsap.fromTo("[data-hero-sub]",
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.75, ease: "power3.out", delay: 0.38 }
-      );
-      gsap.fromTo("[data-hero-btns]",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.52 }
-      );
-      gsap.fromTo("[data-hero-connects]",
-        { opacity: 0 },
-        { opacity: 1, duration: 0.8, ease: "power2.out", delay: 0.68 }
-      );
-      gsap.fromTo("[data-hero-trust]",
-        { opacity: 0 },
-        { opacity: 1, duration: 0.8, ease: "power2.out", delay: 0.78 }
-      );
-      gsap.fromTo("[data-hero-dashboard]",
-        { opacity: 0, x: 55, scale: 0.96 },
-        { opacity: 1, x: 0, scale: 1, duration: 1, ease: "power3.out", delay: 0.3 }
-      );
+      // ── HERO: premium staggered entrance ──
+      const heroTL = gsap.timeline({ defaults: { ease: "power4.out" } });
 
-      // ── STATS BAR ──
+      heroTL
+        .fromTo("[data-hero-badge]",
+          { opacity: 0, y: -24, scale: 0.9 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.8 }, 0.1)
+        .fromTo("[data-hero-h1]",
+          { opacity: 0, y: 40, clipPath: "inset(0 0 100% 0)" },
+          { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 1.1 }, 0.25)
+        .fromTo("[data-hero-sub]",
+          { opacity: 0, y: 28, filter: "blur(6px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9 }, 0.45)
+        .fromTo("[data-hero-btns]",
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.8 }, 0.6)
+        .fromTo("[data-hero-connects]",
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: 0.85 }, 0.75)
+        .fromTo("[data-hero-trust]",
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.8 }, 0.9)
+        .fromTo("[data-hero-dashboard]",
+          { opacity: 0, x: 80, scale: 0.92, rotateY: 8 },
+          { opacity: 1, x: 0, scale: 1, rotateY: 0, duration: 1.3, ease: "power3.out" }, 0.35);
+
+      // ── HERO PARALLAX: background orbs move on scroll ──
+      gsap.to(".hero-orb-1", {
+        y: -120,
+        scrollTrigger: { trigger: "[data-hero-h1]", start: "top top", end: "bottom top", scrub: 1.5 }
+      });
+      gsap.to(".hero-orb-2", {
+        y: -80,
+        scrollTrigger: { trigger: "[data-hero-h1]", start: "top top", end: "bottom top", scrub: 2 }
+      });
+
+      // ── STATS BAR: stagger + counter animation ──
       gsap.fromTo("[data-stat]",
-        { opacity: 0, y: 28 },
+        { opacity: 0, y: 32, scale: 0.95 },
         {
-          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.1,
+          opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "back.out(1.2)", stagger: 0.12,
           scrollTrigger: { trigger: "[data-stats-bar]", start: "top 85%", once: true }
         }
       );
 
-      // ── WHAT IT DOES: heading ──
+      // ── WHAT IT DOES: heading with clip reveal ──
       gsap.fromTo("[data-what-head]",
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+        { opacity: 0, y: 36, clipPath: "inset(0 0 100% 0)" },
+        { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.9, ease: "power4.out",
           scrollTrigger: { trigger: "[data-what-head]", start: "top 88%", once: true }
         }
       );
 
-      // ── Big 3 revenue cards ──
+      // ── Big 3 revenue cards: staggered with scale ──
       gsap.fromTo("[data-big3-card]",
-        { opacity: 0, y: 44, scale: 0.94 },
+        { opacity: 0, y: 50, scale: 0.92 },
         {
-          opacity: 1, y: 0, scale: 1, duration: 0.75, ease: "power3.out", stagger: 0.13,
+          opacity: 1, y: 0, scale: 1, duration: 0.85, ease: "back.out(1.1)", stagger: 0.15,
           scrollTrigger: { trigger: "[data-big3]", start: "top 82%", once: true }
         }
       );
 
-      // ── Separator line animate width ──
+      // ── Separator line with premium width anim ──
       gsap.fromTo("[data-separator]",
         { scaleX: 0, opacity: 0 },
         {
-          scaleX: 1, opacity: 1, duration: 0.9, ease: "power2.out",
+          scaleX: 1, opacity: 1, duration: 1.2, ease: "power2.inOut",
           scrollTrigger: { trigger: "[data-separator]", start: "top 90%", once: true }
         }
       );
 
-      // ── Supporting 6 agent cards ──
+      // ── Supporting 6 agent cards: stagger with blur ──
       gsap.fromTo("[data-agent-card]",
-        { opacity: 0, y: 36 },
+        { opacity: 0, y: 40, filter: "blur(4px)" },
         {
-          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.09,
+          opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out", stagger: 0.08,
           scrollTrigger: { trigger: "[data-agents-grid]", start: "top 82%", once: true }
         }
       );
 
       // ── Bottom CTA strip ──
       gsap.fromTo("[data-bottom-cta]",
-        { opacity: 0, y: 20 },
+        { opacity: 0, y: 24 },
         {
-          opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+          opacity: 1, y: 0, duration: 0.75, ease: "power3.out",
           scrollTrigger: { trigger: "[data-bottom-cta]", start: "top 88%", once: true }
         }
       );
 
       // ── WHO IT'S FOR section ──
       gsap.fromTo("[data-for-head]",
-        { opacity: 0, y: 28 },
-        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out",
+        { opacity: 0, y: 32, clipPath: "inset(0 0 100% 0)" },
+        { opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)", duration: 0.85, ease: "power4.out",
           scrollTrigger: { trigger: "[data-for-head]", start: "top 88%", once: true }
         }
       );
       gsap.fromTo("[data-for-card]",
-        { opacity: 0, y: 32 },
+        { opacity: 0, y: 36, scale: 0.96 },
         {
-          opacity: 1, y: 0, duration: 0.6, ease: "power3.out", stagger: 0.07,
+          opacity: 1, y: 0, scale: 1, duration: 0.65, ease: "back.out(1.1)", stagger: 0.06,
           scrollTrigger: { trigger: "[data-for-grid]", start: "top 82%", once: true }
         }
       );
 
-      // ── HOW IT WORKS steps ──
+      // ── HOW IT WORKS steps: slide + clip reveal ──
       gsap.fromTo("[data-step]",
-        { opacity: 0, x: -40 },
+        { opacity: 0, x: -50, clipPath: "inset(0 100% 0 0)" },
         {
-          opacity: 1, x: 0, duration: 0.75, ease: "power3.out", stagger: 0.15,
+          opacity: 1, x: 0, clipPath: "inset(0 0% 0 0)", duration: 0.9, ease: "power4.out", stagger: 0.18,
           scrollTrigger: { trigger: "[data-steps]", start: "top 82%", once: true }
         }
       );
 
-      // ── SECURITY section ──
+      // ── SECURITY section: premium slide-in ──
       gsap.fromTo("[data-security-left]",
-        { opacity: 0, x: -36 },
-        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out",
+        { opacity: 0, x: -50, filter: "blur(4px)" },
+        { opacity: 1, x: 0, filter: "blur(0px)", duration: 1, ease: "power4.out",
           scrollTrigger: { trigger: "[data-security]", start: "top 80%", once: true }
         }
       );
       gsap.fromTo("[data-security-right]",
-        { opacity: 0, x: 36 },
-        { opacity: 1, x: 0, duration: 0.8, ease: "power3.out", delay: 0.1,
+        { opacity: 0, x: 50, filter: "blur(4px)" },
+        { opacity: 1, x: 0, filter: "blur(0px)", duration: 1, ease: "power4.out", delay: 0.12,
           scrollTrigger: { trigger: "[data-security]", start: "top 80%", once: true }
         }
       );
 
-      // ── PRICING cards ──
+      // ── PRICING cards: staggered spring ──
       gsap.fromTo("[data-pricing-card]",
-        { opacity: 0, y: 44, scale: 0.93 },
+        { opacity: 0, y: 50, scale: 0.9 },
         {
-          opacity: 1, y: 0, scale: 1, duration: 0.75, ease: "power3.out", stagger: 0.12,
+          opacity: 1, y: 0, scale: 1, duration: 0.85, ease: "back.out(1.2)", stagger: 0.14,
           scrollTrigger: { trigger: "[data-pricing]", start: "top 82%", once: true }
         }
       );
 
-      // ── TESTIMONIALS ──
+      // ── TESTIMONIALS: stagger with subtle rotation ──
       gsap.fromTo("[data-testimonial]",
-        { opacity: 0, y: 30 },
+        { opacity: 0, y: 36, rotateX: 8 },
         {
-          opacity: 1, y: 0, duration: 0.65, ease: "power3.out", stagger: 0.1,
+          opacity: 1, y: 0, rotateX: 0, duration: 0.7, ease: "power3.out", stagger: 0.08,
           scrollTrigger: { trigger: "[data-testimonials]", start: "top 82%", once: true }
         }
       );
 
-      // ── CTA SECTION ──
+      // ── CTA SECTION: dramatic entrance ──
       gsap.fromTo("[data-cta-head]",
-        { opacity: 0, y: 36 },
-        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out",
+        { opacity: 0, y: 44, scale: 0.95, clipPath: "inset(0 0 100% 0)" },
+        { opacity: 1, y: 0, scale: 1, clipPath: "inset(0 0 0% 0)", duration: 1.1, ease: "power4.out",
           scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
         }
       );
       gsap.fromTo("[data-cta-sub]",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", delay: 0.15,
+        { opacity: 0, y: 24, filter: "blur(6px)" },
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.8, ease: "power3.out", delay: 0.18,
           scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
         }
       );
       gsap.fromTo("[data-cta-btn]",
-        { opacity: 0, scale: 0.9 },
-        { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)", delay: 0.28,
+        { opacity: 0, y: 20, scale: 0.85 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "back.out(1.7)", delay: 0.32,
           scrollTrigger: { trigger: "[data-cta]", start: "top 82%", once: true }
         }
       );
+
+      // ── NAV: background opacity on scroll ──
+      ScrollTrigger.create({
+        start: "top -80",
+        onUpdate: (self) => {
+          const nav = document.querySelector("nav");
+          if (nav) {
+            const scrolled = self.direction === 1 ? true : window.scrollY > 80;
+            nav.style.borderBottomColor = scrolled ? "rgba(201,146,42,0.22)" : "rgba(201,146,42,0.08)";
+            nav.style.boxShadow = scrolled ? "0 4px 30px rgba(0,0,0,0.3)" : "none";
+          }
+        }
+      });
     });
 
     return () => {
@@ -436,83 +273,6 @@ export default function LocalClaw() {
 
   return (
     <div style={{ fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif", background:BG, color:CREAM, minHeight:"100vh", overflowX:"hidden" }}>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Great+Vibes&display=swap');
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        .lc-logo-text {
-          font-family: 'Great Vibes', cursive;
-          font-size: 1.75rem;
-          color: #F5F0E8;
-          line-height: 1;
-          letter-spacing: 0.02em;
-        }
-        .nav-link { color:#A89880; text-decoration:none; font-size:0.78rem; letter-spacing:0.1em; font-family:'Inter',sans-serif; font-weight:500; transition:color 0.2s; white-space:nowrap; }
-        .nav-link:hover { color:#F5F0E8; }
-        .btn-primary { background:#C9922A; color:#0A0A0A !important; padding:14px 28px; font-family:'Inter',sans-serif; font-weight:700; font-size:0.82rem; letter-spacing:0.1em; text-decoration:none; border-radius:2px; display:inline-block; transition:opacity 0.2s; white-space:nowrap; }
-        .btn-primary:hover { opacity:0.85; }
-        .btn-secondary { background:transparent; color:#F5F0E8 !important; padding:14px 28px; font-family:'Inter',sans-serif; font-weight:500; font-size:0.82rem; letter-spacing:0.08em; text-decoration:none; border-radius:2px; border:1px solid rgba(245,240,232,0.2); display:inline-block; transition:border-color 0.2s; white-space:nowrap; }
-        .btn-secondary:hover { border-color:rgba(245,240,232,0.45); }
-        .card-hover { transition:border-color 0.25s, background 0.25s; }
-        .card-hover:hover { border-color:rgba(201,146,42,0.4) !important; background:rgba(201,146,42,0.04) !important; }
-
-        /* GSAP initial hidden states — revealed by JS */
-        [data-hero-badge],[data-hero-h1],[data-hero-sub],[data-hero-btns],[data-hero-connects],[data-hero-trust],[data-hero-dashboard] { opacity:0; }
-        [data-stat] { opacity:0; }
-        [data-what-head] { opacity:0; }
-        [data-big3-card] { opacity:0; }
-        [data-separator] { opacity:0; transform-origin:center; }
-        [data-agent-card] { opacity:0; }
-        [data-bottom-cta] { opacity:0; }
-        [data-for-head] { opacity:0; }
-        [data-for-card] { opacity:0; }
-        [data-step] { opacity:0; }
-        [data-security-left],[data-security-right] { opacity:0; }
-        [data-pricing-card] { opacity:0; }
-        [data-testimonial] { opacity:0; }
-        [data-cta-head],[data-cta-sub],[data-cta-btn] { opacity:0; }
-
-        .int-icon { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; overflow:hidden; transition:transform 0.2s, border-color 0.2s; flex-shrink:0; }
-        .int-icon:hover { transform:scale(1.14); border-color:rgba(201,146,42,0.55); }
-        .int-icon img { width:18px; height:18px; object-fit:contain; }
-
-        /* Desktop */
-        .nav-desktop { display:flex; gap:2rem; align-items:center; }
-        .nav-mobile-toggle { display:none; }
-        .mobile-menu { display:none; }
-        .hero-layout { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
-        .dashboard-col { display:flex; justify-content:flex-end; }
-
-        /* iPad (769–1024px) */
-        @media (max-width:1024px) {
-          .nav-desktop { display:none !important; }
-          .nav-mobile-toggle { display:flex !important; }
-          .mobile-menu.open { display:flex !important; }
-          .hero-layout { grid-template-columns:1fr !important; gap:3rem !important; }
-          .dashboard-col { justify-content:center !important; }
-          .stats-grid { grid-template-columns:repeat(2,1fr) !important; }
-          .features-big { grid-template-columns:1fr !important; }
-          .features-grid { grid-template-columns:repeat(2,1fr) !important; }
-          .for-grid { grid-template-columns:repeat(2,1fr) !important; }
-          .pricing-grid { grid-template-columns:1fr !important; max-width:460px !important; margin-left:auto !important; margin-right:auto !important; }
-          .testimonials-grid { grid-template-columns:repeat(2,1fr) !important; }
-          .security-grid { grid-template-columns:1fr !important; gap:3rem !important; }
-        }
-
-        /* Mobile (≤768px) */
-        @media (max-width:768px) {
-          .features-big { grid-template-columns:1fr !important; }
-          .features-grid { grid-template-columns:1fr !important; }
-          .for-grid { grid-template-columns:1fr !important; }
-          .testimonials-grid { grid-template-columns:1fr !important; }
-          .stats-grid { grid-template-columns:repeat(2,1fr) !important; }
-          .step-row { flex-direction:column !important; gap:1rem !important; }
-          .connects-strip { flex-wrap:wrap !important; }
-          .cta-btns { flex-direction:column !important; align-items:flex-start !important; }
-          .hero-trust { flex-direction:column !important; gap:1.2rem !important; }
-        }
-      `}</style>
 
       {/* ── NAV ── */}
       <nav style={{ position:"fixed", top:0, left:0, right:0, zIndex:200, background:"rgba(10,10,10,0.97)", borderBottom:`1px solid ${GOLD_BORDER}`, padding:"0 5%", display:"flex", alignItems:"center", justifyContent:"space-between", height:"68px", backdropFilter:"blur(14px)" }}>
@@ -544,35 +304,36 @@ export default function LocalClaw() {
 
       {/* ── HERO ── */}
       <section style={{ minHeight:"100vh", display:"flex", flexDirection:"column", justifyContent:"center", padding:"150px 6% 90px", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:"10%", right:"-5%", width:"700px", height:"700px", background:"radial-gradient(circle, rgba(201,146,42,0.05) 0%, transparent 65%)", pointerEvents:"none" }} />
-        <div style={{ position:"absolute", bottom:"5%", left:"-5%", width:"500px", height:"500px", background:"radial-gradient(circle, rgba(201,146,42,0.03) 0%, transparent 65%)", pointerEvents:"none" }} />
+        <div className="hero-orb-1" style={{ position:"absolute", top:"10%", right:"-5%", width:"700px", height:"700px", background:"radial-gradient(circle, rgba(201,146,42,0.05) 0%, transparent 65%)", pointerEvents:"none" }} />
+        <div className="hero-orb-2" style={{ position:"absolute", bottom:"5%", left:"-5%", width:"500px", height:"500px", background:"radial-gradient(circle, rgba(201,146,42,0.03) 0%, transparent 65%)", pointerEvents:"none" }} />
+        <div className="hero-orb-2" style={{ position:"absolute", top:"40%", left:"30%", width:"400px", height:"400px", background:"radial-gradient(circle, rgba(201,146,42,0.02) 0%, transparent 60%)", pointerEvents:"none" }} />
 
         <div className="hero-layout" style={{ maxWidth:"1200px", margin:"0 auto", width:"100%", position:"relative", zIndex:1 }}>
 
           {/* Left — copy */}
           <div>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
+            <div data-hero-badge style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
               <div style={{ width:5, height:5, background:GOLD, borderRadius:"50%" }} />
               <span style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600" }}>LOCALCLAW AGENT ENGINE</span>
             </div>
 
-            <h1 style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
+            <h1 data-hero-h1 style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
               We deploy AI agents<br />
-              <em style={{ color:GOLD, fontStyle:"italic" }}>for local businesses</em><br />
+              <em className="shimmer-text" style={{ fontStyle:"italic" }}>for local businesses</em><br />
               that never sleep.
             </h1>
 
-            <p style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
+            <p data-hero-sub style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
               LocalClaw combines OpenClaw's autonomous agent framework with NVIDIA NemoClaw enterprise security — deployed and managed for your business. No technical knowledge required.
             </p>
 
-            <div className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
+            <div data-hero-btns className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
               <a href="#book" className="btn-primary" style={{ padding:"16px 32px" }}>BOOK A FREE 15-MIN CALL</a>
               <a href="#how" className="btn-secondary" style={{ padding:"16px 32px" }}>SEE HOW IT WORKS</a>
             </div>
 
             {/* Connects To */}
-            <div className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
+            <div data-hero-connects className="connects-strip" style={{ display:"flex", alignItems:"center", gap:"1rem", marginBottom:"2.8rem" }}>
               <span style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.2em", color:DIM, fontWeight:"600", whiteSpace:"nowrap" }}>CONNECTS TO</span>
               <div style={{ display:"flex", alignItems:"center" }}>
                 {INTEGRATIONS.map((app, i) => (
@@ -589,7 +350,7 @@ export default function LocalClaw() {
             </div>
 
             {/* Trust tags */}
-            <div className="hero-trust" style={{ display:"flex", gap:"2.5rem", flexWrap:"wrap" }}>
+            <div data-hero-trust className="hero-trust" style={{ display:"flex", gap:"2.5rem", flexWrap:"wrap" }}>
               {[["OpenClaw Powered","Open-source agent framework"],["NVIDIA NemoClaw","Enterprise security layer"],["Same-Day Live","In under 24 hours"]].map(([t,s],i) => (
                 <div key={i}>
                   <div style={{ ...sans, fontSize:"0.84rem", fontWeight:"600", color:CREAM, marginBottom:"0.18rem" }}>{t}</div>
@@ -600,8 +361,10 @@ export default function LocalClaw() {
           </div>
 
           {/* Right — dashboard */}
-          <div className="dashboard-col">
-            <DashboardMock />
+          <div data-hero-dashboard className="dashboard-col">
+            <div className="dashboard-glow" style={{ borderRadius:"12px" }}>
+              <DashboardPlayer />
+            </div>
           </div>
         </div>
       </section>
@@ -610,7 +373,7 @@ export default function LocalClaw() {
       <section style={{ background:GOLD_MID, borderTop:`1px solid ${GOLD_BORDER}`, borderBottom:`1px solid ${GOLD_BORDER}`, padding:"2.2rem 6%" }}>
         <div data-stats-bar className="stats-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"1rem", maxWidth:"960px", margin:"0 auto", textAlign:"center" }}>
           {[["24 Hours","SETUP WINDOW"],["NemoClaw™","SECURITY LAYER"],["24 / 7","AGENT UPTIME"],["Telegram","INTERFACE"]].map(([val,label],i) => (
-            <div>
+            <div data-stat key={i}>
               <div style={{ ...display, fontSize:"clamp(1.4rem,3vw,2rem)", fontWeight:"700", color:GOLD, marginBottom:"0.25rem" }}>{val}</div>
               <div style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.18em", color:DIM }}>{label}</div>
             </div>
@@ -748,6 +511,7 @@ export default function LocalClaw() {
         <div style={{ maxWidth:"840px", margin:"0 auto" }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>THE PROCESS</p>
           <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"4rem", lineHeight:"1.08" }}>Go live same day.<br />No technical knowledge needed.</h2>
+          <div data-steps>
           {[
             { num:"01", Icon:Users,     title:"Kickoff Call",    duration:"20–45 min",   desc:"We map your integrations — email, calendar, CRM, Slack — identify your highest-leverage workflows, and plan your agent configuration. You tell us what to automate. We handle everything else." },
             { num:"02", Icon:Lock,      title:"Deploy & Secure", duration:"Same Day",    desc:"We provision your infrastructure, install OpenClaw, layer NVIDIA NemoClaw guardrails, configure Composio OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included." },
@@ -767,6 +531,7 @@ export default function LocalClaw() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </section>
 
@@ -790,7 +555,7 @@ export default function LocalClaw() {
               ))}
             </div>
           </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:"1.4rem" }}>
+          <div data-security-right style={{ display:"flex", flexDirection:"column", gap:"1.4rem" }}>
             {[
               { Icon:Eye,         tag:"ALREADY RUNNING OPENCLAW?", title:"We will audit your setup.",  body:"Most self-installs have security gaps. We audit your existing deployment, add NemoClaw guardrails, harden your firewall, and migrate you to managed care." },
               { Icon:CheckCircle, tag:"100% SATISFACTION",          title:"Guaranteed or refunded.",    body:"If you are not happy with your agent deployment, we will refund you — no questions asked. We are here to build, not to nickel and dime." },
@@ -876,11 +641,12 @@ export default function LocalClaw() {
 
       {/* ── CTA ── */}
       <section id="book" data-cta style={{ padding:"120px 6%", textAlign:"center", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"900px", height:"900px", background:"radial-gradient(circle, rgba(201,146,42,0.07) 0%, transparent 60%)", pointerEvents:"none" }} />
+        <div className="hero-orb-1" style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"900px", height:"900px", background:"radial-gradient(circle, rgba(201,146,42,0.07) 0%, transparent 60%)", pointerEvents:"none" }} />
+        <div className="hero-orb-2" style={{ position:"absolute", top:"30%", right:"10%", width:"400px", height:"400px", background:"radial-gradient(circle, rgba(201,146,42,0.04) 0%, transparent 60%)", pointerEvents:"none" }} />
         <div style={{ position:"relative", zIndex:1 }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1.4rem", fontWeight:"600" }}>GET STARTED TODAY</p>
           <h2 data-cta-head style={{ ...display, fontSize:"clamp(2.5rem,7vw,5.5rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.04" }}>
-            Your agent is<br /><em style={{ color:GOLD, fontStyle:"italic" }}>ready to deploy.</em>
+            Your agent is<br /><em className="shimmer-text" style={{ fontStyle:"italic" }}>ready to deploy.</em>
           </h2>
           <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"460px", margin:"0 auto 3rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
             Book a free 15-minute strategy call. We scope your deployment and you go live same day.
@@ -892,6 +658,9 @@ export default function LocalClaw() {
           <p style={{ ...sans, color:DIM, fontSize:"0.79rem", marginTop:"1.8rem" }}>We schedule across all time zones. DM us on X if you cannot find a slot.</p>
         </div>
       </section>
+
+      {/* ── Grain Overlay ── */}
+      <div className="grain-overlay" aria-hidden="true" />
 
       {/* ── FOOTER ── */}
       <footer style={{ borderTop:`1px solid ${BORDER}`, padding:"2.8rem 6%", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"1.2rem" }}>
