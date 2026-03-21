@@ -1,180 +1,294 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-// Brand tokens
-const BG      = "#080704";
-const BG2     = "#0D0B07";
-const GOLD    = "#C9922A";
-const CREAM   = "#F5EED8";
-const MUTED   = "#9A8F7E";
-const DIM     = "#635C50";
-const BORDER  = "rgba(201,146,42,0.14)";
+// ── Brand tokens (identical to LocalClawClient) ───────────────────────────────
+const BG         = "#080704";
+const BG2        = "#0D0B07";
+const GOLD       = "#C9922A";
+const GOLD_BORDER= "rgba(201,146,42,0.22)";
+const GOLD_MID   = "rgba(201,146,42,0.07)";
+const CREAM      = "#F5EED8";
+const MUTED      = "#9A8F7E";
+const DIM        = "#635C50";
+const BORDER     = "rgba(201,146,42,0.14)";
 
 const display: React.CSSProperties = { fontFamily:"'Cormorant Garamond', Georgia, serif" };
 const sans: React.CSSProperties    = { fontFamily:"'Inter', system-ui, sans-serif" };
 
-// Animated check-mark SVG
+// ── Exact ClawIcon from main page ─────────────────────────────────────────────
+function ClawIcon({ size = 36, color = GOLD }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 6 C10 6, 7 14, 9 24 C10 30, 14 34, 16 36" stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M18 4 C18 4, 16 13, 18 23 C19.5 29.5, 22 33, 23 36" stroke={color} strokeWidth="3.2" strokeLinecap="round" fill="none"/>
+      <path d="M26 6 C26 6, 25 15, 27 24 C28.5 30, 30 33, 30 36" stroke={color} strokeWidth="2.6" strokeLinecap="round" fill="none"/>
+      <path d="M10 6 C11 3, 14 2, 15 4" stroke={color} strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+      <path d="M18 4 C19 1, 22 1, 22 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+      <path d="M26 6 C27 3, 30 3, 29 5" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
+
+// ── Animated check SVG ────────────────────────────────────────────────────────
 function AnimatedCheck() {
   return (
-    <svg viewBox="0 0 80 80" width={80} height={80} style={{ display:"block" }}>
+    <svg viewBox="0 0 96 96" width={96} height={96} style={{ display:"block" }}>
+      {/* Static dim ring */}
+      <circle cx={48} cy={48} r={44} fill="none" stroke={GOLD} strokeWidth={1} strokeOpacity={0.15}/>
+      {/* Animated drawing ring */}
       <circle
-        cx={40} cy={40} r={36}
-        fill="none"
-        stroke={GOLD}
-        strokeWidth={2}
-        strokeOpacity={0.25}
-      />
-      <circle
-        cx={40} cy={40} r={36}
-        fill="none"
-        stroke={GOLD}
-        strokeWidth={2}
-        strokeDasharray={226}
-        strokeDashoffset={226}
+        cx={48} cy={48} r={44}
+        fill="none" stroke={GOLD} strokeWidth={1.5}
+        strokeDasharray={276} strokeDashoffset={276}
         strokeLinecap="round"
-        style={{ animation:"draw-circle 0.7s ease forwards 0.2s" }}
+        style={{ animation:"ty-draw-circle 0.8s cubic-bezier(.4,0,.2,1) forwards 0.2s" }}
       />
+      {/* Animated check */}
       <polyline
-        points="25,42 36,53 56,30"
-        fill="none"
-        stroke={GOLD}
-        strokeWidth={3}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray={50}
-        strokeDashoffset={50}
-        style={{ animation:"draw-check 0.4s ease forwards 0.85s" }}
+        points="28,50 42,64 68,36"
+        fill="none" stroke={GOLD} strokeWidth={3.5}
+        strokeLinecap="round" strokeLinejoin="round"
+        strokeDasharray={60} strokeDashoffset={60}
+        style={{ animation:"ty-draw-check 0.45s cubic-bezier(.4,0,.2,1) forwards 0.95s" }}
       />
     </svg>
   );
 }
 
+// ── Next-step cards ───────────────────────────────────────────────────────────
 const STEPS = [
   {
-    num: "01",
+    num:   "01",
     title: "Check your email",
-    desc: "A confirmation receipt from Stripe is on its way. It confirms your $97 deposit and holds your spot.",
+    desc:  "A Stripe receipt is on its way confirming your $97 deposit. Your spot is officially held.",
   },
   {
-    num: "02",
-    title: "We'll reach out within 2 hours",
-    desc: "A member of the LocalClaw team will contact you to schedule your 20-minute discovery call.",
+    num:   "02",
+    title: "We reach out within 2 hours",
+    desc:  "The LocalClaw team will contact you to schedule your 20-minute scoping call — at your convenience.",
   },
   {
-    num: "03",
-    title: "Go live in under 24 hours",
-    desc: "After the call we handle everything — VPS setup, agent configuration, integrations. You just show up.",
+    num:   "03",
+    title: "Live in under 24 hours",
+    desc:  "After the call we handle everything — VPS setup, agent config, integrations. You just show up.",
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
 export default function ThankYouPage() {
-  const stepsRef = useRef<HTMLDivElement>(null);
+  const stepsRef   = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
 
+  // Nav shadow on scroll
   useEffect(() => {
-    // Stagger-in the steps on mount
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Stagger-in the step cards
+  useEffect(() => {
     const items = stepsRef.current?.querySelectorAll<HTMLDivElement>("[data-step]");
     if (!items) return;
     items.forEach((el, i) => {
       el.style.opacity = "0";
-      el.style.transform = "translateY(24px)";
+      el.style.transform = "translateY(28px)";
       setTimeout(() => {
-        el.style.transition = "opacity 0.55s ease, transform 0.55s ease";
+        el.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)";
         el.style.opacity = "1";
         el.style.transform = "translateY(0)";
-      }, 600 + i * 160);
+      }, 680 + i * 150);
     });
   }, []);
 
   return (
     <>
       <style>{`
-        @keyframes draw-circle {
-          to { stroke-dashoffset: 0; }
-        }
-        @keyframes draw-check {
-          to { stroke-dashoffset: 0; }
-        }
-        @keyframes fade-up {
-          from { opacity:0; transform:translateY(20px); }
+        @keyframes ty-draw-circle { to { stroke-dashoffset: 0; } }
+        @keyframes ty-draw-check  { to { stroke-dashoffset: 0; } }
+        @keyframes ty-fade-up {
+          from { opacity:0; transform:translateY(22px); }
           to   { opacity:1; transform:translateY(0); }
         }
-        .ty-hero { animation: fade-up 0.65s ease both; }
-        .ty-badge { animation: fade-up 0.5s ease both; }
+        @keyframes ty-orb-drift {
+          0%,100% { transform:translate(-50%,-50%) scale(1); }
+          50%      { transform:translate(-50%,-50%) scale(1.12); }
+        }
+        .ty-in { animation: ty-fade-up 0.7s cubic-bezier(.22,1,.36,1) both; }
+        .ty-step-hover {
+          transition: border-color 0.3s, background 0.35s, transform 0.4s cubic-bezier(.22,1,.36,1) !important;
+        }
+        .ty-step-hover:hover {
+          border-color: rgba(201,146,42,0.35) !important;
+          background: rgba(201,146,42,0.05) !important;
+          transform: translateY(-3px) !important;
+        }
+        .ty-back-link {
+          color: ${DIM};
+          font-family: 'Inter', sans-serif;
+          font-size: 0.78rem;
+          letter-spacing: 0.1em;
+          text-decoration: none;
+          transition: color 0.25s;
+        }
+        .ty-back-link:hover { color: ${CREAM}; }
       `}</style>
 
       <div style={{ minHeight:"100vh", background:BG, color:CREAM, display:"flex", flexDirection:"column" }}>
 
-        {/* ── NAV ── */}
-        <nav style={{ padding:"1.6rem 6%", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:`1px solid ${BORDER}` }}>
-          <Link href="/" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:"8px" }}>
-            <svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill={GOLD} fillOpacity={0.15} stroke={GOLD} strokeWidth={1.5}/>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke={GOLD} strokeWidth={1.5} strokeLinecap="round"/>
-              <path d="M9 9h.01M15 9h.01" stroke={GOLD} strokeWidth={2} strokeLinecap="round"/>
-            </svg>
-            <span style={{ ...display, fontSize:"1.3rem", color:CREAM, fontWeight:"600" }}>LocalClaw</span>
+        {/* ── FIXED NAV — exact match to main page ── */}
+        <nav style={{
+          position:"fixed", top:0, left:0, right:0, zIndex:200,
+          background:"rgba(8,7,4,0.97)",
+          borderBottom:`1px solid ${scrolled ? GOLD_BORDER : "rgba(201,146,42,0.08)"}`,
+          padding:"0 5%",
+          display:"flex", alignItems:"center", justifyContent:"space-between",
+          height:"68px",
+          backdropFilter:"blur(14px)",
+          boxShadow: scrolled ? "0 4px 30px rgba(0,0,0,0.3)" : "none",
+          transition:"border-color 0.3s, box-shadow 0.3s",
+        }}>
+          <Link href="/" style={{ textDecoration:"none", display:"flex", alignItems:"center", gap:"10px" }}>
+            <ClawIcon size={32} color={GOLD} />
+            <span className="lc-logo-text">LocalClaw</span>
           </Link>
-          <Link href="/" style={{ ...sans, color:DIM, fontSize:"0.78rem", textDecoration:"none", letterSpacing:"0.1em" }}>
-            ← BACK TO HOME
-          </Link>
+          <Link href="/" className="ty-back-link">← BACK TO HOME</Link>
         </nav>
 
-        {/* ── MAIN ── */}
-        <main style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"80px 6%", textAlign:"center" }}>
+        {/* ── MAIN CONTENT — offset for fixed nav ── */}
+        <main style={{ flex:1, paddingTop:"68px", display:"flex", flexDirection:"column", alignItems:"center", position:"relative", overflow:"hidden" }}>
 
-          {/* Glow orb behind check */}
-          <div style={{ position:"relative", marginBottom:"2.4rem" }}>
-            <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"200px", height:"200px", background:"radial-gradient(circle, rgba(201,146,42,0.18) 0%, transparent 65%)", pointerEvents:"none" }} />
-            <div className="ty-badge" style={{ animationDelay:"0s" }}>
+          {/* Ambient orbs */}
+          <div style={{ position:"absolute", top:"20%", left:"50%", width:"700px", height:"700px", background:"radial-gradient(circle, rgba(201,146,42,0.06) 0%, transparent 65%)", pointerEvents:"none", animation:"ty-orb-drift 9s ease-in-out infinite", transform:"translate(-50%,-50%)" }} />
+          <div style={{ position:"absolute", top:"60%", right:"-10%", width:"400px", height:"400px", background:"radial-gradient(circle, rgba(201,146,42,0.04) 0%, transparent 60%)", pointerEvents:"none" }} />
+
+          <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding:"80px 6% 100px", maxWidth:"1000px", width:"100%", margin:"0 auto" }}>
+
+            {/* Animated check */}
+            <div className="ty-in" style={{ marginBottom:"2rem", animationDelay:"0s", position:"relative" }}>
+              <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"220px", height:"220px", background:"radial-gradient(circle, rgba(201,146,42,0.14) 0%, transparent 65%)", pointerEvents:"none", borderRadius:"50%" }} />
               <AnimatedCheck />
             </div>
-          </div>
 
-          <p className="ty-badge" style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.24em", color:GOLD, marginBottom:"1rem", fontWeight:"600", animationDelay:"0.15s" }}>
-            PAYMENT CONFIRMED
-          </p>
-
-          <h1 className="ty-hero" style={{ ...display, fontSize:"clamp(2.4rem,6vw,4.2rem)", fontWeight:"700", lineHeight:"1.05", marginBottom:"1.2rem", animationDelay:"0.25s" }}>
-            You're in.<br />
-            <em style={{ fontStyle:"italic", color:GOLD }}>Your spot is reserved.</em>
-          </h1>
-
-          <p className="ty-hero" style={{ ...sans, color:MUTED, maxWidth:"480px", margin:"0 auto 1rem", lineHeight:"1.82", fontSize:"0.95rem", animationDelay:"0.35s" }}>
-            Your $97 deposit has been received and will be credited in full to your setup fee. Here's exactly what happens next.
-          </p>
-
-          {/* ── NEXT STEPS ── */}
-          <div ref={stepsRef} style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:"1px", background:BORDER, maxWidth:"860px", width:"100%", margin:"4rem auto", borderRadius:"2px", overflow:"hidden" }}>
-            {STEPS.map((s, i) => (
-              <div data-step key={i} style={{ background:BG2, padding:"2.4rem 2rem", textAlign:"left" }}>
-                <div style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"700", marginBottom:"1.2rem" }}>{s.num}</div>
-                <div style={{ ...display, fontSize:"1.25rem", fontWeight:"700", marginBottom:"0.8rem", lineHeight:"1.2", color:CREAM }}>{s.title}</div>
-                <div style={{ ...sans, color:MUTED, fontSize:"0.86rem", lineHeight:"1.7" }}>{s.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* ── CONTACT NUDGE ── */}
-          <div style={{ background:"rgba(201,146,42,0.06)", border:`1px solid ${BORDER}`, borderRadius:"2px", padding:"2rem 2.8rem", maxWidth:"520px", width:"100%", marginBottom:"3rem" }}>
-            <p style={{ ...sans, color:MUTED, fontSize:"0.87rem", lineHeight:"1.75", margin:0 }}>
-              We usually reach out within <strong style={{ color:CREAM }}>2 hours</strong> during business hours. If you haven't heard from us by then, DM us directly on X at{" "}
-              <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ color:GOLD, textDecoration:"none" }}>@Th3Alch3mist_</a>
-              {" "}and we'll get you sorted immediately.
+            {/* Eyebrow */}
+            <p className="ty-in" style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.28em", color:GOLD, fontWeight:"700", marginBottom:"1.1rem", animationDelay:"0.15s" }}>
+              PAYMENT CONFIRMED
             </p>
-          </div>
 
-          <Link
-            href="/"
-            style={{ ...sans, color:DIM, fontSize:"0.78rem", textDecoration:"none", letterSpacing:"0.1em", padding:"10px 0" }}
-          >
-            ← Return to LocalClaw home
-          </Link>
+            {/* Headline */}
+            <h1 className="ty-in" style={{ ...display, fontSize:"clamp(2.8rem,7vw,5rem)", fontWeight:"700", lineHeight:"1.04", marginBottom:"1.4rem", animationDelay:"0.25s" }}>
+              You're in.{" "}
+              <em style={{ fontStyle:"italic", color:GOLD }}>Your spot<br />is reserved.</em>
+            </h1>
+
+            {/* Sub */}
+            <p className="ty-in" style={{ ...sans, color:MUTED, maxWidth:"480px", lineHeight:"1.85", fontSize:"0.96rem", marginBottom:"0.8rem", animationDelay:"0.35s" }}>
+              Your $97 deposit has been received and is credited in full toward your setup fee. Here's exactly what happens next.
+            </p>
+
+            {/* Divider */}
+            <div className="ty-in" style={{ width:"48px", height:"1px", background:GOLD, opacity:0.4, margin:"1.8rem auto 3.5rem", animationDelay:"0.4s" }} />
+
+            {/* ── NEXT STEPS ── */}
+            <div
+              ref={stepsRef}
+              style={{
+                display:"grid",
+                gridTemplateColumns:"repeat(3,1fr)",
+                gap:"1px",
+                background:GOLD_BORDER,
+                width:"100%",
+                overflow:"hidden",
+                marginBottom:"3.5rem",
+              }}
+            >
+              {STEPS.map((s, i) => (
+                <div
+                  data-step
+                  key={i}
+                  className="ty-step-hover"
+                  style={{
+                    background: BG2,
+                    padding:"2.6rem 2.2rem",
+                    textAlign:"left",
+                    borderTop:`2px solid ${i === 1 ? GOLD : "transparent"}`,
+                  }}
+                >
+                  <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.22em", color:GOLD, fontWeight:"700", marginBottom:"1.4rem" }}>
+                    {s.num}
+                  </div>
+                  <div style={{ ...display, fontSize:"1.3rem", fontWeight:"700", lineHeight:"1.18", color:CREAM, marginBottom:"0.9rem" }}>
+                    {s.title}
+                  </div>
+                  <div style={{ ...sans, color:MUTED, fontSize:"0.86rem", lineHeight:"1.78" }}>
+                    {s.desc}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ── CONTACT NUDGE ── */}
+            <div
+              className="ty-in"
+              style={{
+                background: GOLD_MID,
+                border:`1px solid ${BORDER}`,
+                padding:"2.2rem 3rem",
+                maxWidth:"560px",
+                width:"100%",
+                marginBottom:"3.5rem",
+                animationDelay:"0.5s",
+                textAlign:"left",
+              }}
+            >
+              <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600", marginBottom:"0.9rem" }}>
+                NEED TO REACH US?
+              </p>
+              <p style={{ ...sans, color:MUTED, fontSize:"0.88rem", lineHeight:"1.8", margin:0 }}>
+                We typically follow up within <strong style={{ color:CREAM, fontWeight:"600" }}>2 hours</strong> during business hours.
+                If you haven't heard from us, DM us on X at{" "}
+                <a
+                  href="https://twitter.com/Th3Alch3mist_"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color:GOLD, textDecoration:"none", fontWeight:"500" }}
+                >
+                  @Th3Alch3mist_
+                </a>
+                {" "}— we'll get you sorted immediately.
+              </p>
+            </div>
+
+            {/* Back link */}
+            <Link href="/" className="ty-back-link">← Return to LocalClaw home</Link>
+
+          </div>
         </main>
 
-        {/* ── FOOTER ── */}
-        <footer style={{ borderTop:`1px solid ${BORDER}`, padding:"1.8rem 6%", display:"flex", justifyContent:"center", alignItems:"center" }}>
-          <span style={{ ...sans, color:DIM, fontSize:"0.74rem" }}>Powered by OpenClaw + NVIDIA NemoClaw · &copy; {new Date().getFullYear()} LocalClaw</span>
+        {/* ── FOOTER — matching main page ── */}
+        <footer style={{
+          borderTop:`1px solid ${BORDER}`,
+          padding:"2.4rem 6%",
+          display:"flex",
+          justifyContent:"space-between",
+          alignItems:"center",
+          flexWrap:"wrap",
+          gap:"1rem",
+        }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+            <ClawIcon size={26} color={GOLD} />
+            <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
+          </div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Powered by OpenClaw + NVIDIA NemoClaw</div>
+          <a
+            href="https://twitter.com/Th3Alch3mist_"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ ...sans, color:GOLD, fontSize:"0.76rem", textDecoration:"none" }}
+          >
+            @Th3Alch3mist_ on X
+          </a>
         </footer>
 
       </div>
