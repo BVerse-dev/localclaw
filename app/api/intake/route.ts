@@ -46,16 +46,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── Email alert via Supabase Edge Function or simple log ──────────────────────
-// For now, this logs the alert. When you add Resend (free tier, 100/day):
-// 1. npm install resend
-// 2. Add RESEND_API_KEY to .env.local
-// 3. Uncomment the Resend block below
+// ── Email alert via Resend ───────────────────────────────────────────────────
 async function sendEmailAlert(data: Record<string, unknown>) {
   const alertEmail = process.env.ALERT_EMAIL;
-  if (!alertEmail) return;
+  if (!alertEmail || !process.env.RESEND_API_KEY) return;
 
-  // Format the alert
   const subject = `New LocalClaw Lead: ${data.name} — ${data.business}`;
   const body = `
 NEW INTAKE SUBMISSION
@@ -77,16 +72,14 @@ ${data.details || "No additional details"}
 View all leads: /admin
   `.trim();
 
-  // Log for now (visible in your server/Vercel logs)
-  console.log(`\n📧 EMAIL ALERT TO: ${alertEmail}\n📋 ${subject}\n${body}\n`);
+  console.log(`📧 Sending alert to ${alertEmail}: ${subject}`);
 
-  // ── Uncomment when Resend is set up ──
-  // const { Resend } = await import("resend");
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // await resend.emails.send({
-  //   from: "LocalClaw <alerts@localclawagents.com>",
-  //   to: alertEmail,
-  //   subject,
-  //   text: body,
-  // });
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: "LocalClaw <alerts@mail.localclawagents.com>",
+    to: alertEmail,
+    subject,
+    text: body,
+  });
 }

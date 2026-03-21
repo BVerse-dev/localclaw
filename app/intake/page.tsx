@@ -16,8 +16,8 @@ const BORDER     = "rgba(201,146,42,0.14)";
 const display: React.CSSProperties = { fontFamily:"'Cormorant Garamond', Georgia, serif" };
 const sans: React.CSSProperties    = { fontFamily:"'Inter', system-ui, sans-serif" };
 
-// ── Replace with your Calendly URL when ready ─────────────────────────────────
-const CALENDLY_URL = "https://calendly.com/localclaw/15min";
+// ── Cal.com booking link ──────────────────────────────────────────────────────
+const BOOKING_URL = "https://cal.com/bverse/15min";
 
 // ── ClawIcon (same as main page) ──────────────────────────────────────────────
 function ClawIcon({ size = 36, color = GOLD }: { size?: number; color?: string }) {
@@ -102,11 +102,11 @@ export default function IntakePage() {
   const [automations, setAutomations] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Countdown → redirect to Calendly
+  // Countdown → redirect to Cal.com
   useEffect(() => {
     if (!submitted) return;
     if (countdown <= 0) {
-      window.location.href = CALENDLY_URL;
+      window.location.href = BOOKING_URL;
       return;
     }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
@@ -174,7 +174,7 @@ export default function IntakePage() {
     }
 
     // Always show success + redirect (even if API call had issues,
-    // the Calendly booking is what matters most)
+    // the Cal.com booking is what matters most)
     setSubmitted(true);
     setCountdown(5);
     setSubmitting(false);
@@ -182,7 +182,7 @@ export default function IntakePage() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes intake-fade-up {
           from { opacity:0; transform:translateY(22px); }
           to   { opacity:1; transform:translateY(0); }
@@ -287,7 +287,7 @@ export default function IntakePage() {
           transform: none;
           box-shadow: none;
         }
-      `}</style>
+      ` }} />
 
       <div style={{ minHeight:"100vh", background:BG, color:CREAM, display:"flex", flexDirection:"column" }}>
 
@@ -372,7 +372,7 @@ export default function IntakePage() {
 
                 {/* Manual fallback button */}
                 <a
-                  href={CALENDLY_URL}
+                  href={BOOKING_URL}
                   className="btn-primary"
                   style={{ display:"inline-block", padding:"14px 36px", fontSize:"0.85rem", marginBottom:"1.5rem" }}
                 >
