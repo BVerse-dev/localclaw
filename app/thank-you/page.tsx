@@ -163,7 +163,7 @@ export default function ThankYouPage() {
           <div style={{ position:"absolute", top:"20%", left:"50%", width:"700px", height:"700px", background:"radial-gradient(circle, rgba(201,146,42,0.06) 0%, transparent 65%)", pointerEvents:"none", animation:"ty-orb-drift 9s ease-in-out infinite", transform:"translate(-50%,-50%)" }} />
           <div style={{ position:"absolute", top:"60%", right:"-10%", width:"400px", height:"400px", background:"radial-gradient(circle, rgba(201,146,42,0.04) 0%, transparent 60%)", pointerEvents:"none" }} />
 
-          <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding:"80px 6% 100px", maxWidth:"1000px", width:"100%", margin:"0 auto" }}>
+          <div style={{ position:"relative", zIndex:1, display:"flex", flexDirection:"column", alignItems:"center", textAlign:"center", padding:"80px 6% 100px", maxWidth:"1140px", width:"100%", margin:"0 auto" }}>
 
             {/* Animated check */}
             <div className="ty-in" style={{ marginBottom:"2rem", animationDelay:"0s", position:"relative" }}>
@@ -210,7 +210,7 @@ export default function ThankYouPage() {
                   className="ty-step-hover"
                   style={{
                     background: BG2,
-                    padding:"2.6rem 2.2rem",
+                    padding:"2.6rem 2.6rem",
                     textAlign:"left",
                     borderTop:`2px solid ${i === 1 ? GOLD : "transparent"}`,
                   }}
