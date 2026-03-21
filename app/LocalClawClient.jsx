@@ -11,13 +11,14 @@ import {
 } from "lucide-react";
 
 // ── Stripe Payment Links ─────────────────────────────────────────────────────
-// Replace each "#" with your Stripe Payment Link URL after creating them at
-// https://dashboard.stripe.com/payment-links
 const STRIPE = {
-  DISCOVERY:     "#book",  // $97 discovery deposit (all plans) — add Stripe link
-  STARTER_FULL:  "#book",  // Starter: $997 setup + $149/mo     — add Stripe link
-  BUSINESS_FULL: "#book",  // Business: $1,997 setup + $299/mo  — add Stripe link
-  ENTERPRISE:    "#book",  // Full Stack: $3,500 setup + $499/mo — add Stripe link
+  DISCOVERY:          "https://buy.stripe.com/00wdRb3uW3t0fQjaBI0sU00", // $97 discovery deposit
+  STARTER_FULL:       "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04", // Starter setup $997
+  STARTER_MONTHLY:    "https://buy.stripe.com/6oUdRbd5we7E6fJ25c0sU01", // Starter monthly $149/mo
+  BUSINESS_FULL:      "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05", // Business setup $1,997
+  BUSINESS_MONTHLY:   "https://buy.stripe.com/7sY6oJ5D4fbI6fJ25c0sU06", // Business monthly $299/mo
+  ENTERPRISE:         "https://buy.stripe.com/4gM9AV4z0d3AgUn7pw0sU07", // Full Stack setup $3,500
+  ENTERPRISE_MONTHLY: "https://buy.stripe.com/cNi3cx8Pg0gO1Zt5ho0sU08", // Full Stack monthly $499/mo
 };
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -614,23 +615,27 @@ export default function LocalClaw() {
                   ))}
                 </div>
                 {/* Dual-path CTAs */}
-                {plan.tag === "ENTERPRISE" ? (
-                  <a href={STRIPE.ENTERPRISE} className="btn-secondary" style={{ display:"block", textAlign:"center" }}>TALK TO US →</a>
-                ) : (
-                  <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
-                    <a href={STRIPE.DISCOVERY} className={plan.highlight ? "btn-primary" : "btn-secondary"} style={{ display:"block", textAlign:"center" }}>
-                      BOOK DISCOVERY CALL · $97
-                    </a>
-                    <a
-                      href={plan.tag === "SOLO OPERATORS" ? STRIPE.STARTER_FULL : STRIPE.BUSINESS_FULL}
-                      style={{ ...sans, display:"block", textAlign:"center", color:DIM, fontSize:"0.77rem", textDecoration:"none", padding:"0.35rem 0", letterSpacing:"0.04em", transition:"color 0.2s" }}
-                      onMouseEnter={e => e.currentTarget.style.color = GOLD}
-                      onMouseLeave={e => e.currentTarget.style.color = DIM}
-                    >
-                      Ready to go? Pay {plan.setup} + {plan.monthly} upfront →
-                    </a>
-                  </div>
-                )}
+                <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
+                  <a
+                    href={STRIPE.DISCOVERY}
+                    className={plan.highlight ? "btn-primary" : "btn-secondary"}
+                    style={{ display:"block", textAlign:"center" }}
+                  >
+                    BOOK DISCOVERY CALL · $97
+                  </a>
+                  <a
+                    href={
+                      plan.tag === "SOLO OPERATORS" ? STRIPE.STARTER_FULL :
+                      plan.tag === "MOST POPULAR"   ? STRIPE.BUSINESS_FULL :
+                                                      STRIPE.ENTERPRISE
+                    }
+                    style={{ ...sans, display:"block", textAlign:"center", color:DIM, fontSize:"0.77rem", textDecoration:"none", padding:"0.35rem 0", letterSpacing:"0.04em", transition:"color 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.color = GOLD}
+                    onMouseLeave={e => e.currentTarget.style.color = DIM}
+                  >
+                    Ready to go? Pay {plan.setup} + {plan.monthly} upfront →
+                  </a>
+                </div>
               </div>
             ))}
           </div>
