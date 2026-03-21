@@ -303,19 +303,21 @@ export default function IntakePage() {
 
           <div style={{ position:"relative", zIndex:1, width:"100%", maxWidth:"680px", padding:"70px 6% 100px", margin:"0 auto" }}>
 
-            {/* ── HEADER ── */}
-            <div className="intake-in" style={{ textAlign:"center", marginBottom:"3.5rem", animationDelay:"0s" }}>
-              <p style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.28em", color:GOLD, fontWeight:"700", marginBottom:"1.1rem" }}>
-                DISCOVERY INTAKE
-              </p>
-              <h1 style={{ ...display, fontSize:"clamp(2.2rem,5.5vw,3.5rem)", fontWeight:"700", lineHeight:"1.06", marginBottom:"1.2rem" }}>
-                Tell us about<br />
-                <em style={{ fontStyle:"italic", color:GOLD }}>your business.</em>
-              </h1>
-              <p style={{ ...sans, color:MUTED, maxWidth:"480px", margin:"0 auto", lineHeight:"1.82", fontSize:"0.93rem" }}>
-                Fill out this quick form so we can prepare for your call. Takes about 2 minutes. No commitment, no credit card.
-              </p>
-            </div>
+            {/* ── HEADER (hidden after submission) ── */}
+            {!submitted && (
+              <div className="intake-in" style={{ textAlign:"center", marginBottom:"3.5rem", animationDelay:"0s" }}>
+                <p style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.28em", color:GOLD, fontWeight:"700", marginBottom:"1.1rem" }}>
+                  DISCOVERY INTAKE
+                </p>
+                <h1 style={{ ...display, fontSize:"clamp(2.2rem,5.5vw,3.5rem)", fontWeight:"700", lineHeight:"1.06", marginBottom:"1.2rem" }}>
+                  Tell us about<br />
+                  <em style={{ fontStyle:"italic", color:GOLD }}>your business.</em>
+                </h1>
+                <p style={{ ...sans, color:MUTED, maxWidth:"480px", margin:"0 auto", lineHeight:"1.82", fontSize:"0.93rem" }}>
+                  Fill out this quick form so we can prepare for your call. Takes about 2 minutes. No commitment, no credit card.
+                </p>
+              </div>
+            )}
 
             {/* ── FORM or SUCCESS ── */}
             {submitted ? (
