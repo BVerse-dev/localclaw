@@ -66,7 +66,7 @@ const STEPS = [
   {
     num:   "02",
     title: "We reach out within 2 hours",
-    desc:  "The LocalClaw team will contact you to schedule your 20-minute scoping call — at your convenience.",
+    desc:  "The LocalClaw team will contact you to schedule your 15-minute scoping call — at your convenience.",
   },
   {
     num:   "03",

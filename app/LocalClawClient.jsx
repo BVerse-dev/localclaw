@@ -695,7 +695,7 @@ export default function LocalClaw() {
             Your agent is<br /><em className="shimmer-text" style={{ fontStyle:"italic" }}>ready to deploy.</em>
           </h2>
           <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"500px", margin:"0 auto 1.2rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
-            Reserve your spot with a $97 discovery deposit. We scope your deployment on a 20-minute call and go live within 24 hours.
+            Reserve your spot with a $97 discovery deposit. We scope your deployment on a 15-minute call and go live within 24 hours.
           </p>
           <p style={{ ...sans, color:DIM, maxWidth:"420px", margin:"0 auto 2.8rem", lineHeight:"1.7", fontSize:"0.83rem" }}>
             Your $97 is credited in full toward your setup fee. If we're not the right fit, you get it back — no questions asked.
