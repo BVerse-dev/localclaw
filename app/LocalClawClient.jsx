@@ -297,6 +297,7 @@ export default function LocalClaw() {
           <a href="#how" className="nav-link">HOW IT WORKS</a>
           <a href="#pricing" className="nav-link">PRICING</a>
           <a href="#security" className="nav-link">SECURITY</a>
+          <a href="/blog" className="nav-link">BLOG</a>
           <a href="/intake" className="btn-primary" style={{ padding:"10px 20px", fontSize:"0.75rem" }}>BOOK A CALL</a>
         </div>
         <button className="nav-mobile-toggle" onClick={() => setMobileOpen(o => !o)} style={{ background:"none", border:"none", cursor:"pointer", color:CREAM, padding:"8px", display:"none" }}>
@@ -306,9 +307,9 @@ export default function LocalClaw() {
 
       {/* Mobile menu */}
       <div className={`mobile-menu ${mobileOpen ? "open" : ""}`} style={{ position:"fixed", top:"68px", left:0, right:0, zIndex:190, background:"rgba(10,10,10,0.99)", borderBottom:`1px solid ${GOLD_BORDER}`, flexDirection:"column", padding:"1.5rem 5%", gap:"1.2rem", backdropFilter:"blur(14px)" }}>
-        {["#what","#how","#pricing","#security"].map((href, i) => (
+        {["#what","#how","#pricing","#security","/blog"].map((href, i) => (
           <a key={i} href={href} className="nav-link" onClick={() => setMobileOpen(false)} style={{ fontSize:"0.9rem", padding:"0.4rem 0", borderBottom:`1px solid ${BORDER}`, display:"block" }}>
-            {["WHAT IT DOES","HOW IT WORKS","PRICING","SECURITY"][i]}
+            {["WHAT IT DOES","HOW IT WORKS","PRICING","SECURITY","BLOG"][i]}
           </a>
         ))}
         <a href="/intake" className="btn-primary" onClick={() => setMobileOpen(false)} style={{ textAlign:"center", marginTop:"0.5rem" }}>BOOK A CALL</a>
