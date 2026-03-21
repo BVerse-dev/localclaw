@@ -66,6 +66,57 @@ interface Submission {
   details: string | null;
   status: string;
   admin_notes: string | null;
+  payment_status: string | null;
+  payment_amount: number | null;
+  payment_currency: string | null;
+  stripe_customer_id: string | null;
+  paid_at: string | null;
+  plan: string | null;
+}
+
+interface PaymentData {
+  stats: {
+    totalRevenue: number;
+    totalPaid: number;
+    totalUnpaid: number;
+    totalRefunded: number;
+    totalLeads: number;
+    conversionRate: number;
+    planCounts: Record<string, number>;
+    planRevenue: Record<string, number>;
+  };
+  recentCharges: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    email: string;
+    name: string;
+    status: string;
+    created: number;
+    refunded: boolean;
+    receiptUrl: string | null;
+    matchedLeadId: string | null;
+  }>;
+  paidLeads: Array<{
+    id: string;
+    name: string;
+    email: string;
+    business: string;
+    plan: string;
+    amount: number;
+    currency: string;
+    paidAt: string;
+    status: string;
+  }>;
+  unpaidLeads: Array<{
+    id: string;
+    name: string;
+    email: string;
+    business: string;
+    budget: string;
+    status: string;
+    createdAt: string;
+  }>;
 }
 
 interface Booking {
@@ -149,7 +200,21 @@ function timeUntil(iso: string) {
 }
 
 // ── Tab type ──────────────────────────────────────────────────────────────────
-type TabKey = "overview" | "leads" | "calls" | "calendar";
+type TabKey = "overview" | "leads" | "payments" | "calls" | "calendar";
+
+function paymentBadge(ps: string | null, amount: number | null) {
+  if (ps === "paid") return { label: `PAID $${((amount || 0) / 100).toLocaleString()}`, color: "#10B981" };
+  if (ps === "refunded") return { label: "REFUNDED", color: "#EF4444" };
+  return { label: "UNPAID", color: "#6B7280" };
+}
+
+function planLabel(p: string | null) {
+  if (p === "starter") return "Starter";
+  if (p === "business") return "Business Engine";
+  if (p === "fullstack") return "Full Stack";
+  if (p === "discovery") return "Discovery ($97)";
+  return p || "—";
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
@@ -158,6 +223,9 @@ export default function AdminPage() {
   const [authError, setAuthError] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
+  const [paymentFilter, setPaymentFilter] = useState<"all"|"paid"|"unpaid"|"refunded">("all");
+  const [syncingPayments, setSyncingPayments] = useState(false);
   const [filter, setFilter] = useState("all");
   const [callFilter, setCallFilter] = useState<"upcoming"|"past"|"cancelled">("upcoming");
   const [loading, setLoading] = useState(false);
@@ -206,12 +274,36 @@ export default function AdminPage() {
     }
   }, []);
 
+  // ── Fetch payments ──
+  const fetchPayments = useCallback(async () => {
+    const res = await fetch("/api/admin/payments");
+    if (res.ok) {
+      const data = await res.json();
+      setPaymentData(data);
+    }
+  }, []);
+
   useEffect(() => {
     if (authed) {
       fetchSubmissions();
       fetchBookings();
+      fetchPayments();
     }
-  }, [authed, fetchSubmissions, fetchBookings]);
+  }, [authed, fetchSubmissions, fetchBookings, fetchPayments]);
+
+  // ── Sync payments from Stripe ──
+  const syncPayments = async () => {
+    setSyncingPayments(true);
+    const res = await fetch("/api/admin/payments", { method: "POST" });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.synced > 0) {
+        await fetchSubmissions();
+        await fetchPayments();
+      }
+    }
+    setSyncingPayments(false);
+  };
 
   // ── Sync bookings → lead statuses ──
   const syncBookings = async () => {
@@ -505,11 +597,14 @@ export default function AdminPage() {
 
         {/* ── TABS ── */}
         <div style={{ paddingTop:"60px", borderBottom:`1px solid ${BORDER}`, display:"flex", paddingLeft:"5%" }}>
-          {(["overview","leads","calls","calendar"] as TabKey[]).map(t => (
+          {(["overview","leads","payments","calls","calendar"] as TabKey[]).map(t => (
             <button key={t} className={`admin-tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
-              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "calls" ? "CALLS" : "CALENDAR"}
+              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : "CALENDAR"}
               {t === "calls" && bookingData && bookingData.stats.upcoming > 0 && (
                 <span style={{ marginLeft:"6px", background:"rgba(168,85,247,0.2)", color:"#A855F7", padding:"1px 6px", borderRadius:"100px", fontSize:"0.65rem" }}>{bookingData.stats.upcoming}</span>
+              )}
+              {t === "payments" && paymentData && paymentData.stats.totalPaid > 0 && (
+                <span style={{ marginLeft:"6px", background:"rgba(16,185,129,0.2)", color:"#10B981", padding:"1px 6px", borderRadius:"100px", fontSize:"0.65rem" }}>{paymentData.stats.totalPaid}</span>
               )}
             </button>
           ))}
@@ -538,15 +633,19 @@ export default function AdminPage() {
                 <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>{stats.conversionRate}%</div>
                 <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>onboarded + active</div>
               </div>
-              <div className="stat-card">
-                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>PIPELINE VALUE</div>
-                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:GOLD, lineHeight:1 }}>${stats.pipelineValue.toLocaleString()}</div>
-                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>setup fees (excl. lost)</div>
+              <div className="stat-card-accent" style={{ cursor:"pointer" }} onClick={() => setTab("payments")}>
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:GOLD, fontWeight:"600", marginBottom:"0.5rem" }}>STRIPE REVENUE</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:GOLD, lineHeight:1 }}>
+                  ${((paymentData?.stats.totalRevenue || 0) / 100).toLocaleString()}
+                </div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>
+                  {paymentData?.stats.totalPaid || 0} paid · {paymentData?.stats.totalUnpaid || 0} unpaid
+                </div>
               </div>
               <div className="stat-card">
-                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>MONTHLY RECURRING</div>
-                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#10B981", lineHeight:1 }}>${stats.monthlyRecurring.toLocaleString()}</div>
-                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>active + onboarded MRR</div>
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>PIPELINE VALUE</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>${stats.pipelineValue.toLocaleString()}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>MRR: ${stats.monthlyRecurring.toLocaleString()}/mo</div>
               </div>
             </div>
 
@@ -715,7 +814,7 @@ export default function AdminPage() {
                   <table style={{ width:"100%", borderCollapse:"collapse" }}>
                     <thead>
                       <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
-                        {["Date","Name","Business","Budget","Status"].map(h => (
+                        {["Date","Name","Business","Budget","Payment","Status"].map(h => (
                           <th key={h} style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.16em", fontWeight:"600", color:DIM, padding:"12px 16px", textAlign:"left" }}>{h}</th>
                         ))}
                       </tr>
@@ -734,6 +833,14 @@ export default function AdminPage() {
                           <td style={{ ...sans, fontSize:"0.84rem", color:MUTED, padding:"14px 16px" }}>{s.business}</td>
                           <td style={{ ...sans, fontSize:"0.8rem", color:MUTED, padding:"14px 16px" }}>
                             {s.budget === "starter" ? "$997" : s.budget === "business" ? "$1,997" : s.budget === "fullstack" ? "$3,500" : s.budget || "—"}
+                          </td>
+                          <td style={{ padding:"14px 16px" }}>
+                            {(() => { const pb = paymentBadge(s.payment_status, s.payment_amount); return (
+                              <span className="admin-status-pill" style={{ color:pb.color, background:`${pb.color}15`, border:`1px solid ${pb.color}30` }}>
+                                <span style={{ width:6, height:6, borderRadius:"50%", background:pb.color }} />
+                                {pb.label}
+                              </span>
+                            ); })()}
                           </td>
                           <td style={{ padding:"14px 16px" }}>
                             <span className="admin-status-pill" style={{ color:getStatusColor(s.status), background:`${getStatusColor(s.status)}15`, border:`1px solid ${getStatusColor(s.status)}30` }}>
@@ -776,11 +883,40 @@ export default function AdminPage() {
                     </div>
                   </div>
 
+                  {/* Payment Banner */}
+                  {selected.payment_status === "paid" && (
+                    <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", borderRadius:"4px", marginBottom:"1.5rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#10B981" }} />
+                      <div style={{ flex:1 }}>
+                        <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:"#10B981" }}>
+                          PAID — ${((selected.payment_amount || 0) / 100).toLocaleString()} {(selected.payment_currency || "usd").toUpperCase()}
+                        </div>
+                        <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>
+                          {selected.plan ? planLabel(selected.plan) : ""}{selected.paid_at ? ` · ${formatDate(selected.paid_at)}` : ""}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {selected.payment_status === "refunded" && (
+                    <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:"4px", marginBottom:"1.5rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#EF4444" }} />
+                      <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:"#EF4444" }}>REFUNDED</div>
+                    </div>
+                  )}
+                  {(!selected.payment_status || selected.payment_status === "unpaid") && (
+                    <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", background:"rgba(107,114,128,0.08)", border:"1px solid rgba(107,114,128,0.15)", borderRadius:"4px", marginBottom:"1.5rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#6B7280" }} />
+                      <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"600", color:"#6B7280" }}>NO PAYMENT RECEIVED</div>
+                    </div>
+                  )}
+
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.4rem", marginBottom:"2rem" }}>
                     <div><div className="admin-detail-label">BUSINESS</div><div className="admin-detail-value">{selected.business}</div></div>
                     <div><div className="admin-detail-label">INDUSTRY</div><div className="admin-detail-value">{selected.industry || "—"}</div></div>
                     <div><div className="admin-detail-label">TEAM SIZE</div><div className="admin-detail-value">{selected.team_size || "—"}</div></div>
                     <div><div className="admin-detail-label">BUDGET</div><div className="admin-detail-value">{budgetLabel(selected.budget)}</div></div>
+                    <div><div className="admin-detail-label">PLAN</div><div className="admin-detail-value">{planLabel(selected.plan)}</div></div>
+                    <div><div className="admin-detail-label">STRIPE ID</div><div className="admin-detail-value" style={{ fontSize:"0.75rem", wordBreak:"break-all" }}>{selected.stripe_customer_id || "—"}</div></div>
                   </div>
 
                   <div style={{ marginBottom:"2rem" }}>
@@ -825,6 +961,209 @@ export default function AdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ── PAYMENTS TAB ── */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {tab === "payments" && (
+          <div style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
+
+            {/* Header */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem" }}>
+              <div>
+                <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Payment Tracking</h2>
+                <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Stripe payments synced with your lead pipeline</p>
+              </div>
+              <div style={{ display:"flex", gap:"0.8rem", alignItems:"center" }}>
+                <button onClick={syncPayments} disabled={syncingPayments} className="sync-btn">
+                  {syncingPayments ? "SYNCING..." : "SYNC STRIPE PAYMENTS"}
+                </button>
+                <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer"
+                  style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", color:BG, background:GOLD, padding:"8px 18px", borderRadius:"2px", textDecoration:"none", letterSpacing:"0.06em" }}>
+                  STRIPE DASHBOARD →
+                </a>
+              </div>
+            </div>
+
+            {/* Revenue KPI Cards */}
+            <div style={{ display:"flex", gap:"1rem", flexWrap:"wrap", marginBottom:"2rem" }}>
+              <div className="stat-card-accent">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:GOLD, fontWeight:"600", marginBottom:"0.5rem" }}>TOTAL REVENUE</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:GOLD, lineHeight:1 }}>
+                  ${((paymentData?.stats.totalRevenue || 0) / 100).toLocaleString()}
+                </div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>from {paymentData?.stats.totalPaid || 0} payment{(paymentData?.stats.totalPaid || 0) !== 1 ? "s" : ""}</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>PAID</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#10B981", lineHeight:1 }}>{paymentData?.stats.totalPaid || 0}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>converted leads</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>UNPAID</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#F59E0B", lineHeight:1 }}>{paymentData?.stats.totalUnpaid || 0}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>pending / curious</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>REFUNDED</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:"#EF4444", lineHeight:1 }}>{paymentData?.stats.totalRefunded || 0}</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>returned</div>
+              </div>
+              <div className="stat-card">
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.5rem" }}>CONVERSION</div>
+                <div style={{ ...display, fontSize:"2.2rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>{paymentData?.stats.conversionRate || 0}%</div>
+                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.4rem" }}>leads → paid</div>
+              </div>
+            </div>
+
+            {/* Revenue by Plan */}
+            {paymentData && Object.keys(paymentData.stats.planRevenue).length > 0 && (
+              <div className="overview-card" style={{ marginBottom:"2rem" }}>
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1.2rem" }}>REVENUE BY PLAN</div>
+                <div style={{ display:"flex", gap:"1rem", flexWrap:"wrap" }}>
+                  {Object.entries(paymentData.stats.planRevenue).map(([plan, rev]) => {
+                    const count = paymentData.stats.planCounts[plan] || 0;
+                    const colors: Record<string, string> = { discovery: "#F59E0B", starter: "#3B82F6", business: "#A855F7", fullstack: "#10B981" };
+                    const color = colors[plan] || GOLD;
+                    return (
+                      <div key={plan} style={{ flex:"1", minWidth:"160px", padding:"1rem 1.2rem", background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", borderTop:`3px solid ${color}` }}>
+                        <div style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.12em", color, fontWeight:"700", marginBottom:"0.5rem" }}>{planLabel(plan).toUpperCase()}</div>
+                        <div style={{ ...display, fontSize:"1.6rem", fontWeight:"700", color:CREAM, lineHeight:1 }}>${(rev / 100).toLocaleString()}</div>
+                        <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, marginTop:"0.3rem" }}>{count} customer{count !== 1 ? "s" : ""}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Main grid: recent charges + paid/unpaid leads */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1.5rem" }}>
+
+              {/* Recent Stripe Charges */}
+              <div className="overview-card">
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>RECENT STRIPE CHARGES</div>
+                {!paymentData || paymentData.recentCharges.length === 0 ? (
+                  <div style={{ ...sans, fontSize:"0.84rem", color:DIM, textAlign:"center", padding:"2rem 0" }}>No charges yet.</div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                    {paymentData.recentCharges.slice(0, 10).map(c => (
+                      <div key={c.id} style={{ display:"flex", alignItems:"center", gap:"12px", padding:"10px 12px", background:BG3, borderRadius:"4px", border:`1px solid ${BORDER}` }}>
+                        <div style={{ width:10, height:10, borderRadius:"50%", background: c.refunded ? "#EF4444" : c.status === "succeeded" ? "#10B981" : "#F59E0B", flexShrink:0 }} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
+                            <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"600", color:CREAM, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</div>
+                            <div style={{ ...sans, fontSize:"0.88rem", fontWeight:"700", color: c.refunded ? "#EF4444" : "#10B981", flexShrink:0 }}>
+                              {c.refunded ? "−" : "+"}${(c.amount / 100).toLocaleString()}
+                            </div>
+                          </div>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                            <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>{c.email}</div>
+                            <div style={{ ...sans, fontSize:"0.68rem", color:DIM }}>{new Date(c.created * 1000).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}</div>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:"6px", flexShrink:0 }}>
+                          {c.matchedLeadId && (
+                            <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:GOLD, background:`${GOLD}15`, padding:"2px 8px", borderRadius:"100px", border:`1px solid ${GOLD}30` }}>MATCHED</span>
+                          )}
+                          {c.receiptUrl && (
+                            <a href={c.receiptUrl} target="_blank" rel="noopener noreferrer" style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:DIM, textDecoration:"none" }}>Receipt ↗</a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Unpaid Leads — follow up needed */}
+              <div className="overview-card">
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+                  <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600" }}>UNPAID LEADS — FOLLOW UP</div>
+                  <span style={{ ...sans, fontSize:"0.68rem", color: (paymentData?.unpaidLeads.length || 0) > 0 ? "#F59E0B" : DIM, fontWeight:"600" }}>
+                    {paymentData?.unpaidLeads.length || 0}
+                  </span>
+                </div>
+                {!paymentData || paymentData.unpaidLeads.length === 0 ? (
+                  <div style={{ ...sans, fontSize:"0.84rem", color:DIM, textAlign:"center", padding:"2rem 0" }}>All leads have paid!</div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column" }}>
+                    {paymentData.unpaidLeads.slice(0, 10).map(l => (
+                      <div key={l.id} className="activity-item" style={{ cursor:"pointer" }}
+                        onClick={() => {
+                          const lead = submissions.find(s => s.id === l.id);
+                          if (lead) { setSelected(lead); setEditNotes(lead.admin_notes || ""); setTab("leads"); }
+                        }}>
+                        <div style={{ width:8, height:8, borderRadius:"50%", background:"#F59E0B", marginTop:"6px", flexShrink:0 }} />
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", gap:"8px" }}>
+                            <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"600", color:CREAM, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{l.name}</div>
+                            <div style={{ ...sans, fontSize:"0.68rem", color:DIM, whiteSpace:"nowrap", flexShrink:0 }}>{timeAgo(l.createdAt)}</div>
+                          </div>
+                          <div style={{ ...sans, fontSize:"0.75rem", color:MUTED }}>{l.business} · {l.email}</div>
+                          <div style={{ display:"flex", gap:"8px", marginTop:"4px" }}>
+                            <span className="admin-status-pill" style={{ color:getStatusColor(l.status), background:`${getStatusColor(l.status)}15`, border:`1px solid ${getStatusColor(l.status)}30`, fontSize:"0.58rem" }}>
+                              {getStatusLabel(l.status)}
+                            </span>
+                            {l.budget && (
+                              <span style={{ ...sans, fontSize:"0.65rem", color:DIM }}>{budgetLabel(l.budget)}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Paid Leads Table */}
+            {paymentData && paymentData.paidLeads.length > 0 && (
+              <div className="overview-card" style={{ marginTop:"1.5rem" }}>
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>PAID CUSTOMERS</div>
+                <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                  <thead>
+                    <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
+                      {["Customer","Business","Plan","Amount","Paid On","Status"].map(h => (
+                        <th key={h} style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.14em", fontWeight:"600", color:DIM, padding:"10px 12px", textAlign:"left" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentData.paidLeads.map(l => (
+                      <tr key={l.id} className="admin-row" style={{ borderBottom:`1px solid ${BORDER}` }}
+                        onClick={() => {
+                          const lead = submissions.find(s => s.id === l.id);
+                          if (lead) { setSelected(lead); setEditNotes(lead.admin_notes || ""); setTab("leads"); }
+                        }}>
+                        <td style={{ padding:"12px" }}>
+                          <div style={{ ...sans, fontSize:"0.84rem", fontWeight:"600", color:CREAM }}>{l.name}</div>
+                          <div style={{ ...sans, fontSize:"0.72rem", color:DIM }}>{l.email}</div>
+                        </td>
+                        <td style={{ ...sans, fontSize:"0.82rem", color:MUTED, padding:"12px" }}>{l.business}</td>
+                        <td style={{ padding:"12px" }}>
+                          <span style={{ ...sans, fontSize:"0.75rem", fontWeight:"600", color:CREAM }}>{planLabel(l.plan)}</span>
+                        </td>
+                        <td style={{ ...sans, fontSize:"0.88rem", fontWeight:"700", color:"#10B981", padding:"12px" }}>
+                          ${(l.amount / 100).toLocaleString()}
+                        </td>
+                        <td style={{ ...sans, fontSize:"0.78rem", color:MUTED, padding:"12px" }}>
+                          {l.paidAt ? new Date(l.paidAt).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" }) : "—"}
+                        </td>
+                        <td style={{ padding:"12px" }}>
+                          <span className="admin-status-pill" style={{ color:getStatusColor(l.status), background:`${getStatusColor(l.status)}15`, border:`1px solid ${getStatusColor(l.status)}30` }}>
+                            <span style={{ width:6, height:6, borderRadius:"50%", background:getStatusColor(l.status) }} />
+                            {getStatusLabel(l.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
