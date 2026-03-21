@@ -68,16 +68,15 @@ const labelStyle: React.CSSProperties = {
 };
 
 const AUTOMATION_OPTIONS = [
-  "Email triage & inbox management",
-  "Calendar management & scheduling",
-  "CRM & lead follow-up",
-  "Sales pipeline automation",
-  "Daily briefings & reporting",
-  "Client communication (WhatsApp, Telegram)",
-  "Document processing & filing",
-  "Social media monitoring",
-  "Appointment reminders & follow-ups",
-  "Custom workflow (describe below)",
+  { label:"Lead Magnet Agent", desc:"Capture, qualify & route leads 24/7", color:"#A855F7" },
+  { label:"Calling Agent", desc:"AI outbound/inbound calls & appointment booking", color:"#22C55E" },
+  { label:"Social & Marketing Agent", desc:"Content creation, posting, DMs & ad tracking", color:"#3B82F6" },
+  { label:"Email triage & inbox management", desc:"Flag urgent emails, draft replies, never miss a lead", color:null },
+  { label:"Calendar & daily briefings", desc:"Morning summaries, scheduling, meeting prep", color:null },
+  { label:"CRM & sales follow-up", desc:"Pipeline automation, lead nurturing, deal tracking", color:null },
+  { label:"Client comms (WhatsApp, Telegram, Slack)", desc:"Auto-replies, routing, escalation", color:null },
+  { label:"Appointment reminders & no-show recovery", desc:"Automated confirmations and rebooking", color:null },
+  { label:"Custom workflow", desc:"Something else — describe below", color:null },
 ];
 
 const BUDGET_OPTIONS = [
@@ -418,26 +417,58 @@ export default function IntakePage() {
                     <span style={{ ...display, fontSize:"1.15rem", fontWeight:"700", color:CREAM }}>What Would You Like to Automate?</span>
                   </div>
                   <p style={{ ...sans, color:DIM, fontSize:"0.8rem", marginBottom:"1.2rem" }}>Select all that apply.</p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
-                    {AUTOMATION_OPTIONS.map(opt => (
+                  {/* Big 3 Revenue Agents */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"0.6rem", marginBottom:"0.6rem" }}>
+                    {AUTOMATION_OPTIONS.filter(o => o.color).map(opt => (
                       <div
-                        key={opt}
-                        className={`intake-checkbox${automations.includes(opt) ? " active" : ""}`}
-                        onClick={() => toggleAutomation(opt)}
+                        key={opt.label}
+                        className={`intake-checkbox${automations.includes(opt.label) ? " active" : ""}`}
+                        onClick={() => toggleAutomation(opt.label)}
+                        style={{ display:"flex", flexDirection:"column", gap:"0.4rem", padding:"14px 16px", borderTop:`2px solid ${automations.includes(opt.label) ? opt.color! : "transparent"}`, transition:"border-color 0.25s, background 0.25s" }}
+                      >
+                        <div style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
+                          <div style={{
+                            width:16, height:16, borderRadius:"2px", flexShrink:0,
+                            border: automations.includes(opt.label) ? `1.5px solid ${opt.color}` : `1.5px solid ${DIM}`,
+                            background: automations.includes(opt.label) ? `${opt.color}22` : "transparent",
+                            display:"flex", alignItems:"center", justifyContent:"center",
+                            transition:"all 0.2s",
+                          }}>
+                            {automations.includes(opt.label) && <Check size={10} />}
+                          </div>
+                          <span style={{ ...sans, fontSize:"0.8rem", fontWeight:"600", color: automations.includes(opt.label) ? CREAM : MUTED }}>
+                            {opt.label}
+                          </span>
+                        </div>
+                        <span style={{ ...sans, fontSize:"0.73rem", color:DIM, lineHeight:"1.5", paddingLeft:"26px" }}>{opt.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Supporting agents */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"0.6rem" }}>
+                    {AUTOMATION_OPTIONS.filter(o => !o.color).map(opt => (
+                      <div
+                        key={opt.label}
+                        className={`intake-checkbox${automations.includes(opt.label) ? " active" : ""}`}
+                        onClick={() => toggleAutomation(opt.label)}
                         style={{ display:"flex", alignItems:"center", gap:"0.6rem" }}
                       >
                         <div style={{
                           width:16, height:16, borderRadius:"2px", flexShrink:0,
-                          border: automations.includes(opt) ? `1.5px solid ${GOLD}` : `1.5px solid ${DIM}`,
-                          background: automations.includes(opt) ? "rgba(201,146,42,0.15)" : "transparent",
+                          border: automations.includes(opt.label) ? `1.5px solid ${GOLD}` : `1.5px solid ${DIM}`,
+                          background: automations.includes(opt.label) ? "rgba(201,146,42,0.15)" : "transparent",
                           display:"flex", alignItems:"center", justifyContent:"center",
                           transition:"all 0.2s",
                         }}>
-                          {automations.includes(opt) && <Check size={10} />}
+                          {automations.includes(opt.label) && <Check size={10} />}
                         </div>
-                        <span style={{ ...sans, fontSize:"0.82rem", color: automations.includes(opt) ? CREAM : MUTED }}>
-                          {opt}
-                        </span>
+                        <div style={{ display:"flex", flexDirection:"column", gap:"0.15rem" }}>
+                          <span style={{ ...sans, fontSize:"0.82rem", color: automations.includes(opt.label) ? CREAM : MUTED }}>
+                            {opt.label}
+                          </span>
+                          <span style={{ ...sans, fontSize:"0.72rem", color:DIM }}>{opt.desc}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
