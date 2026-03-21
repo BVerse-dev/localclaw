@@ -72,6 +72,13 @@ interface Submission {
   stripe_customer_id: string | null;
   paid_at: string | null;
   plan: string | null;
+  subscription_status: string | null;
+  subscription_id: string | null;
+  subscription_plan: string | null;
+  subscription_current_period_end: string | null;
+  monthly_amount: number | null;
+  last_payment_at: string | null;
+  failed_payment_reason: string | null;
 }
 
 interface PaymentData {
@@ -200,7 +207,25 @@ function timeUntil(iso: string) {
 }
 
 // ── Tab type ──────────────────────────────────────────────────────────────────
-type TabKey = "overview" | "leads" | "payments" | "calls" | "calendar";
+type TabKey = "overview" | "leads" | "payments" | "calls" | "calendar" | "settings";
+
+interface PaymentEvent {
+  id: string;
+  created_at: string;
+  event_type: string;
+  email: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  failure_reason: string | null;
+  metadata: Record<string, unknown>;
+}
+
+interface EventsData {
+  events: PaymentEvent[];
+  summary: Record<string, number>;
+  recentFailures: Array<{ type: string; reason: string; email: string; created: string }>;
+}
 
 function paymentBadge(ps: string | null, amount: number | null) {
   if (ps === "paid") return { label: `PAID $${((amount || 0) / 100).toLocaleString()}`, color: "#10B981" };
@@ -225,6 +250,7 @@ export default function AdminPage() {
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [paymentFilter, setPaymentFilter] = useState<"all"|"paid"|"unpaid"|"refunded">("all");
+  const [eventsData, setEventsData] = useState<EventsData | null>(null);
   const [syncingPayments, setSyncingPayments] = useState(false);
   const [filter, setFilter] = useState("all");
   const [callFilter, setCallFilter] = useState<"upcoming"|"past"|"cancelled">("upcoming");
@@ -283,13 +309,23 @@ export default function AdminPage() {
     }
   }, []);
 
+  // ── Fetch events ──
+  const fetchEvents = useCallback(async () => {
+    const res = await fetch("/api/admin/events?limit=50");
+    if (res.ok) {
+      const data = await res.json();
+      setEventsData(data);
+    }
+  }, []);
+
   useEffect(() => {
     if (authed) {
       fetchSubmissions();
       fetchBookings();
       fetchPayments();
+      fetchEvents();
     }
-  }, [authed, fetchSubmissions, fetchBookings, fetchPayments]);
+  }, [authed, fetchSubmissions, fetchBookings, fetchPayments, fetchEvents]);
 
   // ── Sync payments from Stripe ──
   const syncPayments = async () => {
@@ -360,7 +396,13 @@ export default function AdminPage() {
       return d >= weekAgo;
     }).length;
 
-    return { total, byStatus, pipelineValue, monthlyRecurring, conversionRate, thisWeek };
+    const activeSubs = submissions.filter(s => s.subscription_status === "active").length;
+    const pastDueSubs = submissions.filter(s => s.subscription_status === "past_due").length;
+    const cancelledSubs = submissions.filter(s => s.subscription_status === "cancelled").length;
+    const stripeRevenue = submissions.filter(s => s.payment_status === "paid").reduce((sum, s) => sum + ((s.payment_amount || 0) / 100), 0);
+    const stripeMRR = submissions.filter(s => s.subscription_status === "active").reduce((sum, s) => sum + ((s.monthly_amount || 0) / 100), 0);
+
+    return { total, byStatus, pipelineValue, monthlyRecurring, conversionRate, thisWeek, activeSubs, pastDueSubs, cancelledSubs, stripeRevenue, stripeMRR };
   }, [submissions]);
 
   const filteredSubmissions = useMemo(() => {
@@ -597,9 +639,9 @@ export default function AdminPage() {
 
         {/* ── TABS ── */}
         <div style={{ paddingTop:"60px", borderBottom:`1px solid ${BORDER}`, display:"flex", paddingLeft:"5%" }}>
-          {(["overview","leads","payments","calls","calendar"] as TabKey[]).map(t => (
+          {(["overview","leads","payments","calls","calendar","settings"] as TabKey[]).map(t => (
             <button key={t} className={`admin-tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
-              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : "CALENDAR"}
+              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : t === "calendar" ? "CALENDAR" : "⚙ SETTINGS"}
               {t === "calls" && bookingData && bookingData.stats.upcoming > 0 && (
                 <span style={{ marginLeft:"6px", background:"rgba(168,85,247,0.2)", color:"#A855F7", padding:"1px 6px", borderRadius:"100px", fontSize:"0.65rem" }}>{bookingData.stats.upcoming}</span>
               )}
@@ -907,6 +949,25 @@ export default function AdminPage() {
                     <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"12px 16px", background:"rgba(107,114,128,0.08)", border:"1px solid rgba(107,114,128,0.15)", borderRadius:"4px", marginBottom:"1.5rem" }}>
                       <div style={{ width:10, height:10, borderRadius:"50%", background:"#6B7280" }} />
                       <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"600", color:"#6B7280" }}>NO PAYMENT RECEIVED</div>
+                    </div>
+                  )}
+
+                  {/* Subscription banner */}
+                  {selected.subscription_status && (
+                    <div style={{ display:"flex", alignItems:"center", gap:"10px", padding:"10px 16px", marginBottom:"1rem", borderRadius:"4px",
+                      background: selected.subscription_status === "active" ? "rgba(16,185,129,0.06)" : selected.subscription_status === "past_due" ? "rgba(245,158,11,0.06)" : "rgba(239,68,68,0.06)",
+                      border: `1px solid ${selected.subscription_status === "active" ? "rgba(16,185,129,0.2)" : selected.subscription_status === "past_due" ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)"}`,
+                    }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background: selected.subscription_status === "active" ? "#10B981" : selected.subscription_status === "past_due" ? "#F59E0B" : "#EF4444" }} />
+                      <div style={{ flex:1 }}>
+                        <span style={{ ...sans, fontSize:"0.75rem", fontWeight:"700", color: selected.subscription_status === "active" ? "#10B981" : selected.subscription_status === "past_due" ? "#F59E0B" : "#EF4444" }}>
+                          SUBSCRIPTION: {selected.subscription_status.toUpperCase().replace("_", " ")}
+                        </span>
+                        {selected.monthly_amount ? <span style={{ ...sans, fontSize:"0.72rem", color:MUTED }}> · ${((selected.monthly_amount || 0) / 100).toLocaleString()}/mo</span> : null}
+                      </div>
+                      {selected.failed_payment_reason && (
+                        <div style={{ ...sans, fontSize:"0.68rem", color:"#EF4444", maxWidth:"180px", textAlign:"right" }}>{selected.failed_payment_reason}</div>
+                      )}
                     </div>
                   )}
 
@@ -1321,6 +1382,247 @@ export default function AdminPage() {
             </div>
             <div style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", overflow:"hidden" }}>
               <div id="cal-embed-container" />
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* ── SETTINGS TAB ── */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {tab === "settings" && (
+          <div style={{ padding:"2rem 5%", maxWidth:"1100px", margin:"0 auto" }}>
+            <div style={{ marginBottom:"2rem" }}>
+              <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Settings & Integrations</h2>
+              <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Manage all connected services and configuration</p>
+            </div>
+
+            {/* Integration Status Cards */}
+            <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>CONNECTED SERVICES</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"2.5rem" }}>
+
+              {/* Supabase */}
+              <div className="overview-card" style={{ borderLeft:"3px solid #3ECF8E" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"0.6rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#3ECF8E" }} />
+                      <span style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM }}>Supabase</span>
+                      <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:"#3ECF8E", background:"rgba(62,207,142,0.1)", padding:"2px 8px", borderRadius:"100px" }}>CONNECTED</span>
+                    </div>
+                    <div style={{ ...sans, fontSize:"0.78rem", color:MUTED, marginBottom:"0.8rem" }}>Database · Lead storage · Payment tracking · Event log</div>
+                    <div style={{ display:"flex", gap:"1.2rem" }}>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:CREAM }}>{submissions.length}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Total leads</div></div>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:CREAM }}>{eventsData?.events.length || 0}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Events logged</div></div>
+                    </div>
+                  </div>
+                  <a href="https://supabase.com/dashboard/project/dfuwkysnaveauodclqdm" target="_blank" rel="noopener noreferrer"
+                    style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:DIM, textDecoration:"none", padding:"6px 12px", border:`1px solid ${BORDER}`, borderRadius:"2px" }}>
+                    Open →
+                  </a>
+                </div>
+              </div>
+
+              {/* Stripe */}
+              <div className="overview-card" style={{ borderLeft:"3px solid #635BFF" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"0.6rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#635BFF" }} />
+                      <span style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM }}>Stripe</span>
+                      <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:"#635BFF", background:"rgba(99,91,255,0.1)", padding:"2px 8px", borderRadius:"100px" }}>CONNECTED</span>
+                    </div>
+                    <div style={{ ...sans, fontSize:"0.78rem", color:MUTED, marginBottom:"0.8rem" }}>Payments · Subscriptions · Webhooks · Revenue tracking</div>
+                    <div style={{ display:"flex", gap:"1.2rem" }}>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:"#10B981" }}>${stats.stripeRevenue.toLocaleString()}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Revenue</div></div>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:CREAM }}>{stats.activeSubs}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Active subs</div></div>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:"#F59E0B" }}>{stats.pastDueSubs}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Past due</div></div>
+                    </div>
+                  </div>
+                  <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer"
+                    style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:DIM, textDecoration:"none", padding:"6px 12px", border:`1px solid ${BORDER}`, borderRadius:"2px" }}>
+                    Open →
+                  </a>
+                </div>
+              </div>
+
+              {/* Cal.com */}
+              <div className="overview-card" style={{ borderLeft:"3px solid #F97316" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"0.6rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#F97316" }} />
+                      <span style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM }}>Cal.com</span>
+                      <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:"#F97316", background:"rgba(249,115,22,0.1)", padding:"2px 8px", borderRadius:"100px" }}>CONNECTED</span>
+                    </div>
+                    <div style={{ ...sans, fontSize:"0.78rem", color:MUTED, marginBottom:"0.8rem" }}>Booking · Discovery calls · Calendar embed · Auto-sync</div>
+                    <div style={{ display:"flex", gap:"1.2rem" }}>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:"#A855F7" }}>{bookingData?.stats.upcoming || 0}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Upcoming</div></div>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:CREAM }}>{bookingData?.stats.past || 0}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Completed</div></div>
+                      <div><div style={{ ...sans, fontSize:"1.1rem", fontWeight:"700", color:CREAM }}>{bookingData?.stats.matched || 0}</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Matched</div></div>
+                    </div>
+                  </div>
+                  <a href="https://app.cal.com/settings" target="_blank" rel="noopener noreferrer"
+                    style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:DIM, textDecoration:"none", padding:"6px 12px", border:`1px solid ${BORDER}`, borderRadius:"2px" }}>
+                    Open →
+                  </a>
+                </div>
+              </div>
+
+              {/* Resend */}
+              <div className="overview-card" style={{ borderLeft:"3px solid #00D4AA" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                  <div>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"0.6rem" }}>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:"#00D4AA" }} />
+                      <span style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM }}>Resend</span>
+                      <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:"#00D4AA", background:"rgba(0,212,170,0.1)", padding:"2px 8px", borderRadius:"100px" }}>CONNECTED</span>
+                    </div>
+                    <div style={{ ...sans, fontSize:"0.78rem", color:MUTED, marginBottom:"0.8rem" }}>Email alerts · Lead notifications · Payment alerts · Failure warnings</div>
+                    <div style={{ display:"flex", gap:"1.2rem" }}>
+                      <div><div style={{ ...sans, fontSize:"0.78rem", color:CREAM }}>alerts@mail.localclawagents.com</div><div style={{ ...sans, fontSize:"0.62rem", color:DIM }}>Sending from</div></div>
+                    </div>
+                  </div>
+                  <a href="https://resend.com/emails" target="_blank" rel="noopener noreferrer"
+                    style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:DIM, textDecoration:"none", padding:"6px 12px", border:`1px solid ${BORDER}`, borderRadius:"2px" }}>
+                    Open →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Webhook & Data Flow */}
+            <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>DATA FLOW</div>
+            <div className="overview-card" style={{ marginBottom:"2.5rem" }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                {[
+                  { from: "Website", arrow: "→", to: "Intake Form", desc: "Visitor fills out form with business details", color: GOLD },
+                  { from: "Intake Form", arrow: "→", to: "Supabase", desc: "Lead saved to database + email alert sent via Resend", color: "#3ECF8E" },
+                  { from: "Intake Form", arrow: "→", to: "Stripe Checkout", desc: "Redirect to payment after form submission", color: "#635BFF" },
+                  { from: "Stripe", arrow: "→", to: "Webhook → Supabase", desc: "Payment confirmed → lead updated → email alert sent", color: "#635BFF" },
+                  { from: "Cal.com", arrow: "→", to: "Supabase (sync)", desc: "Bookings matched to leads by email → status auto-updated", color: "#F97316" },
+                  { from: "All Systems", arrow: "→", to: "Admin Dashboard", desc: "Real-time view of leads, payments, calls, subscriptions", color: CREAM },
+                ].map((step, i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:"12px", padding:"10px 14px", background: i % 2 === 0 ? BG3 : "transparent", borderRadius:"4px" }}>
+                    <span style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color: step.color, minWidth:"130px" }}>{step.from}</span>
+                    <span style={{ ...sans, fontSize:"0.72rem", color:DIM }}>{step.arrow}</span>
+                    <span style={{ ...sans, fontSize:"0.78rem", fontWeight:"600", color:CREAM, minWidth:"150px" }}>{step.to}</span>
+                    <span style={{ ...sans, fontSize:"0.75rem", color:MUTED }}>{step.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Stripe Event Log */}
+            <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>STRIPE EVENT LOG</div>
+
+            {/* Event summary pills */}
+            {eventsData && Object.keys(eventsData.summary).length > 0 && (
+              <div style={{ display:"flex", gap:"0.5rem", flexWrap:"wrap", marginBottom:"1rem" }}>
+                {Object.entries(eventsData.summary).sort((a, b) => b[1] - a[1]).map(([type, count]) => {
+                  const isFailure = type.includes("failed") || type.includes("refund") || type.includes("deleted");
+                  const isSuccess = type.includes("succeeded") || type.includes("completed") || type.includes("paid");
+                  const color = isFailure ? "#EF4444" : isSuccess ? "#10B981" : DIM;
+                  return (
+                    <span key={type} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color, background:`${color}12`, padding:"4px 10px", borderRadius:"100px", border:`1px solid ${color}25` }}>
+                      {type.replace("customer.", "").replace("checkout.session.", "checkout.").replace("payment_intent.", "pi.")} ({count})
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Recent failures */}
+            {eventsData && eventsData.recentFailures.length > 0 && (
+              <div className="overview-card" style={{ marginBottom:"1rem", borderLeft:"3px solid #EF4444" }}>
+                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.16em", color:"#EF4444", fontWeight:"600", marginBottom:"0.8rem" }}>RECENT FAILURES</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                  {eventsData.recentFailures.map((f, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:"10px", padding:"8px 12px", background:"rgba(239,68,68,0.04)", borderRadius:"4px" }}>
+                      <div style={{ width:6, height:6, borderRadius:"50%", background:"#EF4444", flexShrink:0 }} />
+                      <div style={{ flex:1 }}>
+                        <span style={{ ...sans, fontSize:"0.78rem", fontWeight:"600", color:CREAM }}>{f.email || "Unknown"}</span>
+                        <span style={{ ...sans, fontSize:"0.72rem", color:"#EF4444", marginLeft:"8px" }}>{f.reason}</span>
+                      </div>
+                      <span style={{ ...sans, fontSize:"0.68rem", color:DIM }}>{timeAgo(f.created)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Full event log */}
+            <div className="overview-card">
+              {!eventsData || eventsData.events.length === 0 ? (
+                <div style={{ ...sans, fontSize:"0.84rem", color:DIM, textAlign:"center", padding:"2rem 0" }}>No events recorded yet. Events will appear here after Stripe activity.</div>
+              ) : (
+                <div style={{ maxHeight:"400px", overflowY:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom:`1px solid ${BORDER}`, position:"sticky", top:0, background:BG2 }}>
+                        {["Time","Event","Email","Amount","Status"].map(h => (
+                          <th key={h} style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.14em", fontWeight:"600", color:DIM, padding:"8px 10px", textAlign:"left" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventsData.events.map(ev => {
+                        const isFailure = ev.status === "failed" || ev.event_type.includes("failed") || ev.event_type.includes("refund");
+                        const isSuccess = ev.status === "succeeded" || ev.status === "completed" || ev.status === "paid";
+                        const dotColor = isFailure ? "#EF4444" : isSuccess ? "#10B981" : "#F59E0B";
+                        return (
+                          <tr key={ev.id} style={{ borderBottom:`1px solid ${BORDER}` }}>
+                            <td style={{ ...sans, fontSize:"0.72rem", color:DIM, padding:"8px 10px", whiteSpace:"nowrap" }}>{timeAgo(ev.created_at)}</td>
+                            <td style={{ ...sans, fontSize:"0.74rem", color:CREAM, padding:"8px 10px", fontWeight:"500" }}>
+                              {ev.event_type.replace("customer.", "").replace("checkout.session.", "checkout.").replace("payment_intent.", "pi.")}
+                            </td>
+                            <td style={{ ...sans, fontSize:"0.74rem", color:MUTED, padding:"8px 10px" }}>{ev.email || "—"}</td>
+                            <td style={{ ...sans, fontSize:"0.78rem", fontWeight:"600", color: ev.amount > 0 ? (isFailure ? "#EF4444" : "#10B981") : DIM, padding:"8px 10px" }}>
+                              {ev.amount > 0 ? `$${(ev.amount / 100).toLocaleString()}` : "—"}
+                            </td>
+                            <td style={{ padding:"8px 10px" }}>
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:"4px" }}>
+                                <span style={{ width:6, height:6, borderRadius:"50%", background:dotColor }} />
+                                <span style={{ ...sans, fontSize:"0.68rem", color:dotColor, fontWeight:"600" }}>
+                                  {ev.failure_reason ? ev.failure_reason.substring(0, 40) : ev.status}
+                                </span>
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Links */}
+            <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginTop:"2.5rem", marginBottom:"1rem" }}>QUICK LINKS</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:"0.8rem" }}>
+              {[
+                { label: "Stripe Payments", url: "https://dashboard.stripe.com/payments", color: "#635BFF" },
+                { label: "Stripe Subscriptions", url: "https://dashboard.stripe.com/subscriptions", color: "#635BFF" },
+                { label: "Stripe Webhooks", url: "https://dashboard.stripe.com/webhooks", color: "#635BFF" },
+                { label: "Stripe Customers", url: "https://dashboard.stripe.com/customers", color: "#635BFF" },
+                { label: "Supabase Tables", url: "https://supabase.com/dashboard/project/dfuwkysnaveauodclqdm/editor", color: "#3ECF8E" },
+                { label: "Supabase Logs", url: "https://supabase.com/dashboard/project/dfuwkysnaveauodclqdm/logs/explorer", color: "#3ECF8E" },
+                { label: "Cal.com Bookings", url: "https://app.cal.com/bookings", color: "#F97316" },
+                { label: "Cal.com Settings", url: "https://app.cal.com/settings", color: "#F97316" },
+                { label: "Resend Emails", url: "https://resend.com/emails", color: "#00D4AA" },
+                { label: "Resend Domains", url: "https://resend.com/domains", color: "#00D4AA" },
+                { label: "Vercel Dashboard", url: "https://vercel.com", color: CREAM },
+                { label: "GitHub Repo", url: "https://github.com/BVerse-dev/localclaw", color: CREAM },
+              ].map((link, i) => (
+                <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
+                  style={{ ...sans, display:"flex", alignItems:"center", gap:"8px", padding:"12px 14px", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"4px", textDecoration:"none", transition:"border-color 0.2s, background 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = GOLD_BORDER; e.currentTarget.style.background = GOLD_MID; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.background = BG2; }}
+                >
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:link.color, flexShrink:0 }} />
+                  <span style={{ fontSize:"0.78rem", fontWeight:"500", color:CREAM }}>{link.label}</span>
+                  <span style={{ fontSize:"0.68rem", color:DIM, marginLeft:"auto" }}>↗</span>
+                </a>
+              ))}
             </div>
           </div>
         )}
