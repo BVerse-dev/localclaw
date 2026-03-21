@@ -340,7 +340,7 @@ export default function LocalClaw() {
             </p>
 
             <div data-hero-btns className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
-              <a href={STRIPE.DISCOVERY} className="btn-primary" style={{ padding:"16px 32px" }}>START WITH $97 DEPOSIT</a>
+              <a href="/intake?plan=discovery" className="btn-primary" style={{ padding:"16px 32px" }}>START WITH $97 DEPOSIT</a>
               <a href="#how" className="btn-secondary" style={{ padding:"16px 32px" }}>SEE HOW IT WORKS</a>
             </div>
 
@@ -617,18 +617,14 @@ export default function LocalClaw() {
                 {/* Dual-path CTAs */}
                 <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
                   <a
-                    href={STRIPE.DISCOVERY}
+                    href={`/intake?plan=${plan.tag === "SOLO OPERATORS" ? "starter" : plan.tag === "MOST POPULAR" ? "business" : "fullstack"}`}
                     className={plan.highlight ? "btn-primary" : "btn-secondary"}
                     style={{ display:"block", textAlign:"center" }}
                   >
                     BOOK DISCOVERY CALL · $97
                   </a>
                   <a
-                    href={
-                      plan.tag === "SOLO OPERATORS" ? STRIPE.STARTER_FULL :
-                      plan.tag === "MOST POPULAR"   ? STRIPE.BUSINESS_FULL :
-                                                      STRIPE.ENTERPRISE
-                    }
+                    href={`/intake?plan=${plan.tag === "SOLO OPERATORS" ? "starter" : plan.tag === "MOST POPULAR" ? "business" : "fullstack"}`}
                     style={{ ...sans, display:"block", textAlign:"center", color:DIM, fontSize:"0.77rem", textDecoration:"none", padding:"0.35rem 0", letterSpacing:"0.04em", transition:"color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.color = GOLD}
                     onMouseLeave={e => e.currentTarget.style.color = DIM}
@@ -701,7 +697,7 @@ export default function LocalClaw() {
             Your $97 is credited in full toward your setup fee. If we're not the right fit, you get it back — no questions asked.
           </p>
           <div data-cta-btn className="cta-btns" style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
-            <a href={STRIPE.DISCOVERY} className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>CLAIM YOUR SPOT · $97</a>
+            <a href="/intake?plan=discovery" className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>CLAIM YOUR SPOT · $97</a>
             <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>QUESTIONS? DM US</a>
           </div>
           <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"2rem" }}>

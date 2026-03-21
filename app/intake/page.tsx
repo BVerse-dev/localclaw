@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { Suspense, useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 // ── Brand tokens (identical to main site) ─────────────────────────────────────
 const BG         = "#080704";
@@ -16,8 +17,21 @@ const BORDER     = "rgba(201,146,42,0.14)";
 const display: React.CSSProperties = { fontFamily:"'Cormorant Garamond', Georgia, serif" };
 const sans: React.CSSProperties    = { fontFamily:"'Inter', system-ui, sans-serif" };
 
-// ── Cal.com booking link ──────────────────────────────────────────────────────
-const BOOKING_URL = "https://cal.com/bverse/15min";
+// ── Stripe Payment Links ──────────────────────────────────────────────────────
+const STRIPE: Record<string, string> = {
+  discovery:  "https://buy.stripe.com/dRm28tc1s3t0gUnaBI0sU02",
+  starter:    "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04",
+  business:   "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05",
+  fullstack:  "https://buy.stripe.com/4gM9AV4z0d3AgUn7pw0sU07",
+};
+
+// Map plan param → budget radio value
+const PLAN_TO_BUDGET: Record<string, string> = {
+  starter:   "starter",
+  business:  "business",
+  fullstack: "fullstack",
+  discovery: "unsure",
+};
 
 // ── ClawIcon (same as main page) ──────────────────────────────────────────────
 function ClawIcon({ size = 36, color = GOLD }: { size?: number; color?: string }) {
@@ -95,23 +109,28 @@ const TEAM_OPTIONS = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-export default function IntakePage() {
+function IntakeForm() {
+  const searchParams = useSearchParams();
+  const planParam = searchParams.get("plan") || "discovery";
+  const stripeUrl = STRIPE[planParam] || STRIPE.discovery;
+
   const [scrolled, setScrolled] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [automations, setAutomations] = useState<string[]>([]);
+  const [selectedBudget, setSelectedBudget] = useState(PLAN_TO_BUDGET[planParam] || "unsure");
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Countdown → redirect to Cal.com
+  // Countdown → redirect to Stripe payment
   useEffect(() => {
     if (!submitted) return;
     if (countdown <= 0) {
-      window.location.href = BOOKING_URL;
+      window.location.href = stripeUrl;
       return;
     }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [submitted, countdown]);
+  }, [submitted, countdown, stripeUrl]);
 
   // Nav shadow on scroll
   useEffect(() => {
@@ -148,13 +167,15 @@ export default function IntakePage() {
     setSubmitting(true);
 
     const formData = new FormData(formRef.current!);
+    const budgetVal = formData.get("budget") || selectedBudget;
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
       business: formData.get("business"),
       industry: formData.get("industry"),
       teamSize: formData.get("teamSize"),
-      budget: formData.get("budget"),
+      budget: budgetVal,
+      plan: planParam,
       automations,
       details: formData.get("details"),
     };
@@ -330,7 +351,7 @@ export default function IntakePage() {
                   <em style={{ fontStyle:"italic", color:GOLD }}>your business.</em>
                 </h1>
                 <p style={{ ...sans, color:MUTED, maxWidth:"480px", margin:"0 auto", lineHeight:"1.82", fontSize:"0.93rem" }}>
-                  Fill out this quick form so we can prepare for your call. Takes about 2 minutes. No commitment, no credit card.
+                  Fill out this quick form so we can prepare your deployment. Takes about 2 minutes. You'll proceed to secure checkout next.
                 </p>
               </div>
             )}
@@ -352,11 +373,11 @@ export default function IntakePage() {
                 </h2>
 
                 <p style={{ ...sans, color:CREAM, fontSize:"1rem", lineHeight:"1.8", maxWidth:"440px", margin:"0 auto 0.6rem", fontWeight:"500" }}>
-                  One last step — pick a time for your free 15-minute discovery call.
+                  One last step — secure your spot with a {planParam === "discovery" || planParam === "unsure" ? "$97 discovery deposit" : "payment"}.
                 </p>
 
                 <p style={{ ...sans, color:MUTED, fontSize:"0.88rem", lineHeight:"1.7", maxWidth:"400px", margin:"0 auto 2rem" }}>
-                  You'll be redirected to our calendar in <span style={{ color:GOLD, fontWeight:"700", fontSize:"1.05rem" }}>{countdown}</span> {countdown === 1 ? "second" : "seconds"}...
+                  You'll be redirected to checkout in <span style={{ color:GOLD, fontWeight:"700", fontSize:"1.05rem" }}>{countdown}</span> {countdown === 1 ? "second" : "seconds"}...
                 </p>
 
                 {/* Progress bar */}
@@ -372,11 +393,11 @@ export default function IntakePage() {
 
                 {/* Manual fallback button */}
                 <a
-                  href={BOOKING_URL}
+                  href={stripeUrl}
                   className="btn-primary"
                   style={{ display:"inline-block", padding:"14px 36px", fontSize:"0.85rem", marginBottom:"1.5rem" }}
                 >
-                  BOOK YOUR CALL NOW →
+                  PROCEED TO CHECKOUT →
                 </a>
 
                 <br />
@@ -539,21 +560,20 @@ export default function IntakePage() {
                     {BUDGET_OPTIONS.map(opt => (
                       <label
                         key={opt.value}
-                        className="intake-radio"
-                        onClick={(e) => {
-                          document.querySelectorAll('.intake-radio').forEach(el => el.classList.remove('active'));
-                          (e.currentTarget as HTMLElement).classList.add('active');
-                        }}
+                        className={`intake-radio${selectedBudget === opt.value ? " active" : ""}`}
+                        onClick={() => setSelectedBudget(opt.value)}
                       >
-                        <input type="radio" name="budget" value={opt.value} style={{ display:"none" }} />
+                        <input type="radio" name="budget" value={opt.value} checked={selectedBudget === opt.value} readOnly style={{ display:"none" }} />
                         <div style={{
                           width:16, height:16, borderRadius:"50%", flexShrink:0,
-                          border:`1.5px solid ${DIM}`,
+                          border:`1.5px solid ${selectedBudget === opt.value ? GOLD : DIM}`,
                           display:"flex", alignItems:"center", justifyContent:"center",
                           transition:"all 0.2s",
                         }}>
-                          <div className="intake-radio-dot" style={{
-                            width:0, height:0, borderRadius:"50%", background:GOLD,
+                          <div style={{
+                            width: selectedBudget === opt.value ? 8 : 0,
+                            height: selectedBudget === opt.value ? 8 : 0,
+                            borderRadius:"50%", background:GOLD,
                             transition:"all 0.2s",
                           }} />
                         </div>
@@ -575,10 +595,10 @@ export default function IntakePage() {
                 {/* ── Submit ── */}
                 <div data-form-section style={{ paddingTop:"0.5rem" }}>
                   <button type="submit" className="intake-submit" disabled={submitting}>
-                    {submitting ? "SUBMITTING..." : "SUBMIT & SCHEDULE YOUR CALL →"}
+                    {submitting ? "SUBMITTING..." : "SUBMIT & PROCEED TO PAYMENT →"}
                   </button>
                   <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"1.6rem" }}>
-                    {["No commitment required", "We respond within 2 hours", "100% confidential"].map((t,i) => (
+                    {["$97 deposit credited to setup fee", "30-day satisfaction guarantee", "100% confidential"].map((t,i) => (
                       <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
                         <Check size={12} />
                         <span style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>{t}</span>
@@ -614,5 +634,13 @@ export default function IntakePage() {
 
       </div>
     </>
+  );
+}
+
+export default function IntakePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:"100vh", background:"#080704" }} />}>
+      <IntakeForm />
+    </Suspense>
   );
 }
