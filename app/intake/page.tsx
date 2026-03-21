@@ -17,7 +17,7 @@ const display: React.CSSProperties = { fontFamily:"'Cormorant Garamond', Georgia
 const sans: React.CSSProperties    = { fontFamily:"'Inter', system-ui, sans-serif" };
 
 // ── Replace with your Calendly URL when ready ─────────────────────────────────
-const CALENDLY_URL = "#calendly"; // TODO: Replace with https://calendly.com/your-link
+const CALENDLY_URL = "https://calendly.com/localclaw/15min";
 
 // ── ClawIcon (same as main page) ──────────────────────────────────────────────
 function ClawIcon({ size = 36, color = GOLD }: { size?: number; color?: string }) {
