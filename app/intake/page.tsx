@@ -98,8 +98,20 @@ const TEAM_OPTIONS = [
 export default function IntakePage() {
   const [scrolled, setScrolled] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [countdown, setCountdown] = useState(5);
   const [automations, setAutomations] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Countdown → redirect to Calendly
+  useEffect(() => {
+    if (!submitted) return;
+    if (countdown <= 0) {
+      window.location.href = CALENDLY_URL;
+      return;
+    }
+    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [submitted, countdown]);
 
   // Nav shadow on scroll
   useEffect(() => {
@@ -149,13 +161,7 @@ export default function IntakePage() {
     // fetch("/api/intake", { method: "POST", body: JSON.stringify(data) });
 
     setSubmitted(true);
-
-    // Redirect to Calendly after a brief confirmation
-    setTimeout(() => {
-      if (CALENDLY_URL !== "#calendly") {
-        window.location.href = CALENDLY_URL;
-      }
-    }, 2500);
+    setCountdown(5);
   };
 
   return (
@@ -314,6 +320,7 @@ export default function IntakePage() {
             {/* ── FORM or SUCCESS ── */}
             {submitted ? (
               <div className="intake-in" style={{ textAlign:"center", padding:"60px 2rem" }}>
+                {/* Animated check */}
                 <div style={{ position:"relative", display:"inline-block", marginBottom:"2rem" }}>
                   <div style={{ position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)", width:"180px", height:"180px", background:"radial-gradient(circle, rgba(201,146,42,0.14) 0%, transparent 65%)", pointerEvents:"none", borderRadius:"50%" }} />
                   <svg viewBox="0 0 80 80" width={80} height={80} style={{ display:"block", position:"relative" }}>
@@ -321,15 +328,41 @@ export default function IntakePage() {
                     <polyline points="25,42 36,53 56,30" fill="none" stroke={GOLD} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </div>
+
                 <h2 style={{ ...display, fontSize:"2.2rem", fontWeight:"700", marginBottom:"1rem" }}>
                   We've got your details.
                 </h2>
-                <p style={{ ...sans, color:MUTED, fontSize:"0.94rem", lineHeight:"1.8", maxWidth:"400px", margin:"0 auto 1.5rem" }}>
-                  {CALENDLY_URL !== "#calendly"
-                    ? "Redirecting you to pick a call time..."
-                    : "We'll reach out within 2 hours to schedule your discovery call."}
+
+                <p style={{ ...sans, color:CREAM, fontSize:"1rem", lineHeight:"1.8", maxWidth:"440px", margin:"0 auto 0.6rem", fontWeight:"500" }}>
+                  One last step — pick a time for your free 15-minute discovery call.
                 </p>
-                <Link href="/" className="intake-back-link" style={{ fontSize:"0.82rem" }}>← Return to LocalClaw home</Link>
+
+                <p style={{ ...sans, color:MUTED, fontSize:"0.88rem", lineHeight:"1.7", maxWidth:"400px", margin:"0 auto 2rem" }}>
+                  You'll be redirected to our calendar in <span style={{ color:GOLD, fontWeight:"700", fontSize:"1.05rem" }}>{countdown}</span> {countdown === 1 ? "second" : "seconds"}...
+                </p>
+
+                {/* Progress bar */}
+                <div style={{ maxWidth:"300px", margin:"0 auto 2.2rem", height:"3px", background:"rgba(201,146,42,0.15)", borderRadius:"2px", overflow:"hidden" }}>
+                  <div style={{
+                    height:"100%",
+                    background:GOLD,
+                    borderRadius:"2px",
+                    width:`${((5 - countdown) / 5) * 100}%`,
+                    transition:"width 1s linear",
+                  }} />
+                </div>
+
+                {/* Manual fallback button */}
+                <a
+                  href={CALENDLY_URL}
+                  className="btn-primary"
+                  style={{ display:"inline-block", padding:"14px 36px", fontSize:"0.85rem", marginBottom:"1.5rem" }}
+                >
+                  BOOK YOUR CALL NOW →
+                </a>
+
+                <br />
+                <Link href="/" className="intake-back-link" style={{ fontSize:"0.8rem" }}>← Return to LocalClaw home</Link>
               </div>
             ) : (
               <form ref={formRef} onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:"2.4rem" }}>
