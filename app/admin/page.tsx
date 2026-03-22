@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, AlertCircle, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, ToggleLeft, ToggleRight, Archive, Clock, Hash, Users, Workflow, Package } from "lucide-react";
+import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, Clock, Users, Workflow, Package } from "lucide-react";
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const BG         = "#080704";
@@ -842,7 +842,7 @@ export default function AdminPage() {
         }}>
           {(["overview","leads","payments","calls","calendar","agents","settings"] as TabKey[]).map(t => (
             <button key={t} className={`admin-tab${tab === t ? " active" : ""}`} onClick={() => setTab(t)}>
-              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : t === "calendar" ? "CALENDAR" : t === "agents" ? "🤖 AGENTS" : "⚙ SETTINGS"}
+              {t === "overview" ? "OVERVIEW" : t === "leads" ? "LEADS" : t === "payments" ? "PAYMENTS" : t === "calls" ? "CALLS" : t === "calendar" ? "CALENDAR" : t === "agents" ? "AGENTS" : "SETTINGS"}
               {t === "calls" && bookingData && bookingData.stats.upcoming > 0 && (
                 <span style={{ marginLeft:"6px", background:"rgba(168,85,247,0.2)", color:"#A855F7", padding:"1px 6px", borderRadius:"100px", fontSize:"0.65rem" }}>{bookingData.stats.upcoming}</span>
               )}
@@ -1651,7 +1651,7 @@ export default function AdminPage() {
             </aside>
 
             {/* ── Main Content Area ── */}
-            <main style={{ flex:1, padding:"2rem 2.5rem", maxWidth:"1100px" }}>
+            <main style={{ flex:1, padding:"2rem 3rem", maxWidth:"1100px", margin:"0 auto" }}>
 
               {/* ── SUB: OVERVIEW ── */}
               {agentSubTab === "overview" && (
@@ -1659,15 +1659,16 @@ export default function AdminPage() {
                   <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Agent Control Center</h2>
                   <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Deploy, manage, and monitor OpenClaw AI agents</p>
 
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:"1rem", marginBottom:"2.5rem" }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:"1rem", marginBottom:"2.5rem" }}>
                     {[
                       { label: "Total Agents", value: agents.length, color: CREAM, Ic: Layers },
                       { label: "Active", value: agents.filter(a => a.status === "active").length, color: "#22C55E", Ic: CircleDot },
+                      { label: "Deployed", value: agents.filter(a => a.status === "active" || a.status === "configured" || a.status === "paused").length, color: "#A855F7", Ic: Server },
                       { label: "Configured", value: agents.filter(a => a.status === "configured").length, color: "#F59E0B", Ic: Settings2 },
                       { label: "Ready", value: submissions.filter(s => (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") && !agents.find(a => a.submission_id === s.id)).length, color: "#3B82F6", Ic: Rocket },
                     ].map((stat, i) => (
-                      <div key={i} className="overview-card" style={{ padding:"1.2rem" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.8rem" }}>
+                      <div key={i} className="overview-card" style={{ padding:"1.2rem", textAlign:"center" }}>
+                        <div style={{ display:"flex", justifyContent:"center", marginBottom:"0.8rem" }}>
                           <div style={{ width:"36px", height:"36px", borderRadius:"10px", background:`${stat.color}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
                             <stat.Ic size={18} color={stat.color} strokeWidth={1.8} />
                           </div>
@@ -1682,24 +1683,27 @@ export default function AdminPage() {
                   {agents.length > 0 && (
                     <div>
                       <div style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"1rem" }}>RECENT AGENTS</div>
-                      {agents.slice(0, 5).map(agent => {
-                        const st = AGENT_STATUSES[agent.status] || AGENT_STATUSES.configured;
-                        const matched = submissions.find(s => s.id === agent.submission_id);
-                        return (
-                          <div key={agent.id} style={{ display:"flex", alignItems:"center", gap:"14px", padding:"14px 16px", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"10px", marginBottom:"8px", transition:"background 0.2s", cursor:"pointer" }} onClick={() => { setSelectedAgent(agent); setAgentSubTab("deployed"); }}>
-                            <div style={{ width:"38px", height:"38px", borderRadius:"10px", background:`${st.color}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <Bot size={18} color={st.color} strokeWidth={1.8} />
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"10px" }}>
+                        {agents.slice(0, 6).map(agent => {
+                          const st = AGENT_STATUSES[agent.status] || AGENT_STATUSES.configured;
+                          const matched = submissions.find(s => s.id === agent.submission_id);
+                          return (
+                            <div key={agent.id} style={{ display:"flex", alignItems:"center", gap:"12px", padding:"14px 16px", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"10px", transition:"border-color 0.2s", cursor:"pointer" }} onClick={() => { setSelectedAgent(agent); setAgentSubTab("deployed"); }}>
+                              <div style={{ width:"36px", height:"36px", borderRadius:"10px", background:`${st.color}10`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                                <Bot size={17} color={st.color} strokeWidth={1.8} />
+                              </div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{agent.agent_name}</div>
+                                <div style={{ ...sans, fontSize:"0.65rem", color:MUTED, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{matched?.business || agent.slug} · {agent.business_type}</div>
+                              </div>
+                              <div style={{ display:"flex", flexDirection:"column", gap:"4px", alignItems:"flex-end", flexShrink:0 }}>
+                                <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}10`, padding:"3px 8px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
+                                <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:st.color, background:`${st.color}10`, padding:"3px 8px", borderRadius:"100px" }}>{st.label}</span>
+                              </div>
                             </div>
-                            <div style={{ flex:1 }}>
-                              <div style={{ ...sans, fontSize:"0.85rem", fontWeight:"700", color:CREAM }}>{agent.agent_name}</div>
-                              <div style={{ ...sans, fontSize:"0.68rem", color:MUTED }}>{matched?.business || agent.slug} · {agent.business_type}</div>
-                            </div>
-                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}12`, padding:"4px 10px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
-                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:st.color, background:`${st.color}12`, padding:"4px 10px", borderRadius:"100px" }}>{st.label}</span>
-                            <ChevronRight size={16} color={DIM} />
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
@@ -1732,30 +1736,28 @@ export default function AdminPage() {
                       </div>
                     );
                     return (
-                      <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"16px" }}>
                         {readyLeads.map(s => (
-                          <div key={s.id} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"12px", padding:"1.4rem", transition:"border-color 0.2s" }}>
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem" }}>
-                              <div style={{ display:"flex", gap:"12px", alignItems:"center" }}>
-                                <div style={{ width:"42px", height:"42px", borderRadius:"10px", background:`${GOLD}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                                  <Users size={20} color={GOLD} strokeWidth={1.8} />
-                                </div>
-                                <div>
-                                  <div style={{ ...sans, fontSize:"0.95rem", fontWeight:"700", color:CREAM }}>{s.business}</div>
-                                  <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>{s.name} · {s.email}</div>
-                                </div>
+                          <div key={s.id} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"12px", padding:"1.4rem", transition:"border-color 0.2s", display:"flex", flexDirection:"column" }}>
+                            <div style={{ display:"flex", gap:"12px", alignItems:"center", marginBottom:"1rem" }}>
+                              <div style={{ width:"40px", height:"40px", borderRadius:"10px", background:`${GOLD}10`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                                <Users size={18} color={GOLD} strokeWidth={1.8} />
                               </div>
-                              <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                                {s.payment_status === "paid" && (
-                                  <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:"#22C55E", background:"rgba(34,197,94,0.08)", padding:"4px 10px", borderRadius:"100px" }}>PAID</span>
-                                )}
-                                <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:getStatusColor(s.status), background:`${getStatusColor(s.status)}10`, padding:"4px 10px", borderRadius:"100px" }}>{getStatusLabel(s.status)}</span>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ ...sans, fontSize:"0.9rem", fontWeight:"700", color:CREAM, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.business}</div>
+                                <div style={{ ...sans, fontSize:"0.68rem", color:MUTED, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{s.name} · {s.email}</div>
                               </div>
                             </div>
-                            <div style={{ ...sans, fontSize:"0.72rem", color:DIM, marginBottom:"1.2rem", lineHeight:"1.8" }}>
-                              {s.industry && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px", marginRight:"16px" }}><Package size={12} color={MUTED} /> {s.industry}</span>}
-                              {s.budget && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px", marginRight:"16px" }}><Layers size={12} color={MUTED} /> {budgetLabel(s.budget)}</span>}
-                              {s.automations && s.automations.length > 0 && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px" }}><Workflow size={12} color={MUTED} /> {s.automations.length} automations</span>}
+                            <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"1rem" }}>
+                              {s.payment_status === "paid" && (
+                                <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#22C55E", background:"rgba(34,197,94,0.08)", padding:"3px 10px", borderRadius:"100px" }}>PAID</span>
+                              )}
+                              <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:getStatusColor(s.status), background:`${getStatusColor(s.status)}10`, padding:"3px 10px", borderRadius:"100px" }}>{getStatusLabel(s.status)}</span>
+                            </div>
+                            <div style={{ ...sans, fontSize:"0.68rem", color:DIM, marginBottom:"1rem", display:"flex", flexDirection:"column", gap:"6px" }}>
+                              {s.industry && <span style={{ display:"flex", alignItems:"center", gap:"6px" }}><Package size={12} color={MUTED} /> {s.industry}</span>}
+                              {s.budget && <span style={{ display:"flex", alignItems:"center", gap:"6px" }}><Layers size={12} color={MUTED} /> {budgetLabel(s.budget)}</span>}
+                              {s.automations && s.automations.length > 0 && <span style={{ display:"flex", alignItems:"center", gap:"6px" }}><Workflow size={12} color={MUTED} /> {s.automations.length} automations requested</span>}
                             </div>
                             {s.automations && s.automations.length > 0 && (
                               <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"1.2rem" }}>
@@ -1764,13 +1766,15 @@ export default function AdminPage() {
                                 ))}
                               </div>
                             )}
-                            <button
-                              onClick={() => { generateConfig(s.id); setAgentSubTab("generated"); }}
-                              disabled={generatingFor === s.id}
-                              style={{ ...sans, fontSize:"0.75rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"12px 24px", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", transition:"opacity 0.2s" }}
-                            >
-                              {generatingFor === s.id ? <><RefreshCw size={14} className="spin" /> Generating...</> : <><Cpu size={14} /> Generate Agent Config</>}
-                            </button>
+                            <div style={{ marginTop:"auto", paddingTop:"1rem" }}>
+                              <button
+                                onClick={() => { generateConfig(s.id); setAgentSubTab("generated"); }}
+                                disabled={generatingFor === s.id}
+                                style={{ ...sans, fontSize:"0.75rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"12px 24px", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", transition:"opacity 0.2s", width:"100%", justifyContent:"center" }}
+                              >
+                                {generatingFor === s.id ? <><RefreshCw size={14} className="spin" /> Generating...</> : <><Cpu size={14} /> Generate Agent Config</>}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1945,28 +1949,34 @@ export default function AdminPage() {
                     </div>
                   )}
 
-                  <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"16px" }}>
                     {agents.map(agent => {
                       const st = AGENT_STATUSES[agent.status] || AGENT_STATUSES.configured;
                       const matched = submissions.find(s => s.id === agent.submission_id);
                       const isExpanded = selectedAgent?.id === agent.id;
                       return (
-                        <div key={agent.id} style={{ background:BG2, border:`1px solid ${isExpanded ? GOLD_BORDER : BORDER}`, borderRadius:"14px", overflow:"hidden", transition:"border-color 0.2s" }}>
+                        <div key={agent.id} style={{ background:BG2, border:`1px solid ${isExpanded ? GOLD_BORDER : BORDER}`, borderRadius:"14px", overflow:"hidden", transition:"border-color 0.2s", gridColumn: isExpanded ? "1 / -1" : "auto" }}>
                           {/* Agent Row */}
-                          <div style={{ display:"flex", alignItems:"center", gap:"14px", padding:"16px 20px", cursor:"pointer" }} onClick={() => setSelectedAgent(isExpanded ? null : agent)}>
-                            <div style={{ width:"40px", height:"40px", borderRadius:"10px", background:`${st.color}08`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                              <Bot size={20} color={st.color} strokeWidth={1.8} />
-                            </div>
-                            <div style={{ flex:1 }}>
-                              <div style={{ ...sans, fontSize:"0.88rem", fontWeight:"700", color:CREAM }}>{agent.agent_name}</div>
-                              <div style={{ ...sans, fontSize:"0.65rem", color:MUTED }}>
-                                {matched?.name || agent.slug} · {agent.business_type} · <Clock size={10} style={{ verticalAlign:"middle" }} /> {agent.heartbeat_interval || "24h"} · <Hash size={10} style={{ verticalAlign:"middle" }} /> {agent.tools_enabled?.length || 0} tools
-                                {agent.nemoclaw_enabled && <span style={{ color:"#14B8A6", marginLeft:"6px" }}><Shield size={10} style={{ verticalAlign:"middle" }} /> NemoClaw</span>}
+                          <div style={{ padding:"18px 20px", cursor:"pointer" }} onClick={() => setSelectedAgent(isExpanded ? null : agent)}>
+                            <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"10px" }}>
+                              <div style={{ width:"38px", height:"38px", borderRadius:"10px", background:`${st.color}08`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                                <Bot size={18} color={st.color} strokeWidth={1.8} />
                               </div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ ...sans, fontSize:"0.88rem", fontWeight:"700", color:CREAM, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{agent.agent_name}</div>
+                                <div style={{ ...sans, fontSize:"0.65rem", color:MUTED, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                                  {matched?.name || agent.slug} · {agent.business_type}
+                                </div>
+                              </div>
+                              <ChevronRight size={16} color={DIM} style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition:"transform 0.2s", flexShrink:0 }} />
                             </div>
-                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}10`, padding:"4px 12px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
-                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:st.color, background:`${st.color}10`, padding:"4px 12px", borderRadius:"100px" }}>{st.label}</span>
-                            <ChevronRight size={16} color={DIM} style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition:"transform 0.2s" }} />
+                            <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", alignItems:"center" }}>
+                              <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}10`, padding:"3px 10px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
+                              <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:st.color, background:`${st.color}10`, padding:"3px 10px", borderRadius:"100px" }}>{st.label}</span>
+                              <span style={{ ...sans, fontSize:"0.55rem", color:MUTED, display:"inline-flex", alignItems:"center", gap:"3px" }}><Clock size={10} /> {agent.heartbeat_interval || "24h"}</span>
+                              <span style={{ ...sans, fontSize:"0.55rem", color:MUTED, display:"inline-flex", alignItems:"center", gap:"3px" }}><Wrench size={10} /> {agent.tools_enabled?.length || 0} tools</span>
+                              {agent.nemoclaw_enabled && <span style={{ ...sans, fontSize:"0.55rem", color:"#14B8A6", display:"inline-flex", alignItems:"center", gap:"3px" }}><Shield size={10} /> NemoClaw</span>}
+                            </div>
                           </div>
 
                           {/* Expanded */}
