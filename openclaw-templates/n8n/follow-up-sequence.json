@@ -1,0 +1,355 @@
+{
+  "name": "LocalClaw — Follow-Up Sequence",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Cron — Daily 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "intake_submissions",
+          "mode": "list"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "new"
+            }
+          ]
+        },
+        "options": {
+          "returnAll": true
+        }
+      },
+      "id": "supabase-query-leads",
+      "name": "Supabase — Query Unresponded Leads",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [460, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase — LocalClaw"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter leads needing follow-up based on age and follow_up_count\nconst leads = $input.all();\nconst now = new Date();\nconst results = [];\n\nfor (const item of leads) {\n  const lead = item.json;\n  const createdAt = new Date(lead.created_at);\n  const hoursSinceCreated = (now - createdAt) / (1000 * 60 * 60);\n  const lastFollowUp = lead.last_follow_up ? new Date(lead.last_follow_up) : null;\n  const hoursSinceLastFollowUp = lastFollowUp ? (now - lastFollowUp) / (1000 * 60 * 60) : null;\n  const followUpCount = lead.follow_up_count || 0;\n  \n  let shouldFollowUp = false;\n  let followUpType = null;\n  let message = null;\n  \n  // First follow-up: no response after 24 hours\n  if (followUpCount === 0 && hoursSinceCreated >= 24) {\n    shouldFollowUp = true;\n    followUpType = 'first';\n    message = `Hey ${lead.customer_name}! Just checking in — did you get my message about ${lead.service_interest}? Happy to answer questions or find a time that works. What's the best next step for you?`;\n  }\n  \n  // Second follow-up: no response 3 days after first follow-up\n  if (followUpCount === 1 && hoursSinceLastFollowUp !== null && hoursSinceLastFollowUp >= 72) {\n    shouldFollowUp = true;\n    followUpType = 'second';\n    message = `Hi ${lead.customer_name}! Following up one more time on ${lead.service_interest}. I know things get busy — if the timing isn't right, no worries at all. But if you're still interested, I can get something set up for you quickly. Just reply here!`;\n  }\n  \n  // Third follow-up: no response 5 days after second follow-up\n  if (followUpCount === 2 && hoursSinceLastFollowUp !== null && hoursSinceLastFollowUp >= 120) {\n    shouldFollowUp = true;\n    followUpType = 'third';\n    message = `${lead.customer_name}, I don't want to keep popping up if the timing isn't right for you. This'll be my last follow-up — if ${lead.service_interest} becomes a priority down the road, we're here. You can always reach back out and I'll pick right up where we left off.`;\n  }\n  \n  if (shouldFollowUp && lead.customer_phone) {\n    results.push({\n      json: {\n        ...lead,\n        follow_up_type: followUpType,\n        follow_up_message: message,\n        new_follow_up_count: followUpCount + 1,\n        follow_up_timestamp: now.toISOString()\n      }\n    });\n  }\n}\n\nconsole.log(`Follow-up check: ${results.length} leads need follow-up out of ${leads.length} total`);\nreturn results;"
+      },
+      "id": "filter-leads",
+      "name": "Filter — Leads Needing Follow-Up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-phone",
+              "leftValue": "={{ $json.customer_phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-has-phone",
+      "name": "Has Phone Number?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "messaging_product",
+              "value": "whatsapp"
+            },
+            {
+              "name": "to",
+              "value": "={{ $json.customer_phone }}"
+            },
+            {
+              "name": "type",
+              "value": "text"
+            },
+            {
+              "name": "text",
+              "value": "={ \"body\": \"{{ $json.follow_up_message }}\" }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-whatsapp-followup",
+      "name": "WhatsApp — Send Follow-Up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "whatsapp-creds",
+          "name": "WhatsApp API Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "intake_submissions",
+          "mode": "list"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "follow_up_count": "={{ $json.new_follow_up_count }}",
+            "last_follow_up": "={{ $json.follow_up_timestamp }}",
+            "status": "={{ $json.new_follow_up_count >= 3 ? 'cold' : 'following_up' }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "supabase-update-lead",
+      "name": "Supabase — Update Lead Status",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1340, 200],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase — LocalClaw"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "is-third-followup",
+              "leftValue": "={{ $json.new_follow_up_count }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-third-followup",
+      "name": "Is 3rd Follow-Up?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 400]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.owner_telegram_chat_id }}",
+        "text": "=⚠️ Lead Escalation — {{ $json.business_name }}\n\n3 follow-ups with no response:\n\n👤 {{ $json.customer_name }}\n📞 {{ $json.customer_phone }}\n🔧 Interest: {{ $json.service_interest }}\n⏱ Timeline: {{ $json.timeline }}\n📅 First contact: {{ $json.created_at }}\n\nRecommendation: Personal outreach from you directly. This lead may need a human touch.\n\n📬 Last message sent:\n\"{{ $json.follow_up_message }}\"",
+        "additionalFields": {}
+      },
+      "id": "telegram-escalate-owner",
+      "name": "Telegram — Escalate to Owner (3 Strikes)",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1560, 400],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-creds",
+          "name": "Telegram — LocalClaw Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "intake_submissions",
+          "mode": "list"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "escalated",
+            "escalated_at": "={{ $now.toISO() }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "supabase-mark-escalated",
+      "name": "Supabase — Mark Escalated",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1780, 400],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase — LocalClaw"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://localclawagents.com/api/alerts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"agent_id\": \"{{ $json.agent_id }}\",\n  \"business\": \"{{ $json.business_name }}\",\n  \"severity\": \"warning\",\n  \"type\": \"follow_up_escalation\",\n  \"message\": \"3 unanswered follow-ups for {{ $json.customer_name }} — escalated to owner\",\n  \"customer_id\": \"{{ $json.id }}\",\n  \"timestamp\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "id": "localclaw-alert",
+      "name": "LocalClaw — Send Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1780, 560],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "localclaw-api-creds",
+          "name": "LocalClaw API Key"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron — Daily 9AM": {
+      "main": [[{ "node": "Supabase — Query Unresponded Leads", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Query Unresponded Leads": {
+      "main": [[{ "node": "Filter — Leads Needing Follow-Up", "type": "main", "index": 0 }]]
+    },
+    "Filter — Leads Needing Follow-Up": {
+      "main": [[{ "node": "Has Phone Number?", "type": "main", "index": 0 }]]
+    },
+    "Has Phone Number?": {
+      "main": [
+        [{ "node": "WhatsApp — Send Follow-Up", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "WhatsApp — Send Follow-Up": {
+      "main": [
+        [
+          { "node": "Supabase — Update Lead Status", "type": "main", "index": 0 },
+          { "node": "Is 3rd Follow-Up?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Is 3rd Follow-Up?": {
+      "main": [
+        [{ "node": "Telegram — Escalate to Owner (3 Strikes)", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Telegram — Escalate to Owner (3 Strikes)": {
+      "main": [[{ "node": "Supabase — Mark Escalated", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Mark Escalated": {
+      "main": [[{ "node": "LocalClaw — Send Alert", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["localclaw", "follow-up", "production"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "LocalClaw follow-up sequence — runs daily at 9AM, queries Supabase for leads with no response in 24+ hours, sends up to 3 follow-up messages via WhatsApp, updates lead status, and escalates to owner on the 3rd unanswered follow-up."
+  }
+}

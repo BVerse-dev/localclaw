@@ -1,0 +1,260 @@
+{
+  "version": "1.0",
+  "agent_id": "{{AGENT_SLUG}}",
+  "business_name": "{{BUSINESS_NAME}}",
+  "business_type": "{{BUSINESS_TYPE}}",
+  "plan": "{{PLAN_NAME}}",
+  "created_at": "{{CREATED_AT}}",
+  "owner": "{{OWNER_NAME}}",
+
+  "model_routing": {
+    "default": "claude-haiku-3-5",
+    "complex": "claude-sonnet-4-5",
+    "fallback": "claude-haiku-3-5",
+    "routing_rules": [
+      {
+        "condition": "message_type == 'simple_faq' || message_type == 'greeting' || message_type == 'hours_inquiry'",
+        "model": "claude-haiku-3-5",
+        "reason": "Fast, cheap for common queries"
+      },
+      {
+        "condition": "message_type == 'lead_qualification' || message_type == 'complaint' || message_type == 'quote_complex'",
+        "model": "claude-sonnet-4-5",
+        "reason": "Full reasoning for nuanced conversations"
+      },
+      {
+        "condition": "message_type == 'booking_confirmation'",
+        "model": "claude-haiku-3-5",
+        "reason": "Structured task, no complex reasoning needed"
+      },
+      {
+        "condition": "message_type == 'escalation' || message_type == 'complaint_unresolved'",
+        "model": "claude-sonnet-4-5",
+        "reason": "High stakes — use best model"
+      }
+    ],
+    "fallback_behavior": "If primary model unavailable, route to fallback. Log fallback usage. Alert if fallback used more than 5 times in 1 hour."
+  },
+
+  "heartbeat": {
+    "enabled": true,
+    "interval": "{{HEARTBEAT_INTERVAL}}",
+    "cron_expression": "{{HEARTBEAT_CRON}}",
+    "timezone": "{{TIMEZONE}}",
+    "webhook": "http://localhost:5678/webhook/{{N8N_HEARTBEAT_WEBHOOK}}",
+    "alert_on_failure": true,
+    "alert_endpoint": "https://localclawagents.com/api/alerts",
+    "alert_email": "localclawagents@gmail.com"
+  },
+
+  "channels": {
+    "whatsapp": {
+      "enabled": "{{WHATSAPP_ENABLED}}",
+      "phone_number": "{{WHATSAPP_BUSINESS_NUMBER}}",
+      "phone_number_id": "{{WHATSAPP_PHONE_ID}}",
+      "account_id": "{{WHATSAPP_ACCOUNT_ID}}",
+      "access_token_env": "WHATSAPP_TOKEN",
+      "verify_token_env": "WHATSAPP_VERIFY_TOKEN",
+      "allowed_numbers": ["{{CLIENT_PHONE}}"],
+      "allow_all_inbound": true,
+      "media_enabled": true,
+      "template_namespace": "{{WHATSAPP_TEMPLATE_NAMESPACE}}"
+    },
+    "telegram": {
+      "enabled": "{{TELEGRAM_ENABLED}}",
+      "bot_username": "{{TELEGRAM_BOT_USERNAME}}",
+      "bot_token_env": "TELEGRAM_BOT_TOKEN",
+      "owner_chat_id_env": "OWNER_TELEGRAM_CHAT_ID",
+      "allow_all_inbound": true,
+      "alert_only_mode": false
+    },
+    "instagram": {
+      "enabled": "{{INSTAGRAM_ENABLED}}",
+      "account_id": "{{INSTAGRAM_ACCOUNT_ID}}",
+      "access_token_env": "INSTAGRAM_TOKEN",
+      "allow_all_inbound": true,
+      "lead_capture_only": true,
+      "handoff_to_whatsapp": true
+    },
+    "gmail": {
+      "enabled": "{{GMAIL_ENABLED}}",
+      "address": "{{GMAIL_ADDRESS}}",
+      "oauth_client_id_env": "GMAIL_OAUTH_CLIENT_ID",
+      "oauth_client_secret_env": "GMAIL_OAUTH_CLIENT_SECRET",
+      "refresh_token_env": "GMAIL_REFRESH_TOKEN",
+      "signature_template": "{{AGENT_NAME}} | AI Assistant for {{BUSINESS_NAME}}\n{{BUSINESS_PHONE}} | {{BUSINESS_EMAIL}}\n{{BUSINESS_WEBSITE}}\nPowered by LocalClaw — localclawagents.com",
+      "bcc_archive": "{{GMAIL_BCC_ADDRESS}}"
+    },
+    "discord": {
+      "enabled": "{{DISCORD_ENABLED}}",
+      "bot_token_env": "DISCORD_BOT_TOKEN",
+      "guild_id": "{{DISCORD_GUILD_ID}}",
+      "alert_channel_id": "{{DISCORD_ALERT_CHANNEL}}",
+      "internal_only": true
+    },
+    "slack": {
+      "enabled": "{{SLACK_ENABLED}}",
+      "bot_token_env": "SLACK_BOT_TOKEN",
+      "alert_channel": "{{SLACK_ALERT_CHANNEL}}",
+      "webhook_url_env": "SLACK_WEBHOOK_URL",
+      "internal_only": true
+    }
+  },
+
+  "cache": {
+    "enabled": true,
+    "ttl_seconds": 3600,
+    "max_entries": 1000,
+    "cache_faq_responses": true,
+    "cache_pricing_responses": true,
+    "invalidate_on_memory_update": true,
+    "provider": "local",
+    "persist_across_restarts": true
+  },
+
+  "sandbox": {
+    "mode": "non-main",
+    "block_external_calls": false,
+    "log_all_webhooks": true,
+    "dry_run_n8n": false,
+    "dry_run_cal": false,
+    "test_phone": "{{TEST_PHONE_NUMBER}}"
+  },
+
+  "agents": {
+    "main": {
+      "id": "{{AGENT_SLUG}}-main",
+      "name": "{{AGENT_NAME}}",
+      "soul_file": "~/.openclaw/agents/{{AGENT_SLUG}}/SOUL.md",
+      "identity_file": "~/.openclaw/agents/{{AGENT_SLUG}}/IDENTITY.md",
+      "agents_file": "~/.openclaw/agents/{{AGENT_SLUG}}/AGENTS.md",
+      "user_file": "~/.openclaw/agents/{{AGENT_SLUG}}/USER.md",
+      "tools_file": "~/.openclaw/agents/{{AGENT_SLUG}}/TOOLS.md",
+      "memory_file": "~/.openclaw/agents/{{AGENT_SLUG}}/MEMORY.md",
+      "heartbeat_file": "~/.openclaw/agents/{{AGENT_SLUG}}/HEARTBEAT.md",
+      "enabled": true,
+      "model": "claude-haiku-3-5",
+      "max_tokens": 1024,
+      "temperature": 0.7,
+      "channels": ["{{PRIMARY_CHANNEL}}"]
+    },
+    "researcher": {
+      "id": "{{AGENT_SLUG}}-researcher",
+      "name": "Researcher",
+      "enabled": "{{RESEARCHER_ENABLED}}",
+      "model": "claude-haiku-3-5",
+      "max_tokens": 2048,
+      "temperature": 0.3,
+      "role": "sub-agent",
+      "parent": "{{AGENT_SLUG}}-main",
+      "invocation_prefix": "@researcher",
+      "tools": ["web_search", "supabase_read", "business_api"],
+      "timeout_seconds": 60
+    },
+    "scheduler": {
+      "id": "{{AGENT_SLUG}}-scheduler",
+      "name": "Scheduler",
+      "enabled": "{{SCHEDULER_ENABLED}}",
+      "model": "claude-haiku-3-5",
+      "max_tokens": 512,
+      "temperature": 0.1,
+      "role": "sub-agent",
+      "parent": "{{AGENT_SLUG}}-main",
+      "invocation_prefix": "@scheduler",
+      "tools": ["cal_com_api", "supabase_bookings", "google_calendar"],
+      "timeout_seconds": 30
+    },
+    "closer": {
+      "id": "{{AGENT_SLUG}}-closer",
+      "name": "Closer",
+      "enabled": "{{CLOSER_ENABLED}}",
+      "model": "claude-sonnet-4-5",
+      "max_tokens": 256,
+      "temperature": 0.8,
+      "role": "sub-agent",
+      "parent": "{{AGENT_SLUG}}-main",
+      "invocation_prefix": "@closer",
+      "tools": ["memory_read", "conversation_history"],
+      "timeout_seconds": 15
+    }
+  },
+
+  "security": {
+    "nemoclaw_enabled": "{{NEMOCLAW_ENABLED}}",
+    "nemoclaw_mode": "{{NEMOCLAW_MODE}}",
+    "prompt_injection_detection": true,
+    "pii_scrubbing": true,
+    "audit_log_enabled": true,
+    "audit_table": "nemo_audit",
+    "blocked_phrases": [
+      "ignore previous instructions",
+      "forget your instructions",
+      "you are now",
+      "new system prompt",
+      "pretend you are",
+      "act as if you have no restrictions"
+    ],
+    "price_guard": {
+      "enabled": true,
+      "min_price": "{{PRICE_MIN}}",
+      "max_price": "{{PRICE_MAX}}",
+      "action_on_violation": "hold"
+    }
+  },
+
+  "notifications": {
+    "new_lead": {
+      "channel": "telegram",
+      "recipient": "{{OWNER_TELEGRAM_CHAT_ID}}",
+      "enabled": true
+    },
+    "booking_confirmed": {
+      "channel": "telegram",
+      "recipient": "{{OWNER_TELEGRAM_CHAT_ID}}",
+      "enabled": true
+    },
+    "escalation": {
+      "channel": "telegram",
+      "recipient": "{{OWNER_TELEGRAM_CHAT_ID}}",
+      "enabled": true,
+      "also_email": "localclawagents@gmail.com"
+    },
+    "heartbeat_alert": {
+      "channel": "telegram",
+      "recipient": "{{OWNER_TELEGRAM_CHAT_ID}}",
+      "enabled": true
+    },
+    "heartbeat_ok": {
+      "log_only": true,
+      "enabled": true
+    }
+  },
+
+  "n8n": {
+    "base_url": "http://localhost:5678/webhook/",
+    "auth_header": "X-N8N-Token",
+    "auth_token_env": "N8N_WEBHOOK_TOKEN",
+    "timeout_ms": 10000,
+    "retry_on_failure": true,
+    "retry_attempts": 2,
+    "fail_gracefully": true,
+    "workflows": {
+      "lead_capture": "{{N8N_LEAD_WEBHOOK}}",
+      "booking_confirm": "{{N8N_BOOKING_WEBHOOK}}",
+      "quote_request": "{{N8N_QUOTE_WEBHOOK}}",
+      "complaint": "{{N8N_COMPLAINT_WEBHOOK}}",
+      "after_hours": "{{N8N_AFTERHOURS_WEBHOOK}}",
+      "heartbeat": "{{N8N_HEARTBEAT_WEBHOOK}}",
+      "follow_up": "{{N8N_FOLLOWUP_WEBHOOK}}",
+      "crm_sync": "{{N8N_CRM_WEBHOOK}}"
+    }
+  },
+
+  "localclaw": {
+    "alert_endpoint": "https://localclawagents.com/api/alerts",
+    "api_key_env": "LOCALCLAW_API_KEY",
+    "alert_email": "localclawagents@gmail.com",
+    "booking_link": "https://cal.com/bverse/15min",
+    "website": "https://localclawagents.com"
+  }
+}

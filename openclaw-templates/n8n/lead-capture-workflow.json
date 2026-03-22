@@ -1,0 +1,217 @@
+{
+  "name": "LocalClaw — Lead Capture & Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-capture",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook — Lead Capture",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "lead-capture"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalize incoming lead data from OpenClaw agent\nconst body = $input.first().json.body || $input.first().json;\n\nconst lead = {\n  agent_id: body.agent_id || 'unknown',\n  business_slug: body.business_slug || 'unknown',\n  business_name: body.business_name || 'Unknown Business',\n  customer_name: body.customer_name || body.name || 'Unknown',\n  customer_phone: body.customer_phone || body.phone || '',\n  customer_email: body.customer_email || body.email || '',\n  channel: body.channel || 'unknown',\n  channel_handle: body.channel_handle || '',\n  service_interest: body.service_interest || body.service || 'General inquiry',\n  timeline: body.timeline || 'Not specified',\n  notes: body.notes || '',\n  lead_score: body.lead_score || 0,\n  owner_telegram_chat_id: body.owner_telegram_chat_id || '',\n  owner_email: body.owner_email || '',\n  cal_link: body.cal_link || 'https://cal.com/bverse/15min',\n  created_at: new Date().toISOString(),\n  status: 'new',\n  follow_up_count: 0\n};\n\nreturn [{ json: lead }];"
+      },
+      "id": "normalize-lead",
+      "name": "Normalize Lead Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list"
+        },
+        "table": {
+          "__rl": true,
+          "value": "intake_submissions",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "agent_id": "={{ $json.agent_id }}",
+            "business_slug": "={{ $json.business_slug }}",
+            "business_name": "={{ $json.business_name }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "customer_phone": "={{ $json.customer_phone }}",
+            "customer_email": "={{ $json.customer_email }}",
+            "channel": "={{ $json.channel }}",
+            "channel_handle": "={{ $json.channel_handle }}",
+            "service_interest": "={{ $json.service_interest }}",
+            "timeline": "={{ $json.timeline }}",
+            "notes": "={{ $json.notes }}",
+            "lead_score": "={{ $json.lead_score }}",
+            "status": "new",
+            "follow_up_count": 0,
+            "created_at": "={{ $json.created_at }}"
+          }
+        },
+        "filters": {},
+        "options": {
+          "returnAll": false
+        }
+      },
+      "id": "supabase-insert-lead",
+      "name": "Supabase — Insert Lead",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "supabaseApi": {
+          "id": "supabase-creds",
+          "name": "Supabase — LocalClaw"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize Lead Data').item.json.owner_telegram_chat_id }}",
+        "text": "=🦞 New Lead — {{ $('Normalize Lead Data').item.json.business_name }}\n\n👤 Name: {{ $('Normalize Lead Data').item.json.customer_name }}\n📞 Phone: {{ $('Normalize Lead Data').item.json.customer_phone }}\n📧 Email: {{ $('Normalize Lead Data').item.json.customer_email }}\n📲 Channel: {{ $('Normalize Lead Data').item.json.channel }}\n🔧 Interest: {{ $('Normalize Lead Data').item.json.service_interest }}\n⏱ Timeline: {{ $('Normalize Lead Data').item.json.timeline }}\n⭐ Score: {{ $('Normalize Lead Data').item.json.lead_score }}/5\n\n🔗 Book a call: {{ $('Normalize Lead Data').item.json.cal_link }}",
+        "additionalFields": {
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "telegram-owner-notify",
+      "name": "Telegram — Notify Owner",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-creds",
+          "name": "Telegram — LocalClaw Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "hello@localclawagents.com",
+        "toEmail": "={{ $('Normalize Lead Data').item.json.customer_email }}",
+        "subject": "={{ 'Welcome — ' + $('Normalize Lead Data').item.json.business_name + ' got your message' }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html>\n<html>\n<head><meta charset='UTF-8'></head>\n<body style='font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;'>\n  <h2 style='color: #1a1a1a;'>Hey {{ $('Normalize Lead Data').item.json.customer_name }}!</h2>\n  <p>Thanks for reaching out to <strong>{{ $('Normalize Lead Data').item.json.business_name }}</strong>. We received your message and someone will follow up with you shortly.</p>\n  <p>You mentioned you're interested in: <strong>{{ $('Normalize Lead Data').item.json.service_interest }}</strong></p>\n  <p>In the meantime, you can book a time directly using the link below — it's the fastest way to get things moving:</p>\n  <p style='text-align: center; margin: 30px 0;'>\n    <a href='{{ $('Normalize Lead Data').item.json.cal_link }}' style='background: #111; color: #fff; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;'>Book a Time →</a>\n  </p>\n  <p>If you have any questions, just reply to this email or message us back on {{ $('Normalize Lead Data').item.json.channel }}.</p>\n  <p>Looking forward to connecting,<br><strong>The Team at {{ $('Normalize Lead Data').item.json.business_name }}</strong></p>\n  <hr style='margin: 40px 0; border: none; border-top: 1px solid #eee;'>\n  <p style='color: #999; font-size: 12px;'>Powered by LocalClaw AI — localclawagents.com</p>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "resend-welcome-email",
+      "name": "Resend — Welcome Email to Lead",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [900, 380],
+      "credentials": {
+        "smtp": {
+          "id": "resend-smtp-creds",
+          "name": "Resend SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.cal.com/v1/slots?username={{ $env.CAL_USERNAME }}&eventTypeId={{ $env.CAL_EVENT_TYPE_ID }}&startTime={{ $now.toISO() }}&endTime={{ $now.plus({days: 7}).toISO() }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "cal-check-slots",
+      "name": "Cal.com — Fetch Available Slots",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 560],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "cal-api-creds",
+          "name": "Cal.com API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build booking link with pre-filled info\nconst lead = $('Normalize Lead Data').item.json;\nconst slots = $input.first().json;\n\n// Construct a pre-filled Cal.com link\nconst calBase = process.env.CAL_BOOKING_URL || 'https://cal.com/bverse/15min';\nconst params = new URLSearchParams({\n  name: lead.customer_name,\n  email: lead.customer_email,\n  notes: `Interest: ${lead.service_interest}. Timeline: ${lead.timeline}.`\n});\n\nconst bookingLink = `${calBase}?${params.toString()}`;\n\n// Get first available slot for display\nconst firstSlot = slots?.slots ? Object.values(slots.slots)[0]?.[0]?.time : null;\nconst slotDisplay = firstSlot ? new Date(firstSlot).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Choose a time that works for you';\n\nreturn [{\n  json: {\n    ...lead,\n    booking_link: bookingLink,\n    first_available_slot: slotDisplay\n  }\n}];"
+      },
+      "id": "build-booking-link",
+      "name": "Build Prefilled Booking Link",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 560]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $json.owner_telegram_chat_id }}",
+        "text": "=📅 Booking link generated for {{ $json.customer_name }}\n\nFirst available slot: {{ $json.first_available_slot }}\n\nPre-filled link sent to lead:\n{{ $json.booking_link }}",
+        "additionalFields": {}
+      },
+      "id": "telegram-booking-link-notify",
+      "name": "Telegram — Booking Link Ready",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1340, 560],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram-creds",
+          "name": "Telegram — LocalClaw Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\", \"lead_id\": \"{{ $('Supabase — Insert Lead').item.json.id }}\", \"message\": \"Lead captured successfully\" }"
+      },
+      "id": "respond-ok",
+      "name": "Respond — 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Webhook — Lead Capture": {
+      "main": [[{ "node": "Normalize Lead Data", "type": "main", "index": 0 }]]
+    },
+    "Normalize Lead Data": {
+      "main": [[{ "node": "Supabase — Insert Lead", "type": "main", "index": 0 }]]
+    },
+    "Supabase — Insert Lead": {
+      "main": [
+        [
+          { "node": "Telegram — Notify Owner", "type": "main", "index": 0 },
+          { "node": "Resend — Welcome Email to Lead", "type": "main", "index": 0 },
+          { "node": "Cal.com — Fetch Available Slots", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Cal.com — Fetch Available Slots": {
+      "main": [[{ "node": "Build Prefilled Booking Link", "type": "main", "index": 0 }]]
+    },
+    "Build Prefilled Booking Link": {
+      "main": [[{ "node": "Telegram — Booking Link Ready", "type": "main", "index": 0 }]]
+    },
+    "Telegram — Booking Link Ready": {
+      "main": [[{ "node": "Respond — 200 OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["localclaw", "lead-capture", "production"],
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "LocalClaw lead capture workflow — receives webhook from OpenClaw agent, stores in Supabase, notifies owner via Telegram, sends welcome email via Resend, and generates a pre-filled Cal.com booking link."
+  }
+}
