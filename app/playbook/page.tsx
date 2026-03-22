@@ -1,5 +1,20 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+
+/* ── Claw Logo (matches main site) ── */
+function ClawIcon({ size = 28, color = "#C9922A" }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <path d="M10 6 C10 6, 7 14, 9 24 C10 30, 14 34, 16 36" stroke={color} strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M18 4 C18 4, 16 13, 18 23 C19.5 29.5, 22 33, 23 36" stroke={color} strokeWidth="3.2" strokeLinecap="round" fill="none"/>
+      <path d="M26 6 C26 6, 25 15, 27 24 C28.5 30, 30 33, 30 36" stroke={color} strokeWidth="2.6" strokeLinecap="round" fill="none"/>
+      <path d="M10 6 C11 3, 14 2, 15 4" stroke={color} strokeWidth="2.2" strokeLinecap="round" fill="none"/>
+      <path d="M18 4 C19 1, 22 1, 22 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+      <path d="M26 6 C27 3, 30 3, 29 5" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
+    </svg>
+  );
+}
 
 export default function PlaybookPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -54,8 +69,13 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
 .pb-sidebar{position:fixed;top:0;left:0;height:100vh;width:255px;background:#0D0D0D;border-right:1px solid var(--border);overflow-y:auto;padding:2rem 0;z-index:100;transform:translateX(-100%);transition:transform 0.3s ease}
 .pb-sidebar.open{transform:translateX(0)}
 @media(min-width:1200px){.pb-sidebar{transform:translateX(0)}.pb-main-content{margin-left:255px}}
-.pb-sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 1.5rem 2rem;border-bottom:1px solid var(--border)}
+.pb-sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 1.5rem 1.2rem;border-bottom:none;text-decoration:none}
+.pb-sidebar-logo:hover{text-decoration:none;opacity:0.85}
 .pb-sidebar-logo span{font-family:var(--display);font-size:1.3rem;color:var(--cream);font-weight:700}
+.pb-home-link{display:flex;align-items:center;gap:8px;padding:0.6rem 1.5rem;margin:0 0 0.5rem;font-family:var(--sans);font-size:0.78rem;color:var(--muted);text-decoration:none;transition:all 0.2s;border-bottom:1px solid var(--border);padding-bottom:1.2rem}
+.pb-home-link:hover{color:var(--gold);text-decoration:none}
+.pb-home-link svg{transition:transform 0.2s}
+.pb-home-link:hover svg{transform:translateX(-2px)}
 .pb-nav-section{padding:1.5rem 1.5rem 0.5rem;font-family:var(--sans);font-size:0.6rem;letter-spacing:0.2em;color:var(--dim);font-weight:600}
 .pb-nav-link{display:flex;align-items:center;gap:10px;padding:0.55rem 1.5rem;font-family:var(--sans);font-size:0.82rem;color:var(--muted);transition:all 0.2s;cursor:pointer;border-left:3px solid transparent;text-decoration:none}
 .pb-nav-link:hover,.pb-nav-link.active{color:var(--gold);border-left-color:var(--gold);background:var(--gold-mid);text-decoration:none}
@@ -63,6 +83,8 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
 .pb-mobile-header{display:flex;position:fixed;top:0;left:0;right:0;background:#0D0D0D;border-bottom:1px solid var(--border);padding:1rem 5%;z-index:200;align-items:center;justify-content:space-between}
 @media(min-width:1200px){.pb-mobile-header{display:none}}
 .pb-menu-btn{background:none;border:none;color:var(--cream);cursor:pointer;padding:4px}
+.pb-mobile-back{display:flex;align-items:center;justify-content:center;gap:4px;background:rgba(201,146,42,0.1);border:1px solid rgba(201,146,42,0.22);border-radius:100px;padding:6px 14px;font-family:var(--sans);font-size:0.7rem;font-weight:600;letter-spacing:0.08em;color:var(--gold);text-decoration:none;transition:all 0.2s;white-space:nowrap}
+.pb-mobile-back:hover{background:rgba(201,146,42,0.18);text-decoration:none}
 .pb-cover{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:6rem 5%;position:relative;overflow:hidden;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(201,146,42,0.07) 0%,transparent 60%)}
 .pb-cover-badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:100px;padding:6px 18px;margin-bottom:2.5rem;font-family:var(--sans);font-size:0.65rem;letter-spacing:0.22em;color:var(--gold);font-weight:600}
 .pb-cover-badge::before{content:'';width:5px;height:5px;background:var(--gold);border-radius:50%;animation:pb-pulse 2s infinite;display:inline-block}
@@ -187,10 +209,14 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
 
       {/* SIDEBAR */}
       <nav className={`pb-sidebar${sidebarOpen ? " open" : ""}`} ref={sidebarRef}>
-        <div className="pb-sidebar-logo">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 4C14 4 8 8 6 14C4 20 8 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M14 4C14 4 20 8 22 14C24 20 20 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M10 10C10 10 8 16 12 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><path d="M18 10C18 10 20 16 16 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><circle cx="14" cy="14" r="2" fill="#C9922A"/></svg>
+        <Link href="/" className="pb-sidebar-logo">
+          <ClawIcon size={28} />
           <span>LocalClaw</span>
-        </div>
+        </Link>
+        <Link href="/" className="pb-home-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Back to Home
+        </Link>
         <div className="pb-nav-section">PLAYBOOK</div>
         <a className="pb-nav-link" href="#cover" onClick={closeSidebar}><span className="pb-nav-num">&mdash;</span>Cover</a>
         <a className="pb-nav-link" href="#toc" onClick={closeSidebar}><span className="pb-nav-num">&mdash;</span>Contents</a>
@@ -218,13 +244,19 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
 
       {/* MOBILE HEADER */}
       <div className="pb-mobile-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: "#F5F0E8" }}>
-          <svg width="22" height="22" viewBox="0 0 28 28" fill="none"><path d="M14 4C14 4 8 8 6 14C4 20 8 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M14 4C14 4 20 8 22 14C24 20 20 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M10 10C10 10 8 16 12 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><path d="M18 10C18 10 20 16 16 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><circle cx="14" cy="14" r="2" fill="#C9922A"/></svg>
-          LocalClaw Playbook
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: "#F5F0E8", textDecoration: "none" }}>
+          <ClawIcon size={24} />
+          LocalClaw
+        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <Link href="/" className="pb-mobile-back">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            HOME
+          </Link>
+          <button className="pb-menu-btn" onClick={() => setSidebarOpen((o) => !o)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
         </div>
-        <button className="pb-menu-btn" onClick={() => setSidebarOpen((o) => !o)}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
       </div>
 
       <div className="pb-main-content">
@@ -1022,10 +1054,10 @@ done`}</pre></div>
 
         {/* FOOTER */}
         <footer className="pb-playbook-footer">
-          <div className="pb-logo">
-            <svg width="24" height="24" viewBox="0 0 28 28" fill="none"><path d="M14 4C14 4 8 8 6 14C4 20 8 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M14 4C14 4 20 8 22 14C24 20 20 24 14 24" stroke="#C9922A" strokeWidth="2" strokeLinecap="round"/><path d="M10 10C10 10 8 16 12 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><path d="M18 10C18 10 20 16 16 20" stroke="#C9922A" strokeWidth="1.5" strokeLinecap="round"/><circle cx="14" cy="14" r="2" fill="#C9922A"/></svg>
+          <Link href="/" className="pb-logo" style={{ textDecoration: "none" }}>
+            <ClawIcon size={24} />
             LocalClaw
-          </div>
+          </Link>
           <p>&copy; 2026 LocalClaw &middot; Powered by OpenClaw + NVIDIA NemoClaw</p>
           <a href="https://twitter.com/Th3Alch3mist_" style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.75rem", color: "#C9922A" }} target="_blank" rel="noopener noreferrer">@Th3Alch3mist_ on X</a>
         </footer>
