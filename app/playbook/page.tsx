@@ -1,6 +1,16 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import {
+  Clock, MessageSquare, CalendarCheck, DollarSign, Smartphone, ShieldCheck,
+  Globe, Brain, Wrench, GitBranch,
+  MessageCircle, Send, Mail, Calendar, Headphones, Hash, Camera,
+  Inbox, Target, Share2,
+  Lock, Cloud, Shield, ClipboardList,
+  MapPin, CheckCircle, Package,
+  Zap, Rocket, Building,
+  Copy, Check
+} from "lucide-react";
 
 /* ── Claw Logo (matches main site) ── */
 function ClawIcon({ size = 28, color = "#C9922A" }: { size?: number; color?: string }) {
@@ -13,6 +23,22 @@ function ClawIcon({ size = 28, color = "#C9922A" }: { size?: number; color?: str
       <path d="M18 4 C19 1, 22 1, 22 3" stroke={color} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
       <path d="M26 6 C27 3, 30 3, 29 5" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
     </svg>
+  );
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      className={`pb-copy-btn${copied ? " copied" : ""}`}
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }}
+    >
+      {copied ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy</>}
+    </button>
   );
 }
 
@@ -336,6 +362,15 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
   .pb-feature-grid{grid-template-columns:1fr}.pb-section{padding:4rem 5%}
   .pb-arch-row{flex-direction:column}
 }
+.pb-copy-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--dim);transition:all 0.2s;display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.65rem}
+.pb-copy-btn:hover{color:var(--gold);border-color:var(--gold-border);background:var(--gold-mid)}
+.pb-copy-btn.copied{color:var(--green);border-color:rgba(34,197,94,0.3)}
+.pb-metrics-bar{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin:3rem 0;padding:2rem;background:var(--bg3);border:1px solid var(--border);border-radius:14px}
+.pb-metric{text-align:center;padding:0.5rem 1.5rem}
+.pb-metric-value{display:block;font-family:var(--display);font-size:2.2rem;font-weight:700;color:var(--gold);line-height:1.1;margin-bottom:0.3rem}
+.pb-metric-label{font-family:var(--sans);font-size:0.7rem;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase}
+.pb-metric{transition:transform 0.3s ease}
+.pb-metric:hover{transform:translateY(-3px)}
       `}</style>
 
       {/* SIDEBAR */}
@@ -453,12 +488,30 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             </div>
             <p>The local business landscape has shifted permanently. The question is no longer <strong>&ldquo;should I use AI?&rdquo;</strong> — it&apos;s <strong>&ldquo;how fast can I deploy before my competitor does?&rdquo;</strong></p>
             <div className="pb-feature-grid pb-anim pb-stagger" style={{ marginTop: "2rem" }}>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#9200;</div><h4>24/7 Availability</h4><p>Customers contact businesses at all hours. An AI agent never sleeps, never misses a message, and responds in seconds — not hours.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128172;</div><h4>Instant Lead Response</h4><p>Speed to lead is everything. Responding within 5 minutes increases conversion by 900% vs responding in 30 minutes.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128197;</div><h4>Automated Booking</h4><p>No more back-and-forth. The agent checks your calendar, proposes slots, confirms the booking — fully automatically.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128176;</div><h4>Lower Operating Cost</h4><p>A single AI agent handles what would normally require a part-time hire — at a fraction of the monthly cost.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128241;</div><h4>Multi-Channel Presence</h4><p>One agent across WhatsApp, Gmail, Telegram, and Instagram DMs simultaneously. Stay present everywhere your customers are.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128274;</div><h4>Enterprise Security</h4><p>With NemoClaw, your customer data stays protected. Policy-based controls ensure your agent does only what you allow.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Clock size={22} color="var(--gold)" /></div><h4>24/7 Availability</h4><p>Customers contact businesses at all hours. An AI agent never sleeps, never misses a message, and responds in seconds — not hours.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><MessageSquare size={22} color="var(--gold)" /></div><h4>Instant Lead Response</h4><p>Speed to lead is everything. Responding within 5 minutes increases conversion by 900% vs responding in 30 minutes.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><CalendarCheck size={22} color="var(--gold)" /></div><h4>Automated Booking</h4><p>No more back-and-forth. The agent checks your calendar, proposes slots, confirms the booking — fully automatically.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><DollarSign size={22} color="var(--gold)" /></div><h4>Lower Operating Cost</h4><p>A single AI agent handles what would normally require a part-time hire — at a fraction of the monthly cost.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Smartphone size={22} color="var(--gold)" /></div><h4>Multi-Channel Presence</h4><p>One agent across WhatsApp, Gmail, Telegram, and Instagram DMs simultaneously. Stay present everywhere your customers are.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><ShieldCheck size={22} color="var(--gold)" /></div><h4>Enterprise Security</h4><p>With NemoClaw, your customer data stays protected. Policy-based controls ensure your agent does only what you allow.</p></div>
+            </div>
+            <div className="pb-metrics-bar pb-anim">
+              <div className="pb-metric">
+                <span className="pb-metric-value">60s</span>
+                <span className="pb-metric-label">Avg Response Time</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">24/7</span>
+                <span className="pb-metric-label">Availability</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">900%</span>
+                <span className="pb-metric-label">Conversion Lift</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">48%</span>
+                <span className="pb-metric-label">Inquiries Missed</span>
+              </div>
             </div>
             <div className="pb-callout pb-callout-info pb-anim">
               <div className="pb-callout-label">WHO THIS PLAYBOOK IS FOR</div>
@@ -493,10 +546,10 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
               </div>
             </div>
             <div className="pb-feature-grid pb-anim pb-stagger">
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#127760;</div><h4>Multi-Channel Gateway</h4><p>A single Gateway process serves WhatsApp, Telegram, Discord, and iMessage simultaneously from one install.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#129504;</div><h4>Persistent Memory</h4><p>Your agent remembers past conversations, customer names, preferences, and history — per session and across sessions.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128295;</div><h4>Tool Use</h4><p>Agents can browse the web, read files, call APIs, book calendar slots, and execute code — not just chat.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128256;</div><h4>Multi-Agent Routing</h4><p>Route different requests to specialized agents. One for bookings, one for support, one for sales — all coordinated.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Globe size={22} color="var(--gold)" /></div><h4>Multi-Channel Gateway</h4><p>A single Gateway process serves WhatsApp, Telegram, Discord, and iMessage simultaneously from one install.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Brain size={22} color="var(--gold)" /></div><h4>Persistent Memory</h4><p>Your agent remembers past conversations, customer names, preferences, and history — per session and across sessions.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Wrench size={22} color="var(--gold)" /></div><h4>Tool Use</h4><p>Agents can browse the web, read files, call APIs, book calendar slots, and execute code — not just chat.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><GitBranch size={22} color="var(--gold)" /></div><h4>Multi-Agent Routing</h4><p>Route different requests to specialized agents. One for bookings, one for support, one for sales — all coordinated.</p></div>
             </div>
             <div className="pb-callout pb-callout-success pb-anim">
               <div className="pb-callout-label">OPEN SOURCE &middot; MIT LICENSE</div>
@@ -632,17 +685,17 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             </div>
             <h3 style={{ fontSize: "1.1rem", marginBottom: "1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Step 1 — Install OpenClaw globally</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — all platforms</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — all platforms</span><CopyBtn text="npm install -g openclaw@latest" /></div>
               <div className="pb-code-body"><pre><span className="pb-cmd">npm install -g openclaw@latest</span></pre></div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Step 2 — Verify the install</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text="openclaw --version" /></div>
               <div className="pb-code-body"><pre><span className="pb-cmd">openclaw --version</span>{"\n"}<span className="pb-comment"># Expected: openclaw/x.x.x node/v22.x.x linux/x64</span></pre></div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Step 3 — Preview the Dashboard</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text="openclaw dashboard" /></div>
               <div className="pb-code-body"><pre><span className="pb-cmd">openclaw dashboard</span>{"\n"}<span className="pb-comment"># Opens http://127.0.0.1:18789/ in your browser</span></pre></div>
             </div>
             <div className="pb-callout pb-callout-warn pb-anim">
@@ -666,7 +719,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
               <p>The <code>openclaw onboard</code> command walks you through the entire setup with a guided terminal wizard — AI provider, model selection, channels, and daemon installation. Takes about 5 minutes.</p>
             </div>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text="openclaw onboard --install-daemon" /></div>
               <div className="pb-code-body"><pre><span className="pb-cmd">openclaw onboard --install-daemon</span></pre></div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2.5rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>What the wizard walks you through</h3>
@@ -714,17 +767,17 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Fresh Install (new OpenClaw setup)</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — Mac / Linux</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — Mac / Linux</span><CopyBtn text={"curl -fsSL https://nvidia.com/nemoclaw.sh | bash\nnemoclaw onboard\nnemoclaw status"} /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Step 1: Download and install NemoClaw</span>{"\n"}<span className="pb-cmd">curl -fsSL https://nvidia.com/nemoclaw.sh | bash</span>{"\n\n"}<span className="pb-comment"># Step 2: Run interactive onboarding</span>{"\n"}<span className="pb-cmd">nemoclaw onboard</span>{"\n\n"}<span className="pb-comment"># Step 3: Confirm everything is active</span>{"\n"}<span className="pb-cmd">nemoclaw status</span></pre></div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Migrating an Existing OpenClaw Setup</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text="nemoclaw onboard --import-from=openclaw" /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Import your existing OpenClaw config automatically</span>{"\n"}<span className="pb-cmd">nemoclaw onboard --import-from=openclaw</span></pre></div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Enable Local AI Routing (NVIDIA GPU only)</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — RTX GPU required</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL — RTX GPU required</span><CopyBtn text={"nemoclaw config set router.mode=local-first\nnemoclaw config get router.mode"} /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Route sensitive workloads to on-device Nemotron model</span>{"\n"}<span className="pb-cmd">nemoclaw config set router.mode=local-first</span>{"\n\n"}<span className="pb-comment"># Verify routing mode</span>{"\n"}<span className="pb-cmd">nemoclaw config get router.mode</span></pre></div>
             </div>
             <div className="pb-callout pb-callout-success pb-anim">
@@ -748,7 +801,8 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             <div className="pb-policy-block pb-anim">
               <div className="pb-policy-header">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                ~/.openclaw/openshell.yaml — LocalClaw Starter Policy
+                <span style={{flex:1}}>~/.openclaw/openshell.yaml — LocalClaw Starter Policy</span>
+                <CopyBtn text={`version: "2026-03"\nagent_id: "my-business-agent"\n\ncapabilities:\n\n  file_system:\n    allow:\n      - "/home/user/business/contacts/**"\n      - "/home/user/business/bookings/**"\n      - "/tmp/agent-workspace"\n    deny:\n      - "**/.*"\n      - "/home/user/.ssh/**"\n      - "/etc/passwd"\n\n  network:\n    mode: "allowlist"\n    allow_domains:\n      - "api.openai.com"\n      - "api.anthropic.com"\n      - "calendar.googleapis.com"\n      - "gmail.googleapis.com"\n      - "api.telegram.org"\n    deny_all_else: true\n\n  local_routing:\n    force_local_on_sensitive: true\n\nlogging:\n  level: verbose\n  destination: "/var/log/openshell/agent.log"`} />
               </div>
               <div className="pb-policy-body"><pre>{`version: "2026-03"
 agent_id: "my-business-agent"
@@ -788,7 +842,7 @@ logging:
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Reload Policy Without Restarting</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text={"nemoclaw policy validate\nnemoclaw policy reload"} /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Validate your policy file for YAML syntax errors</span>{"\n"}<span className="pb-cmd">nemoclaw policy validate</span>{"\n\n"}<span className="pb-comment"># Apply changes live — no daemon restart needed</span>{"\n"}<span className="pb-cmd">nemoclaw policy reload</span></pre></div>
             </div>
           </div>
@@ -804,14 +858,14 @@ logging:
               <p>OpenClaw supports every channel your customers use. Connect one or all of them — your agent handles them all through the same Gateway with a shared memory and context.</p>
             </div>
             <div className="pb-channel-grid pb-anim pb-stagger">
-              <div className="pb-channel-pill"><span>&#128172;</span> WhatsApp</div>
-              <div className="pb-channel-pill"><span>&#9992;&#65039;</span> Telegram</div>
-              <div className="pb-channel-pill"><span>&#128231;</span> Gmail</div>
-              <div className="pb-channel-pill"><span>&#128197;</span> Google Calendar</div>
-              <div className="pb-channel-pill"><span>&#128172;</span> Discord</div>
-              <div className="pb-channel-pill"><span>&#128188;</span> Slack</div>
-              <div className="pb-channel-pill"><span>&#127822;</span> iMessage</div>
-              <div className="pb-channel-pill"><span>&#128248;</span> Instagram DMs</div>
+              <div className="pb-channel-pill"><MessageCircle size={16} color="var(--gold)" /> WhatsApp</div>
+              <div className="pb-channel-pill"><Send size={16} color="var(--gold)" /> Telegram</div>
+              <div className="pb-channel-pill"><Mail size={16} color="var(--gold)" /> Gmail</div>
+              <div className="pb-channel-pill"><Calendar size={16} color="var(--gold)" /> Google Calendar</div>
+              <div className="pb-channel-pill"><Headphones size={16} color="var(--gold)" /> Discord</div>
+              <div className="pb-channel-pill"><Hash size={16} color="var(--gold)" /> Slack</div>
+              <div className="pb-channel-pill"><Smartphone size={16} color="var(--gold)" /> iMessage</div>
+              <div className="pb-channel-pill"><Camera size={16} color="var(--gold)" /> Instagram DMs</div>
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Telegram — Fastest Setup (5 Minutes)</h3>
             <ul className="pb-steps pb-anim">
@@ -850,7 +904,7 @@ logging:
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>The Complete SOUL.md Template</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">SOUL.md — Business Agent Starter Template</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">SOUL.md — Business Agent Starter Template</span><CopyBtn text={`# IDENTITY\nName: Maya\nBusiness: Mike's Barbershop — Atlanta, GA\nRole: Customer Service Agent & Booking Assistant\nTone: Friendly, warm, professional. Never robotic. Like a real person.\nLanguage: English. Simple, clear sentences. No jargon.\n\n# WHAT YOU KNOW\nServices:\n  - Haircut:             $35 · 45 minutes\n  - Beard Trim:          $20 · 20 minutes\n  - Haircut + Beard:     $50 · 60 minutes\n  - Kids Cut (under 12): $25 · 30 minutes\n\nHours:   Monday–Saturday 9am–7pm · Sunday CLOSED\nAddress: 123 Main Street, Atlanta, GA 30301\nPhone:   (404) 555-0192\nParking: Free street parking on Main Street\n\n# HOW TO HANDLE REQUESTS\nBooking request:\n  Ask: which service? Preferred date and time?\n  Check Google Calendar for open slots.\n  Propose 2-3 options if requested slot is taken.\n  Confirm: date, time, service, address, barber (if specified).\n  Send reminder 24h before via same channel.\n\nPricing questions:\n  Answer directly from the services list above.\n  Never say "I'm not sure" — always give a clear answer.\n\nComplaints:\n  Acknowledge. Apologize genuinely. Offer a solution (discount or redo).\n  Escalate to Mike if the customer is very upset or requests a refund.\n\nNew leads (first contact):\n  Greet warmly. Ask what brings them in.\n  Offer to book right away. Do not make them ask twice.\n\n# CONVERSATION STYLE\nOpening:  "Hey! Welcome to Mike's Barbershop. How can I help you today?"\nClosing:  "See you soon at Mike's! 💈"\nKeep responses: Short and conversational. 1-3 sentences per message.\n\n# WHAT YOU NEVER DO\n- Never promise a specific barber unless Mike confirms availability.\n- Never discuss competitor pricing or badmouth other shops.\n- Never share customer data, booking details, or contact info.\n- Never make promises about wait times you can't verify.`} /></div>
               <div className="pb-code-body"><pre>{`# IDENTITY
 Name: Maya
 Business: Mike's Barbershop — Atlanta, GA
@@ -903,7 +957,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             </div>
             <h3 style={{ fontSize: "1.1rem", margin: "2rem 0 1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Register and Deploy Your Agent</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text={'openclaw agents add --soul ./SOUL.md --name "maya"\nopenclaw agents assign maya --channels telegram,gmail\nopenclaw chat --agent maya\nopenclaw agents list'} /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Register the agent with OpenClaw</span>{"\n"}<span className="pb-cmd">openclaw agents add --soul ./SOUL.md --name &quot;maya&quot;</span>{"\n\n"}<span className="pb-comment"># Assign it to your connected channels</span>{"\n"}<span className="pb-cmd">openclaw agents assign maya --channels telegram,gmail</span>{"\n\n"}<span className="pb-comment"># Test it interactively in the terminal before going live</span>{"\n"}<span className="pb-cmd">openclaw chat --agent maya</span>{"\n\n"}<span className="pb-comment"># Check agent status</span>{"\n"}<span className="pb-cmd">openclaw agents list</span></pre></div>
             </div>
           </div>
@@ -923,7 +977,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             <div className="pb-recipe-card pb-anim">
               <div className="pb-recipe-header">
                 <div>
-                  <div className="pb-recipe-title">&#128231; Inbox Manager</div>
+                  <div className="pb-recipe-title"><Inbox size={18} style={{display:'inline',verticalAlign:'middle',marginRight:'6px'}} /> Inbox Manager</div>
                   <p style={{ fontSize: "0.8rem", color: "#7A6E62", marginTop: "4px", fontFamily: "'Inter',sans-serif" }}>Triages every email, drafts replies, flags urgent messages for you</p>
                 </div>
                 <div className="pb-recipe-tag pb-tag-inbox">EMAIL</div>
@@ -939,7 +993,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             <div className="pb-recipe-card pb-anim">
               <div className="pb-recipe-header">
                 <div>
-                  <div className="pb-recipe-title">&#128197; Appointment Booker</div>
+                  <div className="pb-recipe-title"><CalendarCheck size={18} style={{display:'inline',verticalAlign:'middle',marginRight:'6px'}} /> Appointment Booker</div>
                   <p style={{ fontSize: "0.8rem", color: "#7A6E62", marginTop: "4px", fontFamily: "'Inter',sans-serif" }}>Books, reschedules, and confirms appointments via any channel</p>
                 </div>
                 <div className="pb-recipe-tag pb-tag-appt">BOOKING</div>
@@ -955,7 +1009,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             <div className="pb-recipe-card pb-anim">
               <div className="pb-recipe-header">
                 <div>
-                  <div className="pb-recipe-title">&#127919; Lead Qualifier</div>
+                  <div className="pb-recipe-title"><Target size={18} style={{display:'inline',verticalAlign:'middle',marginRight:'6px'}} /> Lead Qualifier</div>
                   <p style={{ fontSize: "0.8rem", color: "#7A6E62", marginTop: "4px", fontFamily: "'Inter',sans-serif" }}>Scores inbound leads and routes hot ones to you instantly</p>
                 </div>
                 <div className="pb-recipe-tag pb-tag-lead">SALES</div>
@@ -971,7 +1025,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             <div className="pb-recipe-card pb-anim">
               <div className="pb-recipe-header">
                 <div>
-                  <div className="pb-recipe-title">&#128241; Social Media Poster</div>
+                  <div className="pb-recipe-title"><Share2 size={18} style={{display:'inline',verticalAlign:'middle',marginRight:'6px'}} /> Social Media Poster</div>
                   <p style={{ fontSize: "0.8rem", color: "#7A6E62", marginTop: "4px", fontFamily: "'Inter',sans-serif" }}>Writes and schedules on-brand content for Instagram, Facebook &amp; X</p>
                 </div>
                 <div className="pb-recipe-tag pb-tag-social">CONTENT</div>
@@ -987,7 +1041,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             <div className="pb-recipe-card pb-anim">
               <div className="pb-recipe-header">
                 <div>
-                  <div className="pb-recipe-title">&#127911; Customer Support Agent</div>
+                  <div className="pb-recipe-title"><Headphones size={18} style={{display:'inline',verticalAlign:'middle',marginRight:'6px'}} /> Customer Support Agent</div>
                   <p style={{ fontSize: "0.8rem", color: "#7A6E62", marginTop: "4px", fontFamily: "'Inter',sans-serif" }}>Handles FAQs, complaints, and follow-ups 24 hours a day</p>
                 </div>
                 <div className="pb-recipe-tag pb-tag-support">SUPPORT</div>
@@ -1029,22 +1083,22 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             </div>
             <div className="pb-feature-grid pb-anim pb-stagger">
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#128274;</div>
+                <div className="pb-feature-icon"><Lock size={22} color="var(--gold)" /></div>
                 <h4>What Stays Local</h4>
                 <p>Customer names, phone numbers, emails, payment references, booking history, and any message containing personal details — all processed on-device.</p>
               </div>
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#9729;&#65039;</div>
+                <div className="pb-feature-icon"><Cloud size={22} color="var(--gold)" /></div>
                 <h4>What Goes to Cloud</h4>
                 <p>General content writing, knowledge lookups, planning tasks, and anything not containing sensitive data — handled by cloud models for best quality.</p>
               </div>
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#128737;&#65039;</div>
+                <div className="pb-feature-icon"><Shield size={22} color="var(--gold)" /></div>
                 <h4>No GPU? No Problem</h4>
                 <p>Without an NVIDIA GPU, NemoClaw sanitizes prompts before cloud routing — stripping PII before the request leaves your machine.</p>
               </div>
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#128203;</div>
+                <div className="pb-feature-icon"><ClipboardList size={22} color="var(--gold)" /></div>
                 <h4>Full Audit Trail</h4>
                 <p>Every routing decision is logged — what was sent where, what was blocked, and which policy rule triggered. Full compliance visibility.</p>
               </div>
@@ -1067,21 +1121,21 @@ Keep responses: Short and conversational. 1-3 sentences per message.
             </div>
             <h3 style={{ fontSize: "1.1rem", marginBottom: "1.2rem", fontFamily: "'Inter',sans-serif", color: "#F5F0E8", fontWeight: 600 }}>Viewing Live Logs</h3>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">TERMINAL</span><CopyBtn text={"tail -f /var/log/openshell/agent.log\nopenclaw logs --tail 100\nopenclaw logs --channel telegram --tail 50\nopenclaw logs --channel gmail --tail 50\nnemoclaw status\nopenclaw agents list"} /></div>
               <div className="pb-code-body"><pre><span className="pb-comment"># Watch the OpenShell audit log in real time</span>{"\n"}<span className="pb-cmd">tail -f /var/log/openshell/agent.log</span>{"\n\n"}<span className="pb-comment"># View OpenClaw session logs (last 100 entries)</span>{"\n"}<span className="pb-cmd">openclaw logs --tail 100</span>{"\n\n"}<span className="pb-comment"># Filter by specific channel</span>{"\n"}<span className="pb-cmd">openclaw logs --channel telegram --tail 50</span>{"\n"}<span className="pb-cmd">openclaw logs --channel gmail --tail 50</span>{"\n\n"}<span className="pb-comment"># Check overall health</span>{"\n"}<span className="pb-cmd">nemoclaw status</span>{"\n"}<span className="pb-cmd">openclaw agents list</span></pre></div>
             </div>
             <div className="pb-feature-grid pb-anim pb-stagger">
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128336;</div><h4>Timestamp</h4><p>Exact time of every agent action. Useful for debugging response delays and compliance reporting.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128205;</div><h4>Action Type</h4><p>What the agent did — file read, API call, email sent, calendar checked, message replied.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#9989;</div><h4>Policy Result</h4><p>Whether OpenShell allowed or blocked the action, and which specific rule applied.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon">&#128230;</div><h4>Data Routing</h4><p>Whether the request processed locally on Nemotron or went to a cloud model.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Clock size={22} color="var(--gold)" /></div><h4>Timestamp</h4><p>Exact time of every agent action. Useful for debugging response delays and compliance reporting.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><MapPin size={22} color="var(--gold)" /></div><h4>Action Type</h4><p>What the agent did — file read, API call, email sent, calendar checked, message replied.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><CheckCircle size={22} color="var(--gold)" /></div><h4>Policy Result</h4><p>Whether OpenShell allowed or blocked the action, and which specific rule applied.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Package size={22} color="var(--gold)" /></div><h4>Data Routing</h4><p>Whether the request processed locally on Nemotron or went to a cloud model.</p></div>
             </div>
             <div className="pb-callout pb-callout-info pb-anim">
               <div className="pb-callout-label">PRO TIP — SET UP LOG ALERTS</div>
               <p>Pipe your OpenShell log to a simple script that Telegrams you when it sees <code>DENY</code> events. If your agent is getting blocked repeatedly, it means your policy needs updating — or someone is probing it.</p>
             </div>
             <div className="pb-code-block pb-anim">
-              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">BASH — Simple DENY alert script</span></div>
+              <div className="pb-code-header"><div className="pb-code-dots"><span></span><span></span><span></span></div><span className="lang">BASH — Simple DENY alert script</span><CopyBtn text={`#!/bin/bash\n# Watch for DENY events and send a Telegram alert\ntail -f /var/log/openshell/agent.log | grep --line-buffered "DENY" | while read line; do\n  curl -s -X POST "https://api.telegram.org/bot\${BOT_TOKEN}/sendMessage" \\\\\n    -d chat_id="\${YOUR_CHAT_ID}" \\\\\n    -d text="OpenShell DENY: \${line}"\ndone`} /></div>
               <div className="pb-code-body"><pre>{`#!/bin/bash
 # Watch for DENY events and send a Telegram alert
 tail -f /var/log/openshell/agent.log | grep --line-buffered "DENY" | while read line; do
@@ -1150,21 +1204,39 @@ done`}</pre></div>
               <div className="pb-chapter-divider"></div>
               <p>You&apos;ve seen the full stack — from OpenClaw installation to a secured, multi-channel AI agent running for your business. The question now is: do you want to run this yourself, or have it done for you today?</p>
             </div>
+            <div className="pb-metrics-bar pb-anim">
+              <div className="pb-metric">
+                <span className="pb-metric-value">Same Day</span>
+                <span className="pb-metric-label">Deployment</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">$149</span>
+                <span className="pb-metric-label">Starting Monthly</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">16</span>
+                <span className="pb-metric-label">Channels Supported</span>
+              </div>
+              <div className="pb-metric">
+                <span className="pb-metric-value">Zero</span>
+                <span className="pb-metric-label">Code Required</span>
+              </div>
+            </div>
             <div className="pb-feature-grid pb-anim pb-stagger">
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#9889;</div>
+                <div className="pb-feature-icon"><Zap size={22} color="var(--gold)" /></div>
                 <h4>Starter</h4>
                 <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$997 setup + $149/mo</p>
                 <p>One agent deployed on the channel of your choice. Full OpenClaw + NemoClaw setup. Monthly support, tuning, and monitoring included.</p>
               </div>
               <div className="pb-feature-card" style={{ borderColor: "var(--gold-border)", background: "var(--gold-mid)" }}>
-                <div className="pb-feature-icon">&#128640;</div>
+                <div className="pb-feature-icon"><Rocket size={22} color="var(--gold)" /></div>
                 <h4>Business Engine</h4>
                 <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$1,997 setup + $299/mo</p>
                 <p>Multi-channel deployment across WhatsApp, Gmail &amp; Telegram. Three specialized agents. Advanced OpenShell policy. Weekly performance reports.</p>
               </div>
               <div className="pb-feature-card">
-                <div className="pb-feature-icon">&#127970;</div>
+                <div className="pb-feature-icon"><Building size={22} color="var(--gold)" /></div>
                 <h4>Full Stack</h4>
                 <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$3,500 setup + $499/mo</p>
                 <p>Dedicated VPS, all channels, custom agents per department, NemoClaw enterprise policies, priority support, and monthly strategy calls.</p>
