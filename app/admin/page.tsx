@@ -1597,8 +1597,9 @@ export default function AdminPage() {
           <div className="admin-fade" style={{ display:"flex", minHeight:"calc(100vh - 120px)" }}>
 
             {/* ── Floating Left Sidebar ── */}
-            <aside style={{ width:"220px", minWidth:"220px", padding:"1.5rem 0", borderRight:`1px solid ${BORDER}`, position:"sticky", top:"104px", height:"calc(100vh - 120px)", overflow:"auto" }}>
-              <div style={{ padding:"0 1.2rem", marginBottom:"1.5rem" }}>
+            <aside style={{ width:"220px", minWidth:"220px", borderRight:`1px solid ${BORDER}`, position:"sticky", top:"104px", height:"calc(100vh - 120px)", display:"flex", flexDirection:"column" }}>
+              {/* Top: Navigation */}
+              <div style={{ padding:"1.5rem 1.2rem 0" }}>
                 <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.2em", color:DIM, fontWeight:"700", marginBottom:"1rem" }}>AGENT CONTROL</div>
                 {([
                   { key: "overview" as AgentSubTab, label: "Overview", IconComp: LayoutDashboard },
@@ -1624,29 +1625,30 @@ export default function AdminPage() {
                 })}
               </div>
 
-              {/* Sidebar stats */}
-              <div style={{ padding:"0 1.2rem", borderTop:`1px solid ${BORDER}`, paddingTop:"1.2rem" }}>
-                <div style={{ ...sans, fontSize:"0.58rem", letterSpacing:"0.2em", color:DIM, fontWeight:"700", marginBottom:"0.8rem" }}>STATUS</div>
-                {[
-                  { label: "Active", count: agents.filter(a => a.status === "active").length, color: "#22C55E" },
-                  { label: "Configured", count: agents.filter(a => a.status === "configured").length, color: "#F59E0B" },
-                  { label: "Paused", count: agents.filter(a => a.status === "paused").length, color: "#6B7280" },
-                ].map(s => (
-                  <div key={s.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"6px 0", ...sans, fontSize:"0.72rem" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
-                      <CircleDot size={10} color={s.color} />
-                      <span style={{ color:MUTED }}>{s.label}</span>
+              {/* Bottom: Status + Refresh — pushed to bottom */}
+              <div style={{ marginTop:"auto" }}>
+                <div style={{ padding:"0 1.2rem 0", borderTop:`1px solid ${BORDER}`, paddingTop:"1.2rem" }}>
+                  <div style={{ ...sans, fontSize:"0.58rem", letterSpacing:"0.2em", color:DIM, fontWeight:"700", marginBottom:"0.8rem" }}>STATUS</div>
+                  {[
+                    { label: "Active", count: agents.filter(a => a.status === "active").length, color: "#22C55E" },
+                    { label: "Configured", count: agents.filter(a => a.status === "configured").length, color: "#F59E0B" },
+                    { label: "Paused", count: agents.filter(a => a.status === "paused").length, color: "#6B7280" },
+                  ].map(s => (
+                    <div key={s.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"6px 0", ...sans, fontSize:"0.72rem" }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                        <CircleDot size={10} color={s.color} />
+                        <span style={{ color:MUTED }}>{s.label}</span>
+                      </div>
+                      <span style={{ color:CREAM, fontWeight:"600" }}>{s.count}</span>
                     </div>
-                    <span style={{ color:CREAM, fontWeight:"600" }}>{s.count}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ padding:"1.2rem", borderTop:`1px solid ${BORDER}`, marginTop:"1rem" }}>
-                <button onClick={fetchAgents} disabled={agentsLoading} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 0", cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", transition:"border-color 0.2s" }}>
-                  <RefreshCw size={13} className={agentsLoading ? "spin" : ""} />
-                  {agentsLoading ? "Refreshing..." : "Refresh Data"}
-                </button>
+                  ))}
+                </div>
+                <div style={{ padding:"1rem 1.2rem 1.5rem" }}>
+                  <button onClick={fetchAgents} disabled={agentsLoading} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 0", cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", transition:"border-color 0.2s" }}>
+                    <RefreshCw size={13} className={agentsLoading ? "spin" : ""} />
+                    {agentsLoading ? "Refreshing..." : "Refresh Data"}
+                  </button>
+                </div>
               </div>
             </aside>
 
