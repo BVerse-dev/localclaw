@@ -136,6 +136,7 @@ export default function BlogPostClient({ post, relatedPosts }: Props) {
           <Link href="/#how" className="nav-link">HOW IT WORKS</Link>
           <Link href="/#pricing" className="nav-link">PRICING</Link>
           <Link href="/blog" className="nav-link" style={{ color: GOLD }}>BLOG</Link>
+          <Link href="/playbook" className="nav-link">PLAYBOOK</Link>
           <Link href="/intake" className="btn-primary" style={{ padding: "10px 20px", fontSize: "0.75rem" }}>
             BOOK A CALL
           </Link>
@@ -164,6 +165,7 @@ export default function BlogPostClient({ post, relatedPosts }: Props) {
           { href: "/#how", label: "HOW IT WORKS" },
           { href: "/#pricing", label: "PRICING" },
           { href: "/blog", label: "BLOG" },
+          { href: "/playbook", label: "PLAYBOOK" },
         ].map(({ href, label }) => (
           <Link
             key={href} href={href} className="nav-link"
