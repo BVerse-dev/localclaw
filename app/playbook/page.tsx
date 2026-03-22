@@ -64,7 +64,7 @@ export default function PlaybookPage() {
     window.addEventListener("scroll", onScroll);
 
     /* ── Intersection Observer for scroll-triggered animations ── */
-    const animTargets = document.querySelectorAll(".pb-anim");
+    const animTargets = document.querySelectorAll(".pb-anim, .pb-anim-scale, .pb-anim-left, .pb-anim-right, .pb-anim-fade");
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -74,7 +74,7 @@ export default function PlaybookPage() {
           }
         });
       },
-      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.02, rootMargin: "0px 0px -20px 0px" }
     );
     animTargets.forEach((el) => observer.observe(el));
 
@@ -365,12 +365,13 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
 .pb-copy-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--dim);transition:all 0.2s;display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:0.65rem}
 .pb-copy-btn:hover{color:var(--gold);border-color:var(--gold-border);background:var(--gold-mid)}
 .pb-copy-btn.copied{color:var(--green);border-color:rgba(34,197,94,0.3)}
-.pb-metrics-bar{display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;margin:3rem 0;padding:2rem;background:var(--bg3);border:1px solid var(--border);border-radius:14px}
-.pb-metric{text-align:center;padding:0.5rem 1.5rem}
-.pb-metric-value{display:block;font-family:var(--display);font-size:2.2rem;font-weight:700;color:var(--gold);line-height:1.1;margin-bottom:0.3rem}
-.pb-metric-label{font-family:var(--sans);font-size:0.7rem;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase}
-.pb-metric{transition:transform 0.3s ease}
-.pb-metric:hover{transform:translateY(-3px)}
+.pb-metrics-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin:3rem 0;background:var(--border);border:1px solid var(--gold-border);border-radius:16px;overflow:hidden;position:relative}
+.pb-metrics-bar::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(201,146,42,0.06) 0%,transparent 60%);pointer-events:none;z-index:1;border-radius:16px}
+.pb-metric{text-align:center;padding:2rem 1rem;background:var(--bg3);position:relative;z-index:2;transition:background 0.3s ease}
+.pb-metric:hover{background:rgba(201,146,42,0.05)}
+.pb-metric-value{display:block;font-family:var(--display);font-size:clamp(1.8rem,3vw,2.6rem);font-weight:700;color:var(--gold);line-height:1;margin-bottom:0.6rem;letter-spacing:-0.02em}
+.pb-metric-label{font-family:var(--sans);font-size:0.65rem;letter-spacing:0.15em;color:var(--dim);text-transform:uppercase;line-height:1.3}
+@media(max-width:700px){.pb-metrics-bar{grid-template-columns:repeat(2,1fr)}}
       `}</style>
 
       {/* SIDEBAR */}
@@ -497,12 +498,12 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             </div>
             <div className="pb-metrics-bar pb-anim">
               <div className="pb-metric">
-                <span className="pb-metric-value">60s</span>
+                <span className="pb-metric-value">&lt;60s</span>
                 <span className="pb-metric-label">Avg Response Time</span>
               </div>
               <div className="pb-metric">
                 <span className="pb-metric-value">24/7</span>
-                <span className="pb-metric-label">Availability</span>
+                <span className="pb-metric-label">Always Available</span>
               </div>
               <div className="pb-metric">
                 <span className="pb-metric-value">900%</span>
@@ -510,7 +511,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
               </div>
               <div className="pb-metric">
                 <span className="pb-metric-value">48%</span>
-                <span className="pb-metric-label">Inquiries Missed</span>
+                <span className="pb-metric-label">Leads Lost Without AI</span>
               </div>
             </div>
             <div className="pb-callout pb-callout-info pb-anim">
