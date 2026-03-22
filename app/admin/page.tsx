@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, AlertCircle, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, ToggleLeft, ToggleRight, Archive, Clock, Hash, Users, Workflow, Package } from "lucide-react";
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const BG         = "#080704";
@@ -264,13 +265,15 @@ interface GeneratedConfig {
 
 const PLAN_COLORS: Record<string, string> = { starter: "#22C55E", business: "#3B82F6", fullstack: "#C9922A" };
 const PLAN_NAMES: Record<string, string> = { starter: "Starter", business: "Business", fullstack: "Full Stack" };
-const STATUS_ICONS: Record<string, { icon: string; color: string; label: string }> = {
-  configured: { icon: "⚙️", color: "#F59E0B", label: "Configured" },
-  deploying:  { icon: "🚀", color: "#3B82F6", label: "Deploying" },
-  active:     { icon: "🟢", color: "#22C55E", label: "Active" },
-  paused:     { icon: "⏸️", color: "#6B7280", label: "Paused" },
-  error:      { icon: "🔴", color: "#EF4444", label: "Error" },
+const AGENT_STATUSES: Record<string, { color: string; label: string }> = {
+  configured: { color: "#F59E0B", label: "Configured" },
+  deploying:  { color: "#3B82F6", label: "Deploying" },
+  active:     { color: "#22C55E", label: "Active" },
+  paused:     { color: "#6B7280", label: "Paused" },
+  error:      { color: "#EF4444", label: "Error" },
 };
+
+type AgentSubTab = "overview" | "ready" | "deployed" | "generated" | "tools";
 
 function paymentBadge(ps: string | null, amount: number | null) {
   if (ps === "paid") return { label: `PAID $${((amount || 0) / 100).toLocaleString()}`, color: "#10B981" };
@@ -313,6 +316,9 @@ export default function AdminPage() {
   const [viewingFile, setViewingFile] = useState<string | null>(null);
   const [togglingAgent, setTogglingAgent] = useState<string | null>(null);
   const [savingAgent, setSavingAgent] = useState(false);
+  const [agentSubTab, setAgentSubTab] = useState<AgentSubTab>("overview");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savedConfigs, setSavedConfigs] = useState<Array<{ submissionId: string; config: GeneratedConfig }>>([]);
 
   // ── Auth ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -454,11 +460,21 @@ export default function AdminPage() {
       }),
     });
     if (res.ok) {
+      // Keep in savedConfigs so user can still view it
+      if (sub) setSavedConfigs(prev => [...prev, { submissionId: sub.id, config: generatedConfig }]);
       setGeneratedConfig(null);
+      setAgentSubTab("deployed");
       await fetchAgents();
       await fetchSubmissions();
     }
     setSavingAgent(false);
+  };
+
+  // ── Copy helper ──
+  const copyText = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   // ── Toggle agent on/off ──
@@ -780,6 +796,8 @@ export default function AdminPage() {
           to { opacity: 1; transform: translateY(0); }
         }
         .admin-fade { animation: admin-fade-in 0.35s cubic-bezier(.22,1,.36,1) both; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spin { animation: spin 0.8s linear infinite; }
       ` }} />
 
       <div style={{ minHeight:"100vh", background:BG, color:CREAM }}>
@@ -1576,366 +1594,482 @@ export default function AdminPage() {
         {/* ── AGENTS TAB ── */}
         {/* ════════════════════════════════════════════════════════════════════ */}
         {tab === "agents" && (
-          <div className="admin-fade" style={{ padding:"2rem 5%", maxWidth:"1400px", margin:"0 auto" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2rem" }}>
-              <div>
-                <h2 style={{ ...display, fontSize:"1.6rem", fontWeight:"700", marginBottom:"0.3rem" }}>Agent Control Center</h2>
-                <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Deploy, manage, and monitor OpenClaw AI agents for your clients</p>
-              </div>
-              <button onClick={fetchAgents} style={{ ...sans, fontSize:"0.7rem", fontWeight:"600", color:GOLD, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"6px", padding:"8px 16px", cursor:"pointer" }}>
-                {agentsLoading ? "Loading..." : "↻ Refresh"}
-              </button>
-            </div>
+          <div className="admin-fade" style={{ display:"flex", minHeight:"calc(100vh - 120px)" }}>
 
-            {/* ── Agent Stats Row ── */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:"1rem", marginBottom:"2.5rem" }}>
-              {[
-                { label: "Total Agents", value: agents.length, color: CREAM },
-                { label: "Active", value: agents.filter(a => a.status === "active").length, color: "#22C55E" },
-                { label: "Configured", value: agents.filter(a => a.status === "configured").length, color: "#F59E0B" },
-                { label: "Paused", value: agents.filter(a => a.status === "paused").length, color: "#6B7280" },
-                { label: "Ready to Deploy", value: submissions.filter(s => s.payment_status === "paid" && !agents.find(a => a.submission_id === s.id)).length, color: "#3B82F6" },
-              ].map((stat, i) => (
-                <div key={i} className="overview-card" style={{ textAlign:"center" }}>
-                  <div style={{ ...display, fontSize:"2rem", fontWeight:"700", color:stat.color }}>{stat.value}</div>
-                  <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.15em", color:DIM, marginTop:"4px" }}>{stat.label.toUpperCase()}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── Ready to Deploy: Paid leads without agents ── */}
-            {(() => {
-              const readyLeads = submissions.filter(s =>
-                (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") &&
-                !agents.find(a => a.submission_id === s.id)
-              );
-              if (readyLeads.length === 0) return null;
-              return (
-                <div style={{ marginBottom:"2.5rem" }}>
-                  <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>READY TO DEPLOY — GENERATE AGENT CONFIG</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(340px, 1fr))", gap:"1rem" }}>
-                    {readyLeads.map(s => (
-                      <div key={s.id} className="overview-card" style={{ borderLeft:`3px solid ${s.payment_status === "paid" ? "#22C55E" : "#3B82F6"}`, cursor:"pointer", transition:"transform 0.2s" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.8rem" }}>
-                          <div>
-                            <div style={{ ...sans, fontSize:"0.9rem", fontWeight:"700", color:CREAM }}>{s.business}</div>
-                            <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>{s.name} · {s.email}</div>
-                          </div>
-                          <div style={{ display:"flex", gap:"6px" }}>
-                            {s.payment_status === "paid" && (
-                              <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#22C55E", background:"rgba(34,197,94,0.1)", border:"1px solid rgba(34,197,94,0.2)", padding:"2px 8px", borderRadius:"100px" }}>PAID</span>
-                            )}
-                            <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:getStatusColor(s.status), background:`${getStatusColor(s.status)}15`, border:`1px solid ${getStatusColor(s.status)}30`, padding:"2px 8px", borderRadius:"100px" }}>{getStatusLabel(s.status)}</span>
-                          </div>
-                        </div>
-                        <div style={{ ...sans, fontSize:"0.72rem", color:DIM, marginBottom:"0.8rem" }}>
-                          {s.industry && <span>Industry: {s.industry} · </span>}
-                          {s.budget && <span>Plan: {budgetLabel(s.budget)} · </span>}
-                          {s.automations && s.automations.length > 0 && <span>{s.automations.length} automations requested</span>}
-                        </div>
-                        <button
-                          onClick={() => generateConfig(s.id)}
-                          disabled={generatingFor === s.id}
-                          style={{ ...sans, fontSize:"0.72rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"10px 20px", cursor:"pointer", width:"100%", transition:"opacity 0.2s" }}
-                        >
-                          {generatingFor === s.id ? "⚙️ Generating..." : "🤖 Generate Agent Config"}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* ── Generated Config Preview Modal ── */}
-            {generatedConfig && (
-              <div style={{ marginBottom:"2.5rem", background:BG2, border:`1px solid ${GOLD_BORDER}`, borderRadius:"12px", padding:"2rem", position:"relative" }}>
-                <button onClick={() => setGeneratedConfig(null)} style={{ position:"absolute", top:"1rem", right:"1rem", background:"none", border:"none", color:MUTED, cursor:"pointer", fontSize:"1.2rem" }}>✕</button>
-
-                <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"1.5rem" }}>
-                  <div style={{ width:"48px", height:"48px", borderRadius:"12px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.5rem" }}>
-                    {generatedConfig.businessTypeMeta?.icon || "🤖"}
-                  </div>
-                  <div>
-                    <h3 style={{ ...display, fontSize:"1.3rem", fontWeight:"700", marginBottom:"2px" }}>{generatedConfig.agentName}</h3>
-                    <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>
-                      {generatedConfig.businessTypeMeta?.label} · <span style={{ color:PLAN_COLORS[generatedConfig.plan] || GOLD }}>{PLAN_NAMES[generatedConfig.plan] || generatedConfig.plan}</span> · {generatedConfig.planMeta?.price}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Workspace Files */}
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.8rem" }}>GENERATED WORKSPACE FILES</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(140px, 1fr))", gap:"8px", marginBottom:"1.5rem" }}>
-                  {Object.keys(generatedConfig.files).map(fname => (
-                    <button
-                      key={fname}
-                      onClick={() => setViewingFile(viewingFile === fname ? null : fname)}
-                      style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", color: viewingFile === fname ? "#080704" : CREAM, background: viewingFile === fname ? GOLD : BG3, border:`1px solid ${viewingFile === fname ? GOLD : BORDER}`, borderRadius:"8px", padding:"10px 12px", cursor:"pointer", textAlign:"left", transition:"all 0.2s" }}
-                    >
-                      📄 {fname}
+            {/* ── Floating Left Sidebar ── */}
+            <aside style={{ width:"220px", minWidth:"220px", padding:"1.5rem 0", borderRight:`1px solid ${BORDER}`, position:"sticky", top:"104px", height:"calc(100vh - 120px)", overflow:"auto" }}>
+              <div style={{ padding:"0 1.2rem", marginBottom:"1.5rem" }}>
+                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.2em", color:DIM, fontWeight:"700", marginBottom:"1rem" }}>AGENT CONTROL</div>
+                {([
+                  { key: "overview" as AgentSubTab, label: "Overview", IconComp: LayoutDashboard },
+                  { key: "ready" as AgentSubTab, label: "Ready to Deploy", IconComp: Rocket },
+                  { key: "deployed" as AgentSubTab, label: "Deployed Agents", IconComp: Server },
+                  { key: "generated" as AgentSubTab, label: "Generated Configs", IconComp: FileText },
+                  { key: "tools" as AgentSubTab, label: "Tool Registry", IconComp: Wrench },
+                ]).map(item => {
+                  const isActive = agentSubTab === item.key;
+                  const readyCount = item.key === "ready" ? submissions.filter(s => (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") && !agents.find(a => a.submission_id === s.id)).length : 0;
+                  const deployedCount = item.key === "deployed" ? agents.length : 0;
+                  const genCount = item.key === "generated" ? (generatedConfig ? 1 : 0) + savedConfigs.length : 0;
+                  const count = item.key === "ready" ? readyCount : item.key === "deployed" ? deployedCount : item.key === "generated" ? genCount : 0;
+                  return (
+                    <button key={item.key} onClick={() => setAgentSubTab(item.key)} style={{ display:"flex", alignItems:"center", gap:"10px", width:"100%", padding:"10px 14px", marginBottom:"2px", borderRadius:"8px", border:"none", cursor:"pointer", transition:"all 0.2s", background: isActive ? GOLD_MID : "transparent", color: isActive ? GOLD : MUTED, ...sans, fontSize:"0.78rem", fontWeight: isActive ? "700" : "500", textAlign:"left" }}>
+                      <item.IconComp size={16} strokeWidth={isActive ? 2.2 : 1.6} />
+                      <span style={{ flex:1 }}>{item.label}</span>
+                      {count > 0 && (
+                        <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color: isActive ? "#080704" : CREAM, background: isActive ? GOLD : `${MUTED}30`, minWidth:"20px", textAlign:"center", padding:"1px 6px", borderRadius:"100px" }}>{count}</span>
+                      )}
                     </button>
-                  ))}
-                </div>
-
-                {/* File Preview */}
-                {viewingFile && generatedConfig.files[viewingFile] && (
-                  <div style={{ marginBottom:"1.5rem", position:"relative" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"6px" }}>
-                      <span style={{ ...sans, fontSize:"0.7rem", fontWeight:"700", color:GOLD }}>{viewingFile}</span>
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(generatedConfig.files[viewingFile]); }}
-                        style={{ ...sans, fontSize:"0.6rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"4px 10px", cursor:"pointer" }}
-                      >
-                        📋 Copy
-                      </button>
-                    </div>
-                    <pre style={{ ...sans, fontSize:"0.68rem", color:CREAM, background:"#050403", border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"1rem", maxHeight:"400px", overflow:"auto", whiteSpace:"pre-wrap", lineHeight:"1.6" }}>
-                      {generatedConfig.files[viewingFile]}
-                    </pre>
-                  </div>
-                )}
-
-                {/* Tools Required */}
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.8rem" }}>REQUIRED TOOLS ({generatedConfig.tools.required.length})</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:"8px", marginBottom:"1.5rem" }}>
-                  {generatedConfig.tools.required.map((tool: { id: string; icon: string; name: string; requiresClientKey: boolean; description: string; configNotes?: string }) => (
-                    <div key={tool.id} style={{ ...sans, fontSize:"0.72rem", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px", display:"flex", gap:"10px", alignItems:"flex-start" }}>
-                      <span style={{ fontSize:"1.1rem" }}>{tool.icon}</span>
-                      <div>
-                        <div style={{ fontWeight:"700", marginBottom:"2px" }}>{tool.name}
-                          {tool.requiresClientKey && <span style={{ fontSize:"0.55rem", color:"#F59E0B", marginLeft:"6px", background:"rgba(245,158,11,0.1)", padding:"1px 6px", borderRadius:"100px" }}>CLIENT KEY NEEDED</span>}
-                        </div>
-                        <div style={{ fontSize:"0.65rem", color:DIM }}>{tool.description.substring(0, 80)}...</div>
-                        {tool.configNotes && <div style={{ fontSize:"0.6rem", color:MUTED, fontStyle:"italic", marginTop:"3px" }}>{tool.configNotes}</div>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Optional Tools */}
-                {generatedConfig.tools.optional.length > 0 && (
-                  <>
-                    <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.8rem" }}>OPTIONAL TOOLS ({generatedConfig.tools.optional.length})</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(280px, 1fr))", gap:"8px", marginBottom:"1.5rem" }}>
-                      {generatedConfig.tools.optional.map((tool: { id: string; icon: string; name: string; requiresClientKey: boolean; description: string }) => (
-                        <div key={tool.id} style={{ ...sans, fontSize:"0.72rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px", display:"flex", gap:"10px", alignItems:"flex-start", opacity:0.7 }}>
-                          <span style={{ fontSize:"1.1rem" }}>{tool.icon}</span>
-                          <div>
-                            <div style={{ fontWeight:"600", color:CREAM }}>{tool.name}
-                              {tool.requiresClientKey && <span style={{ fontSize:"0.55rem", color:"#F59E0B", marginLeft:"6px", background:"rgba(245,158,11,0.1)", padding:"1px 6px", borderRadius:"100px" }}>CLIENT KEY</span>}
-                            </div>
-                            <div style={{ fontSize:"0.65rem", color:DIM }}>{tool.description.substring(0, 80)}...</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* Deploy Command */}
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.8rem" }}>DEPLOY COMMAND</div>
-                <div style={{ position:"relative", marginBottom:"1.5rem" }}>
-                  <pre style={{ ...sans, fontSize:"0.72rem", color:"#22C55E", background:"#050403", border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"1rem", overflow:"auto" }}>
-                    $ {generatedConfig.deployCommand}
-                  </pre>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(generatedConfig.deployCommand)}
-                    style={{ position:"absolute", top:"8px", right:"8px", ...sans, fontSize:"0.6rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"4px 10px", cursor:"pointer" }}
-                  >
-                    📋
-                  </button>
-                </div>
-
-                {/* Env Vars Needed */}
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"0.8rem" }}>ENVIRONMENT VARIABLES NEEDED</div>
-                <div style={{ background:"#050403", border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"1rem", marginBottom:"1.5rem", position:"relative" }}>
-                  <button
-                    onClick={() => {
-                      const envStr = [
-                        "# Required",
-                        ...Object.entries(generatedConfig.envVars.required).map(([k, v]) => `${k}= ${v}`),
-                        "", "# Optional",
-                        ...Object.entries(generatedConfig.envVars.optional).map(([k, v]) => `${k}= ${v}`),
-                      ].join("\n");
-                      navigator.clipboard.writeText(envStr);
-                    }}
-                    style={{ position:"absolute", top:"8px", right:"8px", ...sans, fontSize:"0.6rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", padding:"4px 10px", cursor:"pointer" }}
-                  >
-                    📋 Copy All
-                  </button>
-                  {Object.entries(generatedConfig.envVars.required).map(([key, comment]) => (
-                    <div key={key} style={{ ...sans, fontSize:"0.68rem", marginBottom:"3px" }}>
-                      <span style={{ color:"#F59E0B" }}>{key}</span><span style={{ color:DIM }}>=</span> <span style={{ color:DIM, fontSize:"0.6rem" }}>{String(comment)}</span>
-                    </div>
-                  ))}
-                  {Object.keys(generatedConfig.envVars.optional).length > 0 && (
-                    <>
-                      <div style={{ ...sans, fontSize:"0.6rem", color:DIM, margin:"8px 0 4px", borderTop:`1px solid ${BORDER}`, paddingTop:"8px" }}>Optional:</div>
-                      {Object.entries(generatedConfig.envVars.optional).map(([key, comment]) => (
-                        <div key={key} style={{ ...sans, fontSize:"0.68rem", marginBottom:"3px", opacity:0.6 }}>
-                          <span style={{ color:"#6B7280" }}>{key}</span><span style={{ color:DIM }}>=</span> <span style={{ color:DIM, fontSize:"0.6rem" }}>{String(comment)}</span>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-
-                {/* Save & Deploy Buttons */}
-                <div style={{ display:"flex", gap:"1rem" }}>
-                  <button
-                    onClick={saveAgent}
-                    disabled={savingAgent}
-                    style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"14px 32px", cursor:"pointer", flex:1, transition:"opacity 0.2s" }}
-                  >
-                    {savingAgent ? "Saving..." : "💾 Save Agent Configuration"}
-                  </button>
-                  <button
-                    onClick={() => { navigator.clipboard.writeText(generatedConfig.deployCommand); }}
-                    style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color:CREAM, background:"transparent", border:`1px solid ${GOLD_BORDER}`, borderRadius:"8px", padding:"14px 32px", cursor:"pointer" }}
-                  >
-                    📋 Copy Deploy Command
-                  </button>
-                </div>
+                  );
+                })}
               </div>
-            )}
 
-            {/* ── Deployed Agents List ── */}
-            {agents.length > 0 && (
-              <div style={{ marginBottom:"2.5rem" }}>
-                <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>DEPLOYED AGENTS</div>
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(380px, 1fr))", gap:"1rem" }}>
-                  {agents.map(agent => {
-                    const si = STATUS_ICONS[agent.status] || STATUS_ICONS.configured;
-                    const matched = submissions.find(s => s.id === agent.submission_id);
-                    return (
-                      <div key={agent.id} className="overview-card" style={{ borderLeft:`3px solid ${si.color}`, cursor:"pointer", transition:"transform 0.2s, border-color 0.2s" }} onClick={() => setSelectedAgent(selectedAgent?.id === agent.id ? null : agent)}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.6rem" }}>
-                          <div style={{ display:"flex", gap:"10px", alignItems:"center" }}>
-                            <div style={{ width:"40px", height:"40px", borderRadius:"10px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.2rem" }}>🤖</div>
-                            <div>
-                              <div style={{ ...sans, fontSize:"0.9rem", fontWeight:"700", color:CREAM }}>{agent.agent_name}</div>
-                              <div style={{ ...sans, fontSize:"0.65rem", color:MUTED }}>{agent.slug}</div>
-                            </div>
-                          </div>
-                          <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                            <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}15`, border:`1px solid ${PLAN_COLORS[agent.plan] || MUTED}30`, padding:"2px 8px", borderRadius:"100px" }}>
-                              {PLAN_NAMES[agent.plan] || agent.plan}
-                            </span>
-                            <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:si.color, background:`${si.color}15`, border:`1px solid ${si.color}30`, padding:"2px 8px", borderRadius:"100px" }}>
-                              {si.icon} {si.label}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div style={{ ...sans, fontSize:"0.72rem", color:DIM, marginBottom:"0.8rem" }}>
-                          Type: {agent.business_type} · Heartbeat: {agent.heartbeat_interval || "24h"} · Tools: {agent.tools_enabled?.length || 0} active
-                          {agent.nemoclaw_enabled && <span style={{ color:"#14B8A6", marginLeft:"8px" }}>🛡️ NemoClaw</span>}
-                        </div>
-
-                        {matched && (
-                          <div style={{ ...sans, fontSize:"0.65rem", color:MUTED, marginBottom:"0.6rem" }}>
-                            Client: {matched.name} · {matched.email} · {matched.business}
-                          </div>
-                        )}
-
-                        {/* Toggle + Actions */}
-                        <div style={{ display:"flex", gap:"8px", marginTop:"0.4rem" }} onClick={e => e.stopPropagation()}>
-                          <button
-                            onClick={() => toggleAgent(agent.id, agent.status)}
-                            disabled={togglingAgent === agent.id}
-                            style={{ ...sans, fontSize:"0.65rem", fontWeight:"700", color: agent.status === "active" ? "#EF4444" : "#22C55E", background: agent.status === "active" ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)", border:`1px solid ${agent.status === "active" ? "rgba(239,68,68,0.2)" : "rgba(34,197,94,0.2)"}`, borderRadius:"6px", padding:"6px 14px", cursor:"pointer", flex:1 }}
-                          >
-                            {togglingAgent === agent.id ? "..." : agent.status === "active" ? "⏸ Pause Agent" : "▶ Activate Agent"}
-                          </button>
-                          <button
-                            onClick={() => { navigator.clipboard.writeText(`./onboard.sh --name "${matched?.business || agent.agent_name}" --type ${agent.business_type} --plan ${agent.plan} --owner "${matched?.name || ""}" --email "${matched?.email || ""}"`); }}
-                            style={{ ...sans, fontSize:"0.65rem", fontWeight:"600", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"6px 14px", cursor:"pointer" }}
-                          >
-                            📋 CMD
-                          </button>
-                          <button
-                            onClick={() => deleteAgent(agent.id)}
-                            style={{ ...sans, fontSize:"0.65rem", fontWeight:"600", color:"#EF4444", background:"rgba(239,68,68,0.05)", border:"1px solid rgba(239,68,68,0.15)", borderRadius:"6px", padding:"6px 10px", cursor:"pointer" }}
-                          >
-                            🗑
-                          </button>
-                        </div>
-
-                        {/* Expanded Details */}
-                        {selectedAgent?.id === agent.id && agent.workspace_files && Object.keys(agent.workspace_files).length > 0 && (
-                          <div style={{ marginTop:"1rem", paddingTop:"1rem", borderTop:`1px solid ${BORDER}` }}>
-                            <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.15em", color:DIM, fontWeight:"600", marginBottom:"0.6rem" }}>WORKSPACE FILES</div>
-                            <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"0.8rem" }}>
-                              {Object.keys(agent.workspace_files).map(f => (
-                                <button
-                                  key={f}
-                                  onClick={(e) => { e.stopPropagation(); setViewingFile(viewingFile === `${agent.id}-${f}` ? null : `${agent.id}-${f}`); }}
-                                  style={{ ...sans, fontSize:"0.62rem", fontWeight:"600", color: viewingFile === `${agent.id}-${f}` ? "#080704" : CREAM, background: viewingFile === `${agent.id}-${f}` ? GOLD : BG3, border:`1px solid ${viewingFile === `${agent.id}-${f}` ? GOLD : BORDER}`, borderRadius:"6px", padding:"4px 10px", cursor:"pointer" }}
-                                >
-                                  {f}
-                                </button>
-                              ))}
-                            </div>
-                            {viewingFile?.startsWith(`${agent.id}-`) && (
-                              <pre style={{ ...sans, fontSize:"0.65rem", color:CREAM, background:"#050403", border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"0.8rem", maxHeight:"300px", overflow:"auto", whiteSpace:"pre-wrap", lineHeight:"1.5" }}>
-                                {agent.workspace_files[viewingFile.replace(`${agent.id}-`, "")]}
-                              </pre>
-                            )}
-                            <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.15em", color:DIM, fontWeight:"600", margin:"0.8rem 0 0.4rem" }}>ENABLED TOOLS</div>
-                            <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
-                              {(agent.tools_enabled || []).map((tid: string) => (
-                                <span key={tid} style={{ ...sans, fontSize:"0.6rem", color:GOLD, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"3px 10px" }}>{tid}</span>
-                              ))}
-                              {(!agent.tools_enabled || agent.tools_enabled.length === 0) && (
-                                <span style={{ ...sans, fontSize:"0.62rem", color:DIM }}>No tools configured yet</span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ── Empty State ── */}
-            {agents.length === 0 && !agentsLoading && !generatedConfig && submissions.filter(s => s.payment_status === "paid" && !agents.find(a => a.submission_id === s.id)).length === 0 && (
-              <div style={{ textAlign:"center", padding:"4rem 2rem" }}>
-                <div style={{ fontSize:"3rem", marginBottom:"1rem" }}>🤖</div>
-                <h3 style={{ ...display, fontSize:"1.3rem", fontWeight:"700", marginBottom:"0.5rem" }}>No Agents Yet</h3>
-                <p style={{ ...sans, fontSize:"0.82rem", color:DIM, maxWidth:"400px", margin:"0 auto" }}>
-                  When clients sign up and pay, their intake data will appear here. Click &ldquo;Generate Agent Config&rdquo; to create their full OpenClaw workspace files automatically.
-                </p>
-              </div>
-            )}
-
-            {/* ── Tool Registry Reference ── */}
-            <div style={{ marginTop:"2rem", paddingTop:"2rem", borderTop:`1px solid ${BORDER}` }}>
-              <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:DIM, fontWeight:"600", marginBottom:"1rem" }}>FULL TOOL REGISTRY — BY PLAN</div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"1rem" }}>
-                {(["starter", "business", "fullstack"] as const).map(plan => (
-                  <div key={plan} style={{ background:BG3, border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"1.2rem", borderTop:`3px solid ${PLAN_COLORS[plan]}` }}>
-                    <div style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color:PLAN_COLORS[plan], marginBottom:"0.2rem" }}>{PLAN_NAMES[plan]}</div>
-                    <div style={{ ...sans, fontSize:"0.6rem", color:DIM, marginBottom:"1rem" }}>
-                      {plan === "starter" ? "$149/mo · 1 channel · 24h heartbeat" : plan === "business" ? "$349/mo · 3 channels · 6h heartbeat" : "$699/mo · All channels · 30m heartbeat · Sub-agents · NemoClaw"}
+              {/* Sidebar stats */}
+              <div style={{ padding:"0 1.2rem", borderTop:`1px solid ${BORDER}`, paddingTop:"1.2rem" }}>
+                <div style={{ ...sans, fontSize:"0.58rem", letterSpacing:"0.2em", color:DIM, fontWeight:"700", marginBottom:"0.8rem" }}>STATUS</div>
+                {[
+                  { label: "Active", count: agents.filter(a => a.status === "active").length, color: "#22C55E" },
+                  { label: "Configured", count: agents.filter(a => a.status === "configured").length, color: "#F59E0B" },
+                  { label: "Paused", count: agents.filter(a => a.status === "paused").length, color: "#6B7280" },
+                ].map(s => (
+                  <div key={s.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"6px 0", ...sans, fontSize:"0.72rem" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                      <CircleDot size={10} color={s.color} />
+                      <span style={{ color:MUTED }}>{s.label}</span>
                     </div>
-                    <div style={{ display:"flex", flexDirection:"column", gap:"4px" }}>
-                      {[
-                        ...(plan === "starter" ? ["whatsapp OR telegram", "n8n", "resend", "supabase", "cal.com", "anthropic", "localclaw alerts"] : []),
-                        ...(plan === "business" ? ["whatsapp", "telegram", "instagram", "n8n", "resend", "supabase", "cal.com", "stripe", "postiz", "nanobana", "anthropic", "openai fallback", "localclaw alerts"] : []),
-                        ...(plan === "fullstack" ? ["whatsapp", "telegram", "instagram", "gmail", "discord", "slack", "n8n", "resend", "supabase", "cal.com", "stripe", "postiz", "nanobana", "google business", "nemoclaw", "sentry", "anthropic", "openai", "tavily", "localclaw alerts"] : []),
-                      ].map((tool, i) => (
-                        <div key={i} style={{ ...sans, fontSize:"0.62rem", color:CREAM, padding:"3px 0", display:"flex", alignItems:"center", gap:"6px" }}>
-                          <span style={{ color:"#22C55E", fontSize:"0.5rem" }}>●</span> {tool}
-                        </div>
-                      ))}
-                    </div>
+                    <span style={{ color:CREAM, fontWeight:"600" }}>{s.count}</span>
                   </div>
                 ))}
               </div>
-            </div>
+
+              <div style={{ padding:"1.2rem", borderTop:`1px solid ${BORDER}`, marginTop:"1rem" }}>
+                <button onClick={fetchAgents} disabled={agentsLoading} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 0", cursor:"pointer", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", gap:"6px", transition:"border-color 0.2s" }}>
+                  <RefreshCw size={13} className={agentsLoading ? "spin" : ""} />
+                  {agentsLoading ? "Refreshing..." : "Refresh Data"}
+                </button>
+              </div>
+            </aside>
+
+            {/* ── Main Content Area ── */}
+            <main style={{ flex:1, padding:"2rem 2.5rem", maxWidth:"1100px" }}>
+
+              {/* ── SUB: OVERVIEW ── */}
+              {agentSubTab === "overview" && (
+                <div>
+                  <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Agent Control Center</h2>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Deploy, manage, and monitor OpenClaw AI agents</p>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:"1rem", marginBottom:"2.5rem" }}>
+                    {[
+                      { label: "Total Agents", value: agents.length, color: CREAM, Ic: Layers },
+                      { label: "Active", value: agents.filter(a => a.status === "active").length, color: "#22C55E", Ic: CircleDot },
+                      { label: "Configured", value: agents.filter(a => a.status === "configured").length, color: "#F59E0B", Ic: Settings2 },
+                      { label: "Ready", value: submissions.filter(s => (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") && !agents.find(a => a.submission_id === s.id)).length, color: "#3B82F6", Ic: Rocket },
+                    ].map((stat, i) => (
+                      <div key={i} className="overview-card" style={{ padding:"1.2rem" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"0.8rem" }}>
+                          <div style={{ width:"36px", height:"36px", borderRadius:"10px", background:`${stat.color}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            <stat.Ic size={18} color={stat.color} strokeWidth={1.8} />
+                          </div>
+                        </div>
+                        <div style={{ ...display, fontSize:"2rem", fontWeight:"700", color:stat.color, lineHeight:1 }}>{stat.value}</div>
+                        <div style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.15em", color:DIM, marginTop:"6px" }}>{stat.label.toUpperCase()}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Recent agents */}
+                  {agents.length > 0 && (
+                    <div>
+                      <div style={{ ...sans, fontSize:"0.62rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"1rem" }}>RECENT AGENTS</div>
+                      {agents.slice(0, 5).map(agent => {
+                        const st = AGENT_STATUSES[agent.status] || AGENT_STATUSES.configured;
+                        const matched = submissions.find(s => s.id === agent.submission_id);
+                        return (
+                          <div key={agent.id} style={{ display:"flex", alignItems:"center", gap:"14px", padding:"14px 16px", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"10px", marginBottom:"8px", transition:"background 0.2s", cursor:"pointer" }} onClick={() => { setSelectedAgent(agent); setAgentSubTab("deployed"); }}>
+                            <div style={{ width:"38px", height:"38px", borderRadius:"10px", background:`${st.color}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                              <Bot size={18} color={st.color} strokeWidth={1.8} />
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ ...sans, fontSize:"0.85rem", fontWeight:"700", color:CREAM }}>{agent.agent_name}</div>
+                              <div style={{ ...sans, fontSize:"0.68rem", color:MUTED }}>{matched?.business || agent.slug} · {agent.business_type}</div>
+                            </div>
+                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}12`, padding:"4px 10px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
+                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:st.color, background:`${st.color}12`, padding:"4px 10px", borderRadius:"100px" }}>{st.label}</span>
+                            <ChevronRight size={16} color={DIM} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {agents.length === 0 && !agentsLoading && (
+                    <div style={{ textAlign:"center", padding:"4rem 2rem" }}>
+                      <Bot size={48} color={DIM} strokeWidth={1.2} style={{ marginBottom:"1rem" }} />
+                      <h3 style={{ ...display, fontSize:"1.2rem", fontWeight:"700", marginBottom:"0.4rem" }}>No Agents Yet</h3>
+                      <p style={{ ...sans, fontSize:"0.8rem", color:DIM, maxWidth:"380px", margin:"0 auto 1.5rem" }}>When clients sign up and pay, generate their agent configs from the Ready to Deploy tab.</p>
+                      <button onClick={() => setAgentSubTab("ready")} style={{ ...sans, fontSize:"0.72rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"10px 24px", cursor:"pointer" }}>View Ready Leads</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── SUB: READY TO DEPLOY ── */}
+              {agentSubTab === "ready" && (
+                <div>
+                  <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Ready to Deploy</h2>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Paid or qualified leads awaiting agent configuration</p>
+
+                  {(() => {
+                    const readyLeads = submissions.filter(s =>
+                      (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") &&
+                      !agents.find(a => a.submission_id === s.id)
+                    );
+                    if (readyLeads.length === 0) return (
+                      <div style={{ textAlign:"center", padding:"3rem 2rem" }}>
+                        <Rocket size={40} color={DIM} strokeWidth={1.2} style={{ marginBottom:"1rem" }} />
+                        <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>No leads ready for deployment right now.</p>
+                      </div>
+                    );
+                    return (
+                      <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                        {readyLeads.map(s => (
+                          <div key={s.id} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"12px", padding:"1.4rem", transition:"border-color 0.2s" }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1rem" }}>
+                              <div style={{ display:"flex", gap:"12px", alignItems:"center" }}>
+                                <div style={{ width:"42px", height:"42px", borderRadius:"10px", background:`${GOLD}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                                  <Users size={20} color={GOLD} strokeWidth={1.8} />
+                                </div>
+                                <div>
+                                  <div style={{ ...sans, fontSize:"0.95rem", fontWeight:"700", color:CREAM }}>{s.business}</div>
+                                  <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>{s.name} · {s.email}</div>
+                                </div>
+                              </div>
+                              <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                                {s.payment_status === "paid" && (
+                                  <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:"#22C55E", background:"rgba(34,197,94,0.08)", padding:"4px 10px", borderRadius:"100px" }}>PAID</span>
+                                )}
+                                <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:getStatusColor(s.status), background:`${getStatusColor(s.status)}10`, padding:"4px 10px", borderRadius:"100px" }}>{getStatusLabel(s.status)}</span>
+                              </div>
+                            </div>
+                            <div style={{ ...sans, fontSize:"0.72rem", color:DIM, marginBottom:"1.2rem", lineHeight:"1.8" }}>
+                              {s.industry && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px", marginRight:"16px" }}><Package size={12} color={MUTED} /> {s.industry}</span>}
+                              {s.budget && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px", marginRight:"16px" }}><Layers size={12} color={MUTED} /> {budgetLabel(s.budget)}</span>}
+                              {s.automations && s.automations.length > 0 && <span style={{ display:"inline-flex", alignItems:"center", gap:"4px" }}><Workflow size={12} color={MUTED} /> {s.automations.length} automations</span>}
+                            </div>
+                            {s.automations && s.automations.length > 0 && (
+                              <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"1.2rem" }}>
+                                {s.automations.map((a, i) => (
+                                  <span key={i} style={{ ...sans, fontSize:"0.6rem", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, padding:"4px 10px", borderRadius:"6px" }}>{a}</span>
+                                ))}
+                              </div>
+                            )}
+                            <button
+                              onClick={() => { generateConfig(s.id); setAgentSubTab("generated"); }}
+                              disabled={generatingFor === s.id}
+                              style={{ ...sans, fontSize:"0.75rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"12px 24px", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px", transition:"opacity 0.2s" }}
+                            >
+                              {generatingFor === s.id ? <><RefreshCw size={14} className="spin" /> Generating...</> : <><Cpu size={14} /> Generate Agent Config</>}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ── SUB: GENERATED CONFIGS ── */}
+              {agentSubTab === "generated" && (
+                <div>
+                  <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Generated Configurations</h2>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Review, edit, and save agent configurations before deployment</p>
+
+                  {!generatedConfig && savedConfigs.length === 0 && (
+                    <div style={{ textAlign:"center", padding:"3rem 2rem" }}>
+                      <FileText size={40} color={DIM} strokeWidth={1.2} style={{ marginBottom:"1rem" }} />
+                      <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"1rem" }}>No configurations generated yet.</p>
+                      <button onClick={() => setAgentSubTab("ready")} style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", color:GOLD, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"8px", padding:"10px 20px", cursor:"pointer" }}>Go to Ready Leads</button>
+                    </div>
+                  )}
+
+                  {/* Active generated config */}
+                  {generatedConfig && (
+                    <div style={{ background:BG2, border:`1px solid ${GOLD_BORDER}`, borderRadius:"14px", overflow:"hidden", marginBottom:"2rem" }}>
+                      {/* Header */}
+                      <div style={{ padding:"1.5rem 2rem", borderBottom:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:"14px" }}>
+                          <div style={{ width:"44px", height:"44px", borderRadius:"12px", background:`${GOLD}10`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            <Bot size={22} color={GOLD} strokeWidth={1.8} />
+                          </div>
+                          <div>
+                            <h3 style={{ ...display, fontSize:"1.2rem", fontWeight:"700", marginBottom:"2px" }}>{generatedConfig.agentName}</h3>
+                            <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>
+                              {generatedConfig.businessTypeMeta?.label} · <span style={{ color:PLAN_COLORS[generatedConfig.plan] || GOLD, fontWeight:"600" }}>{PLAN_NAMES[generatedConfig.plan]}</span> · {generatedConfig.planMeta?.price}
+                            </div>
+                          </div>
+                        </div>
+                        <button onClick={() => setGeneratedConfig(null)} style={{ background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"8px", cursor:"pointer", color:MUTED, display:"flex", alignItems:"center", justifyContent:"center" }}><EyeOff size={16} /></button>
+                      </div>
+
+                      <div style={{ padding:"1.5rem 2rem" }}>
+                        {/* Workspace Files */}
+                        <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>WORKSPACE FILES</div>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(130px, 1fr))", gap:"8px", marginBottom:"1.8rem" }}>
+                          {Object.keys(generatedConfig.files).map(fname => (
+                            <button key={fname} onClick={() => setViewingFile(viewingFile === fname ? null : fname)} style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", color: viewingFile === fname ? "#080704" : CREAM, background: viewingFile === fname ? GOLD : BG3, border:`1px solid ${viewingFile === fname ? GOLD : BORDER}`, borderRadius:"8px", padding:"10px 12px", cursor:"pointer", textAlign:"left", transition:"all 0.15s", display:"flex", alignItems:"center", gap:"8px" }}>
+                              <FileText size={14} strokeWidth={1.6} /> {fname}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* File Preview */}
+                        {viewingFile && generatedConfig.files[viewingFile] && (
+                          <div style={{ marginBottom:"1.8rem" }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"8px" }}>
+                              <span style={{ ...sans, fontSize:"0.72rem", fontWeight:"700", color:CREAM }}>{viewingFile}</span>
+                              <button onClick={() => copyText(generatedConfig.files[viewingFile], `file-${viewingFile}`)} style={{ ...sans, fontSize:"0.62rem", color: copiedId === `file-${viewingFile}` ? "#22C55E" : MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"5px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"5px", transition:"color 0.2s" }}>
+                                {copiedId === `file-${viewingFile}` ? <><Check size={12} /> Copied</> : <><Copy size={12} /> Copy</>}
+                              </button>
+                            </div>
+                            <pre style={{ ...sans, fontSize:"0.68rem", color:CREAM, background:"#040302", border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"1.2rem", maxHeight:"400px", overflow:"auto", whiteSpace:"pre-wrap", lineHeight:"1.7" }}>{generatedConfig.files[viewingFile]}</pre>
+                          </div>
+                        )}
+
+                        {/* Tools */}
+                        <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>REQUIRED TOOLS</div>
+                        <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"1.8rem" }}>
+                          {generatedConfig.tools.required.map((tool: { id: string; name: string; requiresClientKey: boolean; description: string; configNotes?: string }) => (
+                            <div key={tool.id} style={{ ...sans, fontSize:"0.72rem", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"12px 16px", display:"flex", gap:"12px", alignItems:"center" }}>
+                              <Zap size={15} color={GOLD} strokeWidth={1.8} />
+                              <div style={{ flex:1 }}>
+                                <span style={{ fontWeight:"700" }}>{tool.name}</span>
+                                {tool.requiresClientKey && <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#F59E0B", marginLeft:"8px", background:"rgba(245,158,11,0.08)", padding:"2px 8px", borderRadius:"100px" }}>CLIENT KEY</span>}
+                                {tool.configNotes && <div style={{ fontSize:"0.62rem", color:DIM, marginTop:"2px" }}>{tool.configNotes}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {generatedConfig.tools.optional.length > 0 && (
+                          <>
+                            <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>OPTIONAL TOOLS</div>
+                            <div style={{ display:"flex", flexDirection:"column", gap:"6px", marginBottom:"1.8rem" }}>
+                              {generatedConfig.tools.optional.map((tool: { id: string; name: string; requiresClientKey: boolean; description: string }) => (
+                                <div key={tool.id} style={{ ...sans, fontSize:"0.72rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"12px 16px", display:"flex", gap:"12px", alignItems:"center", opacity:0.65 }}>
+                                  <Wrench size={15} color={DIM} strokeWidth={1.6} />
+                                  <div style={{ flex:1 }}>
+                                    <span style={{ fontWeight:"600", color:CREAM }}>{tool.name}</span>
+                                    {tool.requiresClientKey && <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#F59E0B", marginLeft:"8px", background:"rgba(245,158,11,0.08)", padding:"2px 8px", borderRadius:"100px" }}>CLIENT KEY</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Deploy Command */}
+                        <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>DEPLOY COMMAND</div>
+                        <div style={{ position:"relative", marginBottom:"1.8rem" }}>
+                          <pre style={{ ...sans, fontSize:"0.72rem", color:"#22C55E", background:"#040302", border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"1rem 1.2rem", overflow:"auto" }}>$ {generatedConfig.deployCommand}</pre>
+                          <button onClick={() => copyText(generatedConfig.deployCommand, "deploy-cmd")} style={{ position:"absolute", top:"10px", right:"10px", ...sans, fontSize:"0.6rem", color: copiedId === "deploy-cmd" ? "#22C55E" : MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"5px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px" }}>
+                            {copiedId === "deploy-cmd" ? <Check size={11} /> : <Copy size={11} />}
+                          </button>
+                        </div>
+
+                        {/* Env Vars */}
+                        <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>ENVIRONMENT VARIABLES</div>
+                        <div style={{ background:"#040302", border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"1.2rem", marginBottom:"1.8rem", position:"relative" }}>
+                          <button onClick={() => { const envStr = [...Object.entries(generatedConfig.envVars.required).map(([k,v])=>`${k}= ${v}`),"", ...Object.entries(generatedConfig.envVars.optional).map(([k,v])=>`${k}= ${v}`)].join("\n"); copyText(envStr, "all-env"); }} style={{ position:"absolute", top:"10px", right:"10px", ...sans, fontSize:"0.6rem", color: copiedId === "all-env" ? "#22C55E" : MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"5px 10px", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px" }}>
+                            {copiedId === "all-env" ? <><Check size={11} /> Copied</> : <><Copy size={11} /> Copy All</>}
+                          </button>
+                          {Object.entries(generatedConfig.envVars.required).map(([key, comment]) => (
+                            <div key={key} style={{ ...sans, fontSize:"0.68rem", marginBottom:"4px" }}><span style={{ color:"#F59E0B" }}>{key}</span><span style={{ color:DIM }}>=</span> <span style={{ color:DIM, fontSize:"0.58rem" }}>{String(comment)}</span></div>
+                          ))}
+                          {Object.keys(generatedConfig.envVars.optional).length > 0 && (
+                            <>
+                              <div style={{ borderTop:`1px solid ${BORDER}`, margin:"10px 0 6px", paddingTop:"8px", ...sans, fontSize:"0.58rem", color:DIM }}>Optional:</div>
+                              {Object.entries(generatedConfig.envVars.optional).map(([key, comment]) => (
+                                <div key={key} style={{ ...sans, fontSize:"0.68rem", marginBottom:"4px", opacity:0.55 }}><span style={{ color:"#6B7280" }}>{key}</span><span style={{ color:DIM }}>=</span> <span style={{ color:DIM, fontSize:"0.58rem" }}>{String(comment)}</span></div>
+                              ))}
+                            </>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div style={{ display:"flex", gap:"10px" }}>
+                          <button onClick={saveAgent} disabled={savingAgent} style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"10px", padding:"14px 0", cursor:"pointer", flex:1, display:"flex", alignItems:"center", justifyContent:"center", gap:"8px", transition:"opacity 0.2s" }}>
+                            {savingAgent ? <><RefreshCw size={15} className="spin" /> Saving...</> : <><Download size={15} /> Save Agent Configuration</>}
+                          </button>
+                          <button onClick={() => copyText(generatedConfig.deployCommand, "deploy-btn")} style={{ ...sans, fontSize:"0.78rem", fontWeight:"700", color:CREAM, background:"transparent", border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"14px 24px", cursor:"pointer", display:"flex", alignItems:"center", gap:"8px" }}>
+                            {copiedId === "deploy-btn" ? <Check size={15} color="#22C55E" /> : <Terminal size={15} />} {copiedId === "deploy-btn" ? "Copied" : "Copy CMD"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Previously saved configs */}
+                  {savedConfigs.length > 0 && (
+                    <div>
+                      <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"10px" }}>PREVIOUSLY SAVED</div>
+                      {savedConfigs.map((sc, i) => {
+                        const matched = submissions.find(s => s.id === sc.submissionId);
+                        return (
+                          <div key={i} style={{ display:"flex", alignItems:"center", gap:"14px", padding:"14px 16px", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"10px", marginBottom:"8px" }}>
+                            <div style={{ width:"36px", height:"36px", borderRadius:"10px", background:"rgba(34,197,94,0.08)", display:"flex", alignItems:"center", justifyContent:"center" }}><Check size={16} color="#22C55E" strokeWidth={2} /></div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:CREAM }}>{sc.config.agentName}</div>
+                              <div style={{ ...sans, fontSize:"0.65rem", color:MUTED }}>{matched?.business || sc.config.slug} · Saved to database</div>
+                            </div>
+                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:"#22C55E", background:"rgba(34,197,94,0.08)", padding:"4px 10px", borderRadius:"100px" }}>SAVED</span>
+                            <button onClick={() => { setGeneratedConfig(sc.config); }} style={{ ...sans, fontSize:"0.62rem", color:MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px" }}><Eye size={12} /> View</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── SUB: DEPLOYED AGENTS ── */}
+              {agentSubTab === "deployed" && (
+                <div>
+                  <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Deployed Agents</h2>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Manage active and configured agent instances</p>
+
+                  {agents.length === 0 && !agentsLoading && (
+                    <div style={{ textAlign:"center", padding:"3rem 2rem" }}>
+                      <Server size={40} color={DIM} strokeWidth={1.2} style={{ marginBottom:"1rem" }} />
+                      <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>No agents deployed yet. Generate and save a config first.</p>
+                    </div>
+                  )}
+
+                  <div style={{ display:"flex", flexDirection:"column", gap:"12px" }}>
+                    {agents.map(agent => {
+                      const st = AGENT_STATUSES[agent.status] || AGENT_STATUSES.configured;
+                      const matched = submissions.find(s => s.id === agent.submission_id);
+                      const isExpanded = selectedAgent?.id === agent.id;
+                      return (
+                        <div key={agent.id} style={{ background:BG2, border:`1px solid ${isExpanded ? GOLD_BORDER : BORDER}`, borderRadius:"14px", overflow:"hidden", transition:"border-color 0.2s" }}>
+                          {/* Agent Row */}
+                          <div style={{ display:"flex", alignItems:"center", gap:"14px", padding:"16px 20px", cursor:"pointer" }} onClick={() => setSelectedAgent(isExpanded ? null : agent)}>
+                            <div style={{ width:"40px", height:"40px", borderRadius:"10px", background:`${st.color}08`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                              <Bot size={20} color={st.color} strokeWidth={1.8} />
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ ...sans, fontSize:"0.88rem", fontWeight:"700", color:CREAM }}>{agent.agent_name}</div>
+                              <div style={{ ...sans, fontSize:"0.65rem", color:MUTED }}>
+                                {matched?.name || agent.slug} · {agent.business_type} · <Clock size={10} style={{ verticalAlign:"middle" }} /> {agent.heartbeat_interval || "24h"} · <Hash size={10} style={{ verticalAlign:"middle" }} /> {agent.tools_enabled?.length || 0} tools
+                                {agent.nemoclaw_enabled && <span style={{ color:"#14B8A6", marginLeft:"6px" }}><Shield size={10} style={{ verticalAlign:"middle" }} /> NemoClaw</span>}
+                              </div>
+                            </div>
+                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:PLAN_COLORS[agent.plan] || MUTED, background:`${PLAN_COLORS[agent.plan] || MUTED}10`, padding:"4px 12px", borderRadius:"100px" }}>{PLAN_NAMES[agent.plan]}</span>
+                            <span style={{ ...sans, fontSize:"0.58rem", fontWeight:"700", color:st.color, background:`${st.color}10`, padding:"4px 12px", borderRadius:"100px" }}>{st.label}</span>
+                            <ChevronRight size={16} color={DIM} style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition:"transform 0.2s" }} />
+                          </div>
+
+                          {/* Expanded */}
+                          {isExpanded && (
+                            <div style={{ padding:"0 20px 20px", borderTop:`1px solid ${BORDER}` }}>
+                              {/* Actions */}
+                              <div style={{ display:"flex", gap:"8px", padding:"16px 0 12px" }}>
+                                <button onClick={() => toggleAgent(agent.id, agent.status)} disabled={togglingAgent === agent.id} style={{ ...sans, fontSize:"0.68rem", fontWeight:"700", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"8px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", flex:1, justifyContent:"center" }}>
+                                  {togglingAgent === agent.id ? <RefreshCw size={13} className="spin" /> : agent.status === "active" ? <Pause size={13} /> : <Play size={13} />}
+                                  {togglingAgent === agent.id ? "Updating..." : agent.status === "active" ? "Pause Agent" : "Activate Agent"}
+                                </button>
+                                <button onClick={() => copyText(`./onboard.sh --name "${matched?.business || agent.agent_name}" --type ${agent.business_type} --plan ${agent.plan} --owner "${matched?.name || ""}" --email "${matched?.email || ""}"`, `cmd-${agent.id}`)} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color: copiedId === `cmd-${agent.id}` ? "#22C55E" : MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"8px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px" }}>
+                                  {copiedId === `cmd-${agent.id}` ? <Check size={13} /> : <Terminal size={13} />} {copiedId === `cmd-${agent.id}` ? "Copied" : "Copy CMD"}
+                                </button>
+                                <button onClick={() => deleteAgent(agent.id)} style={{ ...sans, fontSize:"0.68rem", fontWeight:"600", color:"#EF4444", background:"rgba(239,68,68,0.04)", border:"1px solid rgba(239,68,68,0.12)", borderRadius:"8px", padding:"8px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px" }}>
+                                  <Trash2 size={13} /> Delete
+                                </button>
+                              </div>
+
+                              {/* Client info */}
+                              {matched && (
+                                <div style={{ ...sans, fontSize:"0.72rem", color:MUTED, padding:"10px 0", borderBottom:`1px solid ${BORDER}`, marginBottom:"12px" }}>
+                                  <strong style={{ color:CREAM }}>Client:</strong> {matched.name} · {matched.email} · {matched.business}
+                                  {matched.payment_status === "paid" && <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#22C55E", marginLeft:"10px", background:"rgba(34,197,94,0.08)", padding:"2px 8px", borderRadius:"100px" }}>PAID</span>}
+                                </div>
+                              )}
+
+                              {/* Workspace files */}
+                              {agent.workspace_files && Object.keys(agent.workspace_files).length > 0 && (
+                                <>
+                                  <div style={{ ...sans, fontSize:"0.58rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"8px" }}>WORKSPACE FILES</div>
+                                  <div style={{ display:"flex", gap:"6px", flexWrap:"wrap", marginBottom:"10px" }}>
+                                    {Object.keys(agent.workspace_files).map(f => (
+                                      <button key={f} onClick={() => setViewingFile(viewingFile === `${agent.id}-${f}` ? null : `${agent.id}-${f}`)} style={{ ...sans, fontSize:"0.65rem", fontWeight:"600", color: viewingFile === `${agent.id}-${f}` ? "#080704" : CREAM, background: viewingFile === `${agent.id}-${f}` ? GOLD : BG3, border:`1px solid ${viewingFile === `${agent.id}-${f}` ? GOLD : BORDER}`, borderRadius:"6px", padding:"6px 12px", cursor:"pointer", display:"flex", alignItems:"center", gap:"5px", transition:"all 0.15s" }}>
+                                        <FileText size={11} /> {f}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {viewingFile?.startsWith(`${agent.id}-`) && (
+                                    <div style={{ position:"relative", marginBottom:"12px" }}>
+                                      <button onClick={() => copyText(agent.workspace_files[viewingFile.replace(`${agent.id}-`, "")], `ws-${viewingFile}`)} style={{ position:"absolute", top:"8px", right:"8px", ...sans, fontSize:"0.58rem", color: copiedId === `ws-${viewingFile}` ? "#22C55E" : MUTED, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"5px", padding:"4px 8px", cursor:"pointer", display:"flex", alignItems:"center", gap:"4px" }}>
+                                        {copiedId === `ws-${viewingFile}` ? <Check size={10} /> : <Copy size={10} />}
+                                      </button>
+                                      <pre style={{ ...sans, fontSize:"0.65rem", color:CREAM, background:"#040302", border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"1rem", maxHeight:"300px", overflow:"auto", whiteSpace:"pre-wrap", lineHeight:"1.6" }}>{agent.workspace_files[viewingFile.replace(`${agent.id}-`, "")]}</pre>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Tools */}
+                              <div style={{ ...sans, fontSize:"0.58rem", letterSpacing:"0.18em", color:DIM, fontWeight:"700", marginBottom:"8px", marginTop:"8px" }}>ENABLED TOOLS</div>
+                              <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                                {(agent.tools_enabled || []).map((tid: string) => (
+                                  <span key={tid} style={{ ...sans, fontSize:"0.62rem", fontWeight:"600", color:CREAM, background:BG3, border:`1px solid ${BORDER}`, borderRadius:"6px", padding:"5px 12px", display:"flex", alignItems:"center", gap:"5px" }}><Zap size={10} color={GOLD} /> {tid}</span>
+                                ))}
+                                {(!agent.tools_enabled || agent.tools_enabled.length === 0) && <span style={{ ...sans, fontSize:"0.65rem", color:DIM }}>No tools configured</span>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── SUB: TOOL REGISTRY ── */}
+              {agentSubTab === "tools" && (
+                <div>
+                  <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Tool Registry</h2>
+                  <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Complete inventory of tools available per plan tier</p>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"16px" }}>
+                    {(["starter", "business", "fullstack"] as const).map(plan => {
+                      const tools = [
+                        ...(plan === "starter" ? ["WhatsApp OR Telegram", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Anthropic Claude", "LocalClaw Alerts"] : []),
+                        ...(plan === "business" ? ["WhatsApp", "Telegram", "Instagram DMs", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Stripe Payments", "Postiz Social", "NanoBana Images", "Anthropic Claude", "OpenAI Fallback", "LocalClaw Alerts"] : []),
+                        ...(plan === "fullstack" ? ["WhatsApp", "Telegram", "Instagram DMs", "Gmail / Email", "Discord", "Slack", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Stripe Payments", "Postiz Social", "NanoBana Images", "Google Business", "NemoClaw Security", "Sentry Monitoring", "Anthropic Claude", "OpenAI GPT", "Tavily Search", "LocalClaw Alerts"] : []),
+                      ];
+                      return (
+                        <div key={plan} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"14px", overflow:"hidden" }}>
+                          <div style={{ padding:"1.2rem 1.4rem", borderBottom:`1px solid ${BORDER}`, background:`${PLAN_COLORS[plan]}06` }}>
+                            <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:PLAN_COLORS[plan] }}>{PLAN_NAMES[plan]}</div>
+                            <div style={{ ...sans, fontSize:"0.62rem", color:DIM, marginTop:"4px" }}>
+                              {plan === "starter" ? "$149/mo · 1 ch · 24h" : plan === "business" ? "$349/mo · 3 ch · 6h" : "$699/mo · All ch · 30m · Sub-agents"}
+                            </div>
+                          </div>
+                          <div style={{ padding:"1rem 1.4rem" }}>
+                            {tools.map((tool, i) => (
+                              <div key={i} style={{ display:"flex", alignItems:"center", gap:"10px", padding:"7px 0", borderBottom: i < tools.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                                <CircleDot size={8} color={PLAN_COLORS[plan]} />
+                                <span style={{ ...sans, fontSize:"0.7rem", color:CREAM }}>{tool}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+            </main>
           </div>
         )}
 
