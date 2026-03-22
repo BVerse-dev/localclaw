@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { name, email, business, industry, teamSize, budget, automations, details } = body;
+    const { name, email, phone, business, industry, teamSize, budget, automations, details } = body;
 
     // Validate required fields
     if (!name || !email || !business) {
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       .insert({
         name,
         email,
+        phone: phone || null,
         business,
         industry: industry || null,
         team_size: teamSize || null,
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send email alert (fire-and-forget — don't block the response)
-    sendEmailAlert({ name, email, business, industry, teamSize, budget, automations, details }).catch(
+    sendEmailAlert({ name, email, phone, business, industry, teamSize, budget, automations, details }).catch(
       (err) => console.error("Email alert failed:", err)
     );
 
@@ -58,6 +59,7 @@ NEW INTAKE SUBMISSION
 
 Name:       ${data.name}
 Email:      ${data.email}
+Phone:      ${data.phone || "Not provided"}
 Business:   ${data.business}
 Industry:   ${data.industry || "Not specified"}
 Team Size:  ${data.teamSize || "Not specified"}

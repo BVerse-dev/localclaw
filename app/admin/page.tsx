@@ -59,6 +59,7 @@ interface Submission {
   created_at: string;
   name: string;
   email: string;
+  phone: string | null;
   business: string;
   industry: string | null;
   team_size: string | null;
@@ -1074,7 +1075,7 @@ export default function AdminPage() {
                           </td>
                           <td style={{ padding:"14px 16px" }}>
                             <div style={{ ...sans, fontSize:"0.86rem", fontWeight:"600", color:CREAM }}>{s.name}</div>
-                            <div style={{ ...sans, fontSize:"0.75rem", color:DIM }}>{s.email}</div>
+                            <div style={{ ...sans, fontSize:"0.75rem", color:DIM }}>{s.email}{s.phone ? ` · ${s.phone}` : ""}</div>
                           </td>
                           <td style={{ ...sans, fontSize:"0.84rem", color:MUTED, padding:"14px 16px" }}>{s.business}</td>
                           <td style={{ ...sans, fontSize:"0.8rem", color:MUTED, padding:"14px 16px" }}>

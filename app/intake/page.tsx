@@ -171,6 +171,7 @@ function IntakeForm() {
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
+      phone: formData.get("phone"),
       business: formData.get("business"),
       industry: formData.get("industry"),
       teamSize: formData.get("teamSize"),
@@ -422,6 +423,10 @@ function IntakeForm() {
                     <div>
                       <label style={labelStyle}>EMAIL ADDRESS *</label>
                       <input name="email" type="email" required placeholder="john@company.com" className="intake-input" style={inputStyle} />
+                    </div>
+                    <div style={{ gridColumn:"1 / -1" }}>
+                      <label style={labelStyle}>PHONE NUMBER</label>
+                      <input name="phone" type="tel" placeholder="+1 (555) 123-4567" className="intake-input" style={inputStyle} />
                     </div>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginTop:"1rem" }}>

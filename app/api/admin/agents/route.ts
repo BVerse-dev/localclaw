@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
       businessType,
       ownerName: sub.name,
       ownerEmail: sub.email,
+      ownerPhone: sub.phone || "",
       plan: planKey,
       industry: sub.industry || "general",
       automations: sub.automations || [],
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest) {
           industry: industryTools,
         },
         envVars: { required: requiredEnvVars, optional: optionalEnvVars },
-        deployCommand: `./onboard.sh --name "${sub.business}" --type ${businessType} --plan ${planKey} --owner "${sub.name}" --email "${sub.email}"`,
+        deployCommand: `./onboard.sh --name "${sub.business}" --type ${businessType} --plan ${planKey} --owner "${sub.name}" --email "${sub.email}" --phone "${sub.phone || ""}"`,
       },
     });
   }
@@ -257,6 +258,7 @@ interface GenerateParams {
   businessType: string;
   ownerName: string;
   ownerEmail: string;
+  ownerPhone: string;
   plan: "starter" | "business" | "fullstack";
   industry: string;
   automations: string[];
@@ -440,6 +442,7 @@ ${p.plan === "fullstack" ? "\n## SUB-AGENTS: Researcher + Scheduler + Closer (ac
 ## OWNER
 **Name:** ${p.ownerName}
 **Email:** ${p.ownerEmail}
+**Phone:** ${p.ownerPhone || "Not provided"}
 **Plan:** ${p.plan} (${planMeta.price})
 
 ## BUSINESS
@@ -483,6 +486,10 @@ Tables: intake_submissions, bookings, deployed_agents
 ## LocalClaw Alerts
 Endpoint: https://localclawagents.com/api/alerts
 Alert email: localclawagents@gmail.com
+
+## Owner Contact
+Phone: ${p.ownerPhone || "[TO BE FILLED]"}
+WhatsApp Business: ${p.ownerPhone || "[TO BE CONFIGURED]"}
 
 ## Active Channels
 ${channels}
