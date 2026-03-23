@@ -643,7 +643,7 @@ export default function LocalClaw() {
               "$97 deposit credited to your setup fee",
               "30-day satisfaction guarantee",
               "Cancel before kickoff — full refund",
-              "Additional agents +$1,500 each",
+              "Additional agents +$850 each",
             ].map((t,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
                 <CheckCircle size={13} color={GOLD} strokeWidth={2} style={{ flexShrink:0 }} />
