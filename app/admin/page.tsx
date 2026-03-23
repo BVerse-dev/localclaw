@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, Clock, Users, Workflow, Package } from "lucide-react";
+import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, Clock, Users, Workflow, Package, BookOpen, Plus, X, Save, Search } from "lucide-react";
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const BG         = "#080704";
@@ -274,7 +274,45 @@ const AGENT_STATUSES: Record<string, { color: string; label: string }> = {
   error:      { color: "#EF4444", label: "Error" },
 };
 
-type AgentSubTab = "overview" | "ready" | "deployed" | "generated" | "tools";
+type AgentSubTab = "overview" | "ready" | "deployed" | "generated" | "tools" | "skills";
+
+// ── Skill types ─────────────────────────────────────────────────────────────
+interface AgentSkill {
+  id: string;
+  name: string;
+  description: string;
+  category: "lead-capture" | "communication" | "scheduling" | "marketing" | "crm" | "payments" | "analytics" | "custom";
+  instructions: string;
+  user_invocable: boolean;
+  plans: string[];
+  required_tools: string[];
+  is_template: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AgentSkillAssignment {
+  id: string;
+  agent_id: string;
+  skill_id: string;
+  enabled: boolean;
+  assigned_at: string;
+  skill: AgentSkill;
+}
+
+const SKILL_CATEGORIES: Record<string, { label: string; color: string }> = {
+  "lead-capture":  { label: "Lead Capture",   color: "#A855F7" },
+  "communication": { label: "Communication",  color: "#3B82F6" },
+  "scheduling":    { label: "Scheduling",     color: "#F97316" },
+  "marketing":     { label: "Marketing",      color: "#EC4899" },
+  "crm":           { label: "CRM",            color: "#10B981" },
+  "payments":      { label: "Payments",       color: "#635BFF" },
+  "analytics":     { label: "Analytics",      color: "#06B6D4" },
+  "custom":        { label: "Custom",         color: "#C9922A" },
+};
+
+// Skills loaded from database via /api/admin/skills
+
 
 function paymentBadge(ps: string | null, amount: number | null) {
   if (ps === "paid") return { label: `PAID $${((amount || 0) / 100).toLocaleString()}`, color: "#10B981" };
@@ -320,6 +358,117 @@ export default function AdminPage() {
   const [agentSubTab, setAgentSubTab] = useState<AgentSubTab>("overview");
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedConfigs, setSavedConfigs] = useState<Array<{ submissionId: string; config: GeneratedConfig }>>([]);
+  const [skillSearch, setSkillSearch] = useState("");
+  const [skillCategoryFilter, setSkillCategoryFilter] = useState<string>("all");
+  const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
+  const [creatingSkill, setCreatingSkill] = useState(false);
+  const [customSkillName, setCustomSkillName] = useState("");
+  const [customSkillDesc, setCustomSkillDesc] = useState("");
+  const [customSkillCategory, setCustomSkillCategory] = useState<string>("custom");
+  const [customSkillInstructions, setCustomSkillInstructions] = useState("");
+  const [customSkillPlans, setCustomSkillPlans] = useState<string[]>(["starter", "business", "fullstack"]);
+  const [allSkills, setAllSkills] = useState<AgentSkill[]>([]);
+  const [skillsLoading, setSkillsLoading] = useState(false);
+  const [assigningSkill, setAssigningSkill] = useState<string | null>(null);
+  const [skillCopied, setSkillCopied] = useState<string | null>(null);
+  const [savingSkill, setSavingSkill] = useState(false);
+  const [deletingSkill, setDeletingSkill] = useState<string | null>(null);
+
+  // ── Fetch skills from DB ──
+  const fetchSkills = useCallback(async () => {
+    setSkillsLoading(true);
+    try {
+      const res = await fetch("/api/admin/skills");
+      if (res.ok) {
+        const data = await res.json();
+        setAllSkills(data.skills || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch skills:", err);
+    }
+    setSkillsLoading(false);
+  }, []);
+
+  const filteredSkills = useMemo(() => {
+    return allSkills.filter(s => {
+      if (skillCategoryFilter !== "all" && s.category !== skillCategoryFilter) return false;
+      if (skillSearch && !s.name.toLowerCase().includes(skillSearch.toLowerCase()) && !s.description.toLowerCase().includes(skillSearch.toLowerCase())) return false;
+      return true;
+    });
+  }, [allSkills, skillCategoryFilter, skillSearch]);
+
+  const saveCustomSkill = async () => {
+    if (!customSkillName || !customSkillDesc || !customSkillInstructions) return;
+    setSavingSkill(true);
+    const skillName = customSkillName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    try {
+      const res = await fetch("/api/admin/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          name: skillName,
+          description: customSkillDesc,
+          category: customSkillCategory,
+          instructions: `---\nname: ${skillName}\ndescription: ${customSkillDesc}\n---\n\n${customSkillInstructions}`,
+          userInvocable: false,
+          plans: customSkillPlans,
+          requiredTools: [],
+        }),
+      });
+      if (res.ok) {
+        setCustomSkillName("");
+        setCustomSkillDesc("");
+        setCustomSkillInstructions("");
+        setCustomSkillCategory("custom");
+        setCustomSkillPlans(["starter", "business", "fullstack"]);
+        setCreatingSkill(false);
+        fetchSkills();
+      }
+    } catch (err) {
+      console.error("Failed to save skill:", err);
+    }
+    setSavingSkill(false);
+  };
+
+  const copySkillMd = (skill: AgentSkill) => {
+    navigator.clipboard.writeText(skill.instructions);
+    setSkillCopied(skill.id);
+    setTimeout(() => setSkillCopied(null), 2000);
+  };
+
+  const deleteCustomSkill = async (id: string) => {
+    setDeletingSkill(id);
+    try {
+      const res = await fetch("/api/admin/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", skillId: id }),
+      });
+      if (res.ok) {
+        if (expandedSkill === id) setExpandedSkill(null);
+        fetchSkills();
+      }
+    } catch (err) {
+      console.error("Failed to delete skill:", err);
+    }
+    setDeletingSkill(null);
+  };
+
+  const assignSkillToAgent = async (skillId: string, agentId: string) => {
+    setAssigningSkill(skillId);
+    try {
+      await fetch("/api/admin/skills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "assign", agentId, skillId }),
+      });
+      setTimeout(() => setAssigningSkill(null), 2000);
+    } catch (err) {
+      console.error("Failed to assign skill:", err);
+      setAssigningSkill(null);
+    }
+  };
 
   // ── Auth ──
   const handleLogin = async (e: React.FormEvent) => {
@@ -427,8 +576,11 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (authed && tab === "agents") fetchAgents();
-  }, [authed, tab, fetchAgents]);
+    if (authed && tab === "agents") {
+      fetchAgents();
+      fetchSkills();
+    }
+  }, [authed, tab, fetchAgents, fetchSkills]);
 
   // ── Generate agent config from submission ──
   const generateConfig = async (submissionId: string) => {
@@ -1607,13 +1759,15 @@ export default function AdminPage() {
                   { key: "ready" as AgentSubTab, label: "Ready to Deploy", IconComp: Rocket },
                   { key: "deployed" as AgentSubTab, label: "Deployed Agents", IconComp: Server },
                   { key: "generated" as AgentSubTab, label: "Generated Configs", IconComp: FileText },
+                  { key: "skills" as AgentSubTab, label: "Skills", IconComp: BookOpen },
                   { key: "tools" as AgentSubTab, label: "Tool Registry", IconComp: Wrench },
                 ]).map(item => {
                   const isActive = agentSubTab === item.key;
                   const readyCount = item.key === "ready" ? submissions.filter(s => (s.payment_status === "paid" || s.status === "onboarded" || s.status === "call_booked") && !agents.find(a => a.submission_id === s.id)).length : 0;
                   const deployedCount = item.key === "deployed" ? agents.length : 0;
                   const genCount = item.key === "generated" ? (generatedConfig ? 1 : 0) + savedConfigs.length : 0;
-                  const count = item.key === "ready" ? readyCount : item.key === "deployed" ? deployedCount : item.key === "generated" ? genCount : 0;
+                  const skillsCount = item.key === "skills" ? allSkills.length : 0;
+                  const count = item.key === "ready" ? readyCount : item.key === "deployed" ? deployedCount : item.key === "generated" ? genCount : item.key === "skills" ? skillsCount : 0;
                   return (
                     <button key={item.key} onClick={() => setAgentSubTab(item.key)} style={{ display:"flex", alignItems:"center", gap:"10px", width:"100%", padding:"10px 14px", marginBottom:"2px", borderRadius:"8px", border:"none", cursor:"pointer", transition:"all 0.2s", background: isActive ? GOLD_MID : "transparent", color: isActive ? GOLD : MUTED, ...sans, fontSize:"0.78rem", fontWeight: isActive ? "700" : "500", textAlign:"left" }}>
                       <item.IconComp size={16} strokeWidth={isActive ? 2.2 : 1.6} />
@@ -2043,6 +2197,194 @@ export default function AdminPage() {
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* ── SUB: SKILLS ── */}
+              {agentSubTab === "skills" && (
+                <div>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"2rem" }}>
+                    <div>
+                      <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Agent Skills</h2>
+                      <p style={{ ...sans, fontSize:"0.82rem", color:DIM }}>Skills are SKILL.md files that teach agents how to perform specific tasks. Each skill is a modular capability package.</p>
+                    </div>
+                    <button onClick={() => setCreatingSkill(!creatingSkill)} style={{ ...sans, fontSize:"0.72rem", fontWeight:"700", color: creatingSkill ? CREAM : "#080704", background: creatingSkill ? "transparent" : GOLD, border: creatingSkill ? `1px solid ${BORDER}` : "none", borderRadius:"8px", padding:"10px 20px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", whiteSpace:"nowrap" }}>
+                      {creatingSkill ? <><X size={14} /> Cancel</> : <><Plus size={14} /> Create Skill</>}
+                    </button>
+                  </div>
+
+                  {/* ── Create Skill Form ── */}
+                  {creatingSkill && (
+                    <div style={{ background:BG2, border:`1px solid ${GOLD_BORDER}`, borderRadius:"14px", padding:"1.8rem", marginBottom:"2rem" }}>
+                      <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:GOLD, fontWeight:"700", marginBottom:"1.2rem" }}>NEW SKILL</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem", marginBottom:"1rem" }}>
+                        <div>
+                          <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>SKILL NAME *</label>
+                          <input value={customSkillName} onChange={e => setCustomSkillName(e.target.value)} placeholder="e.g. inventory-checker" style={{ ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px", color:CREAM, fontSize:"0.82rem", outline:"none", boxSizing:"border-box" }} />
+                        </div>
+                        <div>
+                          <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>CATEGORY</label>
+                          <select value={customSkillCategory} onChange={e => setCustomSkillCategory(e.target.value)} style={{ ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px", color:CREAM, fontSize:"0.82rem", outline:"none", cursor:"pointer", boxSizing:"border-box" }}>
+                            {Object.entries(SKILL_CATEGORIES).map(([k, v]) => (
+                              <option key={k} value={k} style={{ background:BG }}>{v.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom:"1rem" }}>
+                        <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>DESCRIPTION *</label>
+                        <input value={customSkillDesc} onChange={e => setCustomSkillDesc(e.target.value)} placeholder="One-line description of what this skill does" style={{ ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px", color:CREAM, fontSize:"0.82rem", outline:"none", boxSizing:"border-box" }} />
+                      </div>
+                      <div style={{ marginBottom:"1rem" }}>
+                        <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>PLAN TIERS</label>
+                        <div style={{ display:"flex", gap:"0.6rem" }}>
+                          {(["starter", "business", "fullstack"] as const).map(p => (
+                            <button key={p} onClick={() => setCustomSkillPlans(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", padding:"6px 14px", borderRadius:"6px", border:`1px solid ${customSkillPlans.includes(p) ? PLAN_COLORS[p] : BORDER}`, background: customSkillPlans.includes(p) ? `${PLAN_COLORS[p]}15` : "transparent", color: customSkillPlans.includes(p) ? PLAN_COLORS[p] : DIM, cursor:"pointer" }}>
+                              {PLAN_NAMES[p]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom:"1.2rem" }}>
+                        <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>INSTRUCTIONS (Markdown) *</label>
+                        <textarea value={customSkillInstructions} onChange={e => setCustomSkillInstructions(e.target.value)} placeholder={"# Skill Name\n\nWhen the user asks for X, do Y.\n\n## Steps\n1. First step\n2. Second step\n..."} rows={10} style={{ ...sans, width:"100%", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"14px", color:CREAM, fontSize:"0.8rem", lineHeight:"1.6", outline:"none", resize:"vertical", boxSizing:"border-box", fontFamily:"'JetBrains Mono', 'Fira Code', monospace" }} />
+                      </div>
+                      <button onClick={saveCustomSkill} disabled={!customSkillName || !customSkillDesc || !customSkillInstructions || savingSkill} style={{ ...sans, fontSize:"0.72rem", fontWeight:"700", color:"#080704", background:GOLD, border:"none", borderRadius:"8px", padding:"10px 24px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", opacity: (!customSkillName || !customSkillDesc || !customSkillInstructions || savingSkill) ? 0.4 : 1 }}>
+                        <Save size={14} /> {savingSkill ? "Saving..." : "Save Skill"}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* ── Search & Filter ── */}
+                  <div style={{ display:"flex", gap:"1rem", marginBottom:"1.5rem", alignItems:"center" }}>
+                    <div style={{ position:"relative", flex:1 }}>
+                      <Search size={14} color={DIM} style={{ position:"absolute", left:"12px", top:"50%", transform:"translateY(-50%)" }} />
+                      <input value={skillSearch} onChange={e => setSkillSearch(e.target.value)} placeholder="Search skills..." style={{ ...sans, width:"100%", background:BG2, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"10px 14px 10px 36px", color:CREAM, fontSize:"0.8rem", outline:"none", boxSizing:"border-box" }} />
+                    </div>
+                    <div style={{ display:"flex", gap:"0.4rem", flexWrap:"wrap" }}>
+                      <button onClick={() => setSkillCategoryFilter("all")} style={{ ...sans, fontSize:"0.65rem", fontWeight:"600", padding:"6px 12px", borderRadius:"6px", border:`1px solid ${skillCategoryFilter === "all" ? GOLD : BORDER}`, background: skillCategoryFilter === "all" ? GOLD_MID : "transparent", color: skillCategoryFilter === "all" ? GOLD : DIM, cursor:"pointer" }}>All</button>
+                      {Object.entries(SKILL_CATEGORIES).map(([k, v]) => (
+                        <button key={k} onClick={() => setSkillCategoryFilter(k)} style={{ ...sans, fontSize:"0.65rem", fontWeight:"600", padding:"6px 12px", borderRadius:"6px", border:`1px solid ${skillCategoryFilter === k ? v.color : BORDER}`, background: skillCategoryFilter === k ? `${v.color}15` : "transparent", color: skillCategoryFilter === k ? v.color : DIM, cursor:"pointer" }}>
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── Stats Bar ── */}
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:"1rem", marginBottom:"2rem" }}>
+                    {[
+                      { label: "Total Skills", value: allSkills.length, color: GOLD },
+                      { label: "Templates", value: allSkills.filter(s => s.is_template).length, color: "#3B82F6" },
+                      { label: "Custom", value: allSkills.filter(s => !s.is_template).length, color: "#A855F7" },
+                      { label: "Categories", value: Object.keys(SKILL_CATEGORIES).length, color: "#10B981" },
+                    ].map(s => (
+                      <div key={s.label} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"10px", padding:"1rem 1.2rem" }}>
+                        <div style={{ ...sans, fontSize:"1.4rem", fontWeight:"700", color:s.color }}>{s.value}</div>
+                        <div style={{ ...sans, fontSize:"0.65rem", color:DIM, letterSpacing:"0.1em", marginTop:"2px" }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* ── Skills Grid ── */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1rem" }}>
+                    {filteredSkills.map(skill => {
+                      const cat = SKILL_CATEGORIES[skill.category];
+                      const isExpanded = expandedSkill === skill.id;
+                      const isCustom = !skill.is_template;
+                      return (
+                        <div key={skill.id} style={{ background:BG2, border:`1px solid ${isExpanded ? cat.color + "40" : BORDER}`, borderRadius:"14px", overflow:"hidden", transition:"border-color 0.2s", gridColumn: isExpanded ? "1 / -1" : undefined }}>
+                          {/* Header */}
+                          <div style={{ padding:"1.2rem 1.4rem", cursor:"pointer" }} onClick={() => setExpandedSkill(isExpanded ? null : skill.id)}>
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"0.5rem" }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+                                <BookOpen size={16} color={cat.color} />
+                                <span style={{ ...sans, fontSize:"0.85rem", fontWeight:"700", color:CREAM }}>{skill.name}</span>
+                                {skill.user_invocable && (
+                                  <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#F59E0B", background:"rgba(245,158,11,0.1)", padding:"2px 6px", borderRadius:"4px" }}>SLASH CMD</span>
+                                )}
+                                {isCustom && (
+                                  <span style={{ ...sans, fontSize:"0.55rem", fontWeight:"700", color:"#A855F7", background:"rgba(168,85,247,0.1)", padding:"2px 6px", borderRadius:"4px" }}>CUSTOM</span>
+                                )}
+                              </div>
+                              <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                                <span style={{ ...sans, fontSize:"0.6rem", fontWeight:"600", color:cat.color, background:`${cat.color}12`, padding:"3px 8px", borderRadius:"4px", border:`1px solid ${cat.color}25` }}>{cat.label}</span>
+                                <ChevronRight size={14} color={DIM} style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition:"transform 0.2s" }} />
+                              </div>
+                            </div>
+                            <p style={{ ...sans, fontSize:"0.76rem", color:MUTED, lineHeight:"1.5", margin:0 }}>{skill.description}</p>
+                            <div style={{ display:"flex", gap:"4px", marginTop:"0.6rem" }}>
+                              {skill.plans.map(p => (
+                                <span key={p} style={{ ...sans, fontSize:"0.55rem", fontWeight:"600", color:PLAN_COLORS[p], background:`${PLAN_COLORS[p]}12`, padding:"2px 6px", borderRadius:"4px" }}>{PLAN_NAMES[p]}</span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Expanded Content */}
+                          {isExpanded && (
+                            <div style={{ borderTop:`1px solid ${BORDER}`, padding:"1.2rem 1.4rem" }}>
+                              {/* Required Tools */}
+                              {skill.required_tools.length > 0 && (
+                                <div style={{ marginBottom:"1rem" }}>
+                                  <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.16em", color:DIM, fontWeight:"700", marginBottom:"0.5rem" }}>REQUIRED TOOLS</div>
+                                  <div style={{ display:"flex", gap:"6px", flexWrap:"wrap" }}>
+                                    {skill.required_tools.map(t => (
+                                      <span key={t} style={{ ...sans, fontSize:"0.68rem", color:CREAM, background:BG, padding:"4px 10px", borderRadius:"6px", border:`1px solid ${BORDER}` }}>{t}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* SKILL.md Preview */}
+                              <div style={{ marginBottom:"1rem" }}>
+                                <div style={{ ...sans, fontSize:"0.6rem", letterSpacing:"0.16em", color:DIM, fontWeight:"700", marginBottom:"0.5rem" }}>SKILL.md</div>
+                                <pre style={{ ...sans, fontSize:"0.72rem", color:MUTED, lineHeight:"1.65", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"1rem", overflow:"auto", maxHeight:"400px", whiteSpace:"pre-wrap", margin:0, fontFamily:"'JetBrains Mono', 'Fira Code', monospace" }}>
+                                  {skill.instructions}
+                                </pre>
+                              </div>
+
+                              {/* Actions */}
+                              <div style={{ display:"flex", gap:"0.6rem", flexWrap:"wrap" }}>
+                                <button onClick={() => copySkillMd(skill)} style={{ ...sans, fontSize:"0.7rem", fontWeight:"600", color: skillCopied === skill.id ? "#10B981" : CREAM, background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"8px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px" }}>
+                                  {skillCopied === skill.id ? <><Check size={13} /> Copied</> : <><Copy size={13} /> Copy SKILL.md</>}
+                                </button>
+                                {agents.length > 0 && (
+                                  <select
+                                    value=""
+                                    onChange={e => {
+                                      if (!e.target.value) return;
+                                      assignSkillToAgent(skill.id, e.target.value);
+                                    }}
+                                    style={{ ...sans, fontSize:"0.7rem", background:BG, border:`1px solid ${BORDER}`, borderRadius:"8px", padding:"8px 16px", color:MUTED, cursor:"pointer" }}
+                                  >
+                                    <option value="">Assign to Agent...</option>
+                                    {agents.map(a => (
+                                      <option key={a.id} value={a.id} style={{ background:BG }}>{a.agent_name}</option>
+                                    ))}
+                                  </select>
+                                )}
+                                {assigningSkill === skill.id && (
+                                  <span style={{ ...sans, fontSize:"0.7rem", color:"#10B981", display:"flex", alignItems:"center", gap:"4px" }}><Check size={13} /> Assigned</span>
+                                )}
+                                {isCustom && (
+                                  <button onClick={() => deleteCustomSkill(skill.id)} disabled={deletingSkill === skill.id} style={{ ...sans, fontSize:"0.7rem", fontWeight:"600", color:"#EF4444", background:"transparent", border:`1px solid rgba(239,68,68,0.3)`, borderRadius:"8px", padding:"8px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:"6px", marginLeft:"auto", opacity: deletingSkill === skill.id ? 0.5 : 1 }}>
+                                    <Trash2 size={13} /> {deletingSkill === skill.id ? "Deleting..." : "Delete"}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {filteredSkills.length === 0 && (
+                    <div style={{ textAlign:"center", padding:"3rem", color:DIM }}>
+                      <BookOpen size={32} color={DIM} style={{ marginBottom:"1rem", opacity:0.5 }} />
+                      <p style={{ ...sans, fontSize:"0.85rem" }}>No skills match your search.</p>
+                    </div>
+                  )}
                 </div>
               )}
 
