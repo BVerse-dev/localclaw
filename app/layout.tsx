@@ -5,7 +5,7 @@ const SITE_URL = "https://localclawagents.com";
 const SITE_NAME = "LocalClaw";
 const SITE_TITLE = "LocalClaw — AI Agents for Local Businesses";
 const SITE_DESC = "LocalClaw deploys autonomous AI agents that handle your inbox, close leads, book appointments, and post content — 24/7. Powered by OpenClaw + NVIDIA NemoClaw. No technical knowledge required. Live in under 24 hours.";
-const OG_IMAGE = `${SITE_URL}/icon.svg`;
+const OG_IMAGE = `${SITE_URL}/opengraph-image`;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -90,8 +90,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
     ],
-    apple: "/apple-icon.svg",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 
   // ── Manifest ──
@@ -108,17 +112,17 @@ export const metadata: Metadata = {
     images: [
       {
         url: OG_IMAGE,
-        width: 512,
-        height: 512,
+        width: 1200,
+        height: 630,
         alt: "LocalClaw — AI Agents for Local Businesses",
-        type: "image/svg+xml",
+        type: "image/png",
       },
     ],
   },
 
   // ── Twitter / X ──
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     site: "@Th3Alch3mist_",
     creator: "@Th3Alch3mist_",
     title: SITE_TITLE,
@@ -145,12 +149,14 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
 
-  // ── Verification (add your codes when ready) ──
-  // verification: {
-  //   google: "your-google-verification-code",
-  //   yandex: "your-yandex-code",
-  //   other: { "msvalidate.01": "your-bing-code" },
-  // },
+  // ── Verification ──
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || "",
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || "",
+    other: {
+      "msvalidate.01": process.env.NEXT_PUBLIC_BING_VERIFICATION || "",
+    },
+  },
 
   // ── Category ──
   category: "technology",

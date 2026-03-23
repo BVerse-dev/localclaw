@@ -77,13 +77,38 @@ export default async function BlogPostPage({
       "@type": "Organization",
       name: "LocalClaw",
       url: "https://localclawagents.com",
-      logo: "https://localclawagents.com/icon.svg",
+      logo: "https://localclawagents.com/icon-512.png",
     },
     mainEntityOfPage: {
       "@type": "WebPage",
       "@id": `https://localclawagents.com/blog/${post.slug}`,
     },
     keywords: post.keywords.join(", "),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://localclawagents.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: "https://localclawagents.com/blog",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title,
+        item: `https://localclawagents.com/blog/${post.slug}`,
+      },
+    ],
   };
 
   // Get related posts (different slug, max 3)
@@ -94,6 +119,10 @@ export default async function BlogPostPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <BlogPostClient post={post} relatedPosts={related} />
     </>
