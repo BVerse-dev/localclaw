@@ -312,6 +312,9 @@ const SKILL_CATEGORIES: Record<string, { label: string; color: string }> = {
 function paymentBadge(ps: string | null, amount: number | null) {
   if (ps === "paid") return { label: `PAID $${((amount || 0) / 100).toLocaleString()}`, color: "#10B981" };
   if (ps === "refunded") return { label: "REFUNDED", color: "#EF4444" };
+  if (ps === "disputed") return { label: "⚠ DISPUTED", color: "#F97316" };
+  if (ps === "dispute_won") return { label: "DISPUTE WON", color: "#10B981" };
+  if (ps === "dispute_lost") return { label: "DISPUTE LOST", color: "#EF4444" };
   return { label: "UNPAID", color: "#6B7280" };
 }
 

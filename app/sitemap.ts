@@ -37,6 +37,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.85,
     },
+    { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.3 },
+    { url: `${baseUrl}/refund-policy`, lastModified: new Date(), changeFrequency: "yearly" as const, priority: 0.3 },
     ...blogEntries,
   ];
 }

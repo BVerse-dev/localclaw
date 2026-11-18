@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase";
+import { POLICY_VERSION } from "@/lib/policy";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { name, email, phone, business, industry, teamSize, budget, automations, details } = body;
+    const { name, email, phone, business, industry, teamSize, budget, automations, details, termsAccepted, termsVersion } = body;
 
     // Validate required fields
     if (!name || !email || !business) {
       return NextResponse.json({ error: "Name, email, and business are required." }, { status: 400 });
     }
+    if (termsAccepted !== true) {
+      return NextResponse.json({ error: "You must accept the Terms of Service and Refund Policy." }, { status: 400 });
+    }
+
+    // Server-side acceptance record (dispute evidence) — timestamp and IP are set here, not by the client
+    const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+    const consentLine = `[Terms ${String(termsVersion || POLICY_VERSION).slice(0, 20)} accepted ${new Date().toISOString()} from ${ip.slice(0, 64)}; non-refundable acknowledged]`;
+    const detailsWithConsent = [details, consentLine].filter(Boolean).join("\n");
 
     // Insert into Supabase
     const { data, error } = await getSupabase()
@@ -24,7 +33,7 @@ export async function POST(req: NextRequest) {
         team_size: teamSize || null,
         budget: budget || null,
         automations: automations || [],
-        details: details || null,
+        details: detailsWithConsent,
         status: "new",
       })
       .select()

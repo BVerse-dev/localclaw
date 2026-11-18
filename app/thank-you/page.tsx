@@ -64,8 +64,8 @@ function getSteps(plan?: Plan) {
       num:   "01",
       title: "Check your email",
       desc:  plan
-        ? `A Stripe receipt is on its way confirming your ${plan.name} setup fee and first month. Your subscription is active.`
-        : "A Stripe receipt is on its way confirming your $97 deposit. Your spot is officially held.",
+        ? `A Stripe receipt is on its way confirming your ${plan.name} setup fee and first month. Your subscription is active. Charges appear on your statement as LOCALCLAW or BVERSE INC.`
+        : "A Stripe receipt is on its way confirming your $97 deposit. Your spot is officially held. It will appear on your statement as LOCALCLAW or BVERSE INC.",
     },
     {
       num:   "02",
@@ -296,7 +296,7 @@ export default function ThankYouPage() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner</div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
           <a
             href="https://twitter.com/Th3Alch3mist_"
             target="_blank"

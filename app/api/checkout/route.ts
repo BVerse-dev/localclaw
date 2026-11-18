@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { DISCOVERY, DISCOVERY_CREDIT_COUPON, getPlan } from "@/lib/plans";
+import { POLICY_VERSION, REFUND_URL, TERMS_URL } from "@/lib/policy";
 
 export const runtime = "nodejs";
 
@@ -30,8 +31,19 @@ async function hasUnusedDepositCredit(stripe: Stripe, email: string): Promise<bo
   return paidDeposit && !alreadyCredited;
 }
 
+/** Client IP as seen by Vercel (first hop of x-forwarded-for). */
+function clientIp(req: NextRequest): string {
+  return (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || req.headers.get("x-real-ip") || "";
+}
+
+/** Stripe rejects consent_collection until a Terms URL is set in Dashboard → Settings → Public details. */
+function isMissingTosUrlError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /terms of service|terms_of_service|consent_collection/i.test(msg);
+}
+
 /**
- * POST /api/checkout  { plan, email?, leadId? }
+ * POST /api/checkout  { plan, email?, leadId?, termsAccepted }
  * Creates a Stripe Checkout Session:
  *  - discovery → one-time $97 deposit
  *  - plan tiers → subscription (monthly retainer) + one-time setup fee on the first invoice
@@ -40,7 +52,7 @@ async function hasUnusedDepositCredit(stripe: Stripe, email: string): Promise<bo
  * Falls back to the static payment link if Stripe isn't configured for the plan.
  */
 export async function POST(req: NextRequest) {
-  let body: { plan?: string; email?: string; leadId?: string };
+  let body: { plan?: string; email?: string; leadId?: string; termsAccepted?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -55,11 +67,24 @@ export async function POST(req: NextRequest) {
   if (planKey !== "discovery" && !plan) {
     return NextResponse.json({ error: "Unknown plan" }, { status: 400 });
   }
+  // No payment without prior, recorded acceptance of the Terms & Refund Policy.
+  if (body.termsAccepted !== true) {
+    return NextResponse.json({ error: "You must accept the Terms of Service and Refund Policy." }, { status: 400 });
+  }
 
   const fallback = plan ? plan.stripe.link : DISCOVERY.stripe.link;
   const stripe = stripeClient();
-  const metadata = { plan: planKey, lead_id: leadId, source: "localclaw-site" };
-  // mirrors the existing payment-link settings (automatic tax, phone collection)
+  // Dispute evidence: what was accepted, when, and from where (Stripe metadata values ≤ 500 chars).
+  const metadata = {
+    plan: planKey,
+    lead_id: leadId,
+    source: "localclaw-site",
+    terms_version: POLICY_VERSION,
+    terms_accepted_at: new Date().toISOString(),
+    terms_accepted_ip: clientIp(req).slice(0, 100),
+    terms_accepted_ua: (req.headers.get("user-agent") || "").slice(0, 300),
+    non_refundable_disclosed: "pricing_page,intake_checkbox,checkout_page",
+  };
   const common = {
     customer_email: email,
     client_reference_id: leadId || undefined,
@@ -67,7 +92,31 @@ export async function POST(req: NextRequest) {
     allow_promotion_codes: true,
     automatic_tax: { enabled: true },
     phone_number_collection: { enabled: true },
+    // Chargeback defence: AVS address match + 3D Secure liability shift on fraud disputes
+    billing_address_collection: "required",
+    payment_method_options: { card: { request_three_d_secure: "any" } },
+    consent_collection: { terms_of_service: "required" },
+    custom_text: {
+      terms_of_service_acceptance: {
+        message: `I agree to the [Terms of Service](${TERMS_URL}) and [Refund Policy](${REFUND_URL}), and understand that **all payments are final and non-refundable**.`,
+      },
+      submit: {
+        message: "All payments are final and non-refundable. Monthly plans can be cancelled anytime to stop future billing.",
+      },
+    },
   } satisfies Partial<Stripe.Checkout.SessionCreateParams>;
+
+  /** Create the session; if the Stripe account has no Terms URL yet, retry with the notice only. */
+  const create = async (params: Stripe.Checkout.SessionCreateParams) => {
+    try {
+      return await stripe!.checkout.sessions.create(params);
+    } catch (err) {
+      if (!isMissingTosUrlError(err)) throw err;
+      console.warn("Stripe Terms of Service URL not configured — creating session without consent checkbox");
+      const { consent_collection: _c, custom_text, ...rest } = params;
+      return await stripe!.checkout.sessions.create({ ...rest, custom_text: { submit: custom_text?.submit } });
+    }
+  };
 
   try {
     if (!stripe) throw new Error("STRIPE_SECRET_KEY not set");
@@ -75,7 +124,7 @@ export async function POST(req: NextRequest) {
     let session: Stripe.Checkout.Session;
 
     if (!plan) {
-      session = await stripe.checkout.sessions.create({
+      session = await create({
         mode: "payment",
         line_items: [{
           quantity: 1,
@@ -98,7 +147,7 @@ export async function POST(req: NextRequest) {
       }
       const tagged = credit ? { ...metadata, deposit_credit: "applied" } : metadata;
 
-      session = await stripe.checkout.sessions.create({
+      session = await create({
         mode: "subscription",
         line_items: [
           {
