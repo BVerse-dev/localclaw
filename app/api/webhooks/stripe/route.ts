@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabase } from "@/lib/supabase";
 import { planFromAmount, isPlanKey } from "@/lib/plans";
-import { sendPurchaseConfirmation } from "@/lib/emails";
+import { sendPurchaseConfirmation, purchaseTypeOf } from "@/lib/emails";
 import { stageDisputeEvidence } from "@/lib/disputes";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_unset", { apiVersion: "2026-02-25.clover" });
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
         const amount = session.amount_total || 0;
         const currency = session.currency || "usd";
         const customerId = typeof session.customer === "string" ? session.customer : null;
-        const plan = resolvePlan(session.metadata, amount);
+        const plan = resolvePlan(session.metadata, session.amount_subtotal ?? amount); // pre-tax, pre-discount: matches list prices exactly
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
 
         const lead =
@@ -191,6 +191,8 @@ export async function POST(req: NextRequest) {
           console.log(`✅ New lead from payment: ${email}`);
         }
 
+        const purchaseType = purchaseTypeOf({ planKey: plan, mode: session.mode, subtotalCents: session.amount_subtotal || amount });
+
         // Customer confirmation with the billing policy restated (chargeback prevention + evidence)
         const confirmationSent = await sendPurchaseConfirmation({
           to: email,
@@ -200,10 +202,12 @@ export async function POST(req: NextRequest) {
           currency,
           sessionId: session.id,
           depositCredited: session.metadata?.deposit_credit === "applied",
+          purchaseType,
         }).catch((e) => { console.error(e); return false; });
 
         await logEvent("checkout.session.completed", event.id, email, lead?.id || null, amount, currency, "completed", null, {
           plan,
+          purchaseType,
           sessionId: session.id,
           tosConsent: session.consent?.terms_of_service || null,
           termsVersion: session.metadata?.terms_version || null,
@@ -214,7 +218,7 @@ export async function POST(req: NextRequest) {
 
         await sendAlert(
           `💰 Payment: $${(amount / 100).toFixed(2)} — ${plan}`,
-          `Customer: ${email}\nAmount: $${(amount / 100).toFixed(2)} ${currency.toUpperCase()}\nPlan: ${plan}\nTerms accepted: ${session.consent?.terms_of_service || (session.metadata?.terms_accepted_at ? "intake form" : "unknown")}\nConfirmation email: ${confirmationSent ? "sent" : "NOT sent"}\nTime: ${new Date().toLocaleString()}\n\nView: /admin`
+          `Customer: ${email}\nAmount: $${(amount / 100).toFixed(2)} ${currency.toUpperCase()}\nPlan: ${plan} (${purchaseType.replace("_", " ")})\nTerms accepted: ${session.consent?.terms_of_service || (session.metadata?.terms_accepted_at ? "intake form" : "unknown")}\nConfirmation email: ${confirmationSent ? "sent" : "NOT sent"}\nTime: ${new Date().toLocaleString()}\n\nView: /admin`
         ).catch(console.error);
         break;
       }
