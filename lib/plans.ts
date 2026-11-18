@@ -26,6 +26,9 @@ export interface Plan {
     // Combined payment link (setup fee + monthly subscription in one checkout).
     // Used as the fallback if /api/checkout can't create a session, and shareable directly.
     link: string;
+    // Separate links for sales use (not shown on the site yet):
+    setupOnlyLink?: string;   // one-time setup fee only — no subscription
+    monthlyOnlyLink?: string; // monthly management only — for clients who already paid setup
   };
 }
 
@@ -69,6 +72,8 @@ export const PLANS: Plan[] = [
       setupProduct: "prod_UBnKmcdOmSuxFA",
       monthlyProduct: "prod_UBnKOEhrlXQqkc",
       link: "https://buy.stripe.com/28EeVfd5wgfMcE7h060sU0a",
+      setupOnlyLink: "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04",
+      monthlyOnlyLink: "https://buy.stripe.com/6oUdRbd5we7E6fJ25c0sU01",
     },
   },
   {
@@ -94,6 +99,8 @@ export const PLANS: Plan[] = [
       setupProduct: "prod_UBnKtoqdgcW12U",
       monthlyProduct: "prod_UBnKXxBIfOEWax",
       link: "https://buy.stripe.com/28EbJ34z0fbI5bFh060sU0b",
+      setupOnlyLink: "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05",
+      monthlyOnlyLink: "https://buy.stripe.com/7sY6oJ5D4fbI6fJ25c0sU06",
     },
   },
   {
@@ -119,6 +126,8 @@ export const PLANS: Plan[] = [
       setupProduct: "prod_UBnKybyNYMDiZd",
       monthlyProduct: "prod_UBnKN6DR3qXEVQ",
       link: "https://buy.stripe.com/cNidRb5D43t07jNaBI0sU0c",
+      setupOnlyLink: "https://buy.stripe.com/4gM9AV4z0d3AgUn7pw0sU07",
+      monthlyOnlyLink: "https://buy.stripe.com/cNi3cx8Pg0gO1Zt5ho0sU08",
     },
   },
   {
@@ -144,6 +153,8 @@ export const PLANS: Plan[] = [
       setupProduct: "prod_VeQzOODtZ7bLfr",
       monthlyProduct: "prod_VeR0R0HPgUMr23",
       link: "https://buy.stripe.com/dRm28taXoe7E0VpaBI0sU09",
+      setupOnlyLink: "https://buy.stripe.com/6oU3cx0iK2oWdIb25c0sU0d",
+      monthlyOnlyLink: "https://buy.stripe.com/eVqeVf5D44x47jNh060sU0e",
     },
   },
 ];

@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
 
       const amount = session.amount_total || 0;
       const tagged = session.metadata?.plan;
-      const plan = tagged === "discovery" || isPlanKey(tagged) ? tagged : planFromAmount(amount);
+      const plan = tagged === "discovery" || isPlanKey(tagged) ? tagged : planFromAmount(session.amount_subtotal ?? amount);
 
       const customerId = typeof session.customer === "string" ? session.customer : null;
 
