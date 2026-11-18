@@ -296,7 +296,7 @@ export default function ThankYouPage() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a><a href="/privacy" style={{ color:"inherit", marginLeft:"1rem" }}>Privacy</a></div>
           <a
             href="https://twitter.com/Th3Alch3mist_"
             target="_blank"

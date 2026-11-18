@@ -25,6 +25,7 @@ export default function LegalPage({
         <div style={{ display: "flex", gap: "1.2rem", fontSize: "0.78rem" }}>
           <Link href="/terms" style={{ color: MUTED, textDecoration: "none" }}>Terms</Link>
           <Link href="/refund-policy" style={{ color: MUTED, textDecoration: "none" }}>Refund Policy</Link>
+          <Link href="/privacy" style={{ color: MUTED, textDecoration: "none" }}>Privacy</Link>
         </div>
       </nav>
 
