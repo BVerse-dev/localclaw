@@ -10,17 +10,8 @@ import {
   Phone, Megaphone, Gift
 } from "lucide-react";
 
-// ── Stripe Payment Links ─────────────────────────────────────────────────────
-const STRIPE = {
-  DISCOVERY:          "https://buy.stripe.com/dRm28tc1s3t0gUnaBI0sU02", // $97 discovery deposit
-  STARTER_FULL:       "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04", // Starter setup $997
-  STARTER_MONTHLY:    "https://buy.stripe.com/6oUdRbd5we7E6fJ25c0sU01", // Starter monthly $149/mo
-  BUSINESS_FULL:      "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05", // Business setup $1,997
-  BUSINESS_MONTHLY:   "https://buy.stripe.com/7sY6oJ5D4fbI6fJ25c0sU06", // Business monthly $299/mo
-  ENTERPRISE:         "https://buy.stripe.com/4gM9AV4z0d3AgUn7pw0sU07", // Full Stack setup $3,500
-  ENTERPRISE_MONTHLY: "https://buy.stripe.com/cNi3cx8Pg0gO1Zt5ho0sU08", // Full Stack monthly $499/mo
-};
-// ─────────────────────────────────────────────────────────────────────────────
+// Plans, pricing & Stripe wiring live in lib/plans.ts (single source of truth)
+import { PLANS, FRAMEWORKS, DISCOVERY, ADDITIONAL_AGENT_PRICE, usd } from "../lib/plans";
 
 // v2 ── Brand logos via jsDelivr simple-icons (reliable CDN) ──
 const SI = (name) => `https://cdn.jsdelivr.net/npm/simple-icons@v11/icons/${name}.svg`;
@@ -294,6 +285,7 @@ export default function LocalClaw() {
         </div>
         <div className="nav-desktop">
           <a href="#what" className="nav-link">WHAT IT DOES</a>
+          <a href="#frameworks" className="nav-link">FRAMEWORKS</a>
           <a href="#how" className="nav-link">HOW IT WORKS</a>
           <a href="#pricing" className="nav-link">PRICING</a>
           <a href="#security" className="nav-link">SECURITY</a>
@@ -308,9 +300,9 @@ export default function LocalClaw() {
 
       {/* Mobile menu */}
       <div className={`mobile-menu ${mobileOpen ? "open" : ""}`} style={{ position:"fixed", top:"68px", left:0, right:0, zIndex:190, background:"rgba(10,10,10,0.99)", borderBottom:`1px solid ${GOLD_BORDER}`, flexDirection:"column", padding:"1.5rem 5%", gap:"1.2rem", backdropFilter:"blur(14px)" }}>
-        {["#what","#how","#pricing","#security","/blog","/playbook"].map((href, i) => (
+        {["#what","#frameworks","#how","#pricing","#security","/blog","/playbook"].map((href, i) => (
           <a key={i} href={href} className="nav-link" onClick={() => setMobileOpen(false)} style={{ fontSize:"0.9rem", padding:"0.4rem 0", borderBottom:`1px solid ${BORDER}`, display:"block" }}>
-            {["WHAT IT DOES","HOW IT WORKS","PRICING","SECURITY","BLOG","PLAYBOOK"][i]}
+            {["WHAT IT DOES","FRAMEWORKS","HOW IT WORKS","PRICING","SECURITY","BLOG","PLAYBOOK"][i]}
           </a>
         ))}
         <a href="/intake" className="btn-primary" onClick={() => setMobileOpen(false)} style={{ textAlign:"center", marginTop:"0.5rem" }}>BOOK A CALL</a>
@@ -328,17 +320,17 @@ export default function LocalClaw() {
           <div>
             <div data-hero-badge style={{ display:"inline-flex", alignItems:"center", gap:"8px", background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"100px", padding:"6px 18px", marginBottom:"2.2rem" }}>
               <div style={{ width:5, height:5, background:GOLD, borderRadius:"50%" }} />
-              <span style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600" }}>LOCALCLAW AGENT ENGINE</span>
+              <span style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.2em", color:GOLD, fontWeight:"600" }}>THE ONE-STOP AI AGENT PARTNER</span>
             </div>
 
             <h1 data-hero-h1 style={{ ...display, fontSize:"clamp(2.6rem,5.5vw,5rem)", lineHeight:"1.04", fontWeight:"700", marginBottom:"1.8rem", letterSpacing:"-0.02em" }}>
-              We deploy AI agents<br />
-              <em className="shimmer-text" style={{ fontStyle:"italic" }}>for local businesses</em><br />
-              that never sleep.
+              Every AI agent<br />
+              <em className="shimmer-text" style={{ fontStyle:"italic" }}>your business needs</em><br />
+              — one partner.
             </h1>
 
             <p data-hero-sub style={{ ...sans, fontSize:"1rem", color:MUTED, maxWidth:"500px", lineHeight:"1.8", marginBottom:"2.8rem", fontWeight:"400" }}>
-              LocalClaw combines OpenClaw's autonomous agent framework with NVIDIA NemoClaw enterprise security — deployed and managed for your business. No technical knowledge required.
+              OpenClaw, Hermes, Claude, OpenAI, n8n and more — we pick the right agent framework for every job, then deploy, secure and manage it for you. No technical knowledge required.
             </p>
 
             <div data-hero-btns className="cta-btns" style={{ display:"flex", gap:"1rem", flexWrap:"wrap", alignItems:"center", marginBottom:"3rem" }}>
@@ -365,7 +357,7 @@ export default function LocalClaw() {
 
             {/* Trust tags */}
             <div data-hero-trust className="hero-trust" style={{ display:"flex", gap:"2.5rem", flexWrap:"wrap" }}>
-              {[["OpenClaw Powered","Open-source agent framework"],["NVIDIA NemoClaw","Enterprise security layer"],["Same-Day Live","In under 24 hours"]].map(([t,s],i) => (
+              {[["Framework-Agnostic","OpenClaw, Hermes, Claude & more"],["Enterprise Guardrails","On every deployment"],["Same-Day Live","In under 24 hours"]].map(([t,s],i) => (
                 <div key={i}>
                   <div style={{ ...sans, fontSize:"0.84rem", fontWeight:"600", color:CREAM, marginBottom:"0.18rem" }}>{t}</div>
                   <div style={{ ...sans, fontSize:"0.74rem", color:DIM }}>{s}</div>
@@ -386,12 +378,35 @@ export default function LocalClaw() {
       {/* ── STATS BAR ── */}
       <section style={{ background:GOLD_MID, borderTop:`1px solid ${GOLD_BORDER}`, borderBottom:`1px solid ${GOLD_BORDER}`, padding:"2.2rem 6%" }}>
         <div data-stats-bar className="stats-grid" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:"1rem", maxWidth:"960px", margin:"0 auto", textAlign:"center" }}>
-          {[["24 Hours","SETUP WINDOW"],["NemoClaw™","SECURITY LAYER"],["24 / 7","AGENT UPTIME"],["Telegram","INTERFACE"]].map(([val,label],i) => (
+          {[[`${FRAMEWORKS.length}+`,"AGENT FRAMEWORKS"],["24 Hours","SETUP WINDOW"],["24 / 7","AGENT UPTIME"],["1 Partner","FOR EVERY AGENT"]].map(([val,label],i) => (
             <div data-stat key={i}>
               <div style={{ ...display, fontSize:"clamp(1.4rem,3vw,2rem)", fontWeight:"700", color:GOLD, marginBottom:"0.25rem" }}>{val}</div>
               <div style={{ ...sans, fontSize:"0.63rem", letterSpacing:"0.18em", color:DIM }}>{label}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ── FRAMEWORKS ── */}
+      <section id="frameworks" style={{ padding:"100px 6% 40px", background:BG }}>
+        <div style={{ maxWidth:"1200px", margin:"0 auto" }}>
+          <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>FRAMEWORK-AGNOSTIC BY DESIGN</p>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap", gap:"2rem", marginBottom:"3.5rem" }}>
+            <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.3rem)", fontWeight:"700", lineHeight:"1.1" }}>One partner.<br /><em style={{ color:GOLD, fontStyle:"italic" }}>Every agent framework.</em></h2>
+            <p style={{ ...sans, color:MUTED, maxWidth:"400px", lineHeight:"1.78", fontSize:"0.93rem" }}>New agent frameworks launch every month. You shouldn't have to bet your business on one. We match each workflow to the best tool — and run them all side by side under one managed, secured stack.</p>
+          </div>
+          <div className="frameworks-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
+            {FRAMEWORKS.map((f, i) => (
+              <div key={f.name} className="card-hover" style={{ background:BG2, padding:"1.8rem 1.8rem", border:"1px solid transparent", display:"flex", gap:"1rem", alignItems:"flex-start" }}>
+                <div style={{ ...display, fontSize:"1.6rem", fontWeight:"700", color:GOLD_DIM, lineHeight:"1", minWidth:"2.2rem" }}>{String(i + 1).padStart(2, "0")}</div>
+                <div>
+                  <div style={{ ...display, fontWeight:"700", fontSize:"1.15rem", marginBottom:"0.35rem", color:CREAM }}>{f.name}</div>
+                  <div style={{ ...sans, color:DIM, fontSize:"0.84rem", lineHeight:"1.55" }}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ ...sans, color:DIM, fontSize:"0.82rem", textAlign:"center", marginTop:"1.6rem" }}>Don't see your stack? If it runs an agent, we can deploy, secure and manage it.</p>
         </div>
       </section>
 
@@ -467,7 +482,7 @@ export default function LocalClaw() {
               { Icon:Zap,           time:"On Demand",     title:"Instant Actions",     desc:"Running 10 min late — your agent emails the next meeting and reschedules. Talk to it like a human assistant." },
               { Icon:MessageSquare, time:"Ongoing",       title:"Comms Monitor",       desc:"Watches Slack, WhatsApp, and CRM threads. Surfaces what matters and filters what doesn't." },
               { Icon:BarChart2,     time:"Weekly",        title:"Performance Reports", desc:"Automated KPI summaries to Telegram — campaign results, lead counts, follow-up status, and action items." },
-              { Icon:Shield,        time:"Always",        title:"NemoClaw Security",   desc:"NVIDIA's enterprise guardrails run on every agent action. Your credentials never leave your infrastructure." },
+              { Icon:Shield,        time:"Always",        title:"Built-in Guardrails", desc:"Enterprise guardrails — including NVIDIA NemoClaw where it fits — run on every agent action. Your credentials never leave your infrastructure." },
             ].map(({ Icon,time,title,desc },i) => (
               <div data-agent-card key={i} style={{ background:BG2, padding:"2.2rem 2rem" }}>
                 <div style={{ width:38, height:38, background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, borderRadius:"4px", display:"flex", alignItems:"center", justifyContent:"center", marginBottom:"1.2rem" }}>
@@ -527,8 +542,8 @@ export default function LocalClaw() {
           <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"4rem", lineHeight:"1.08" }}>Go live same day.<br />No technical knowledge needed.</h2>
           <div data-steps>
           {[
-            { num:"01", Icon:Users,     title:"Kickoff Call",    duration:"20–45 min",   desc:"We map your integrations — email, calendar, CRM, Slack — identify your highest-leverage workflows, and plan your agent configuration. You tell us what to automate. We handle everything else." },
-            { num:"02", Icon:Lock,      title:"Deploy & Secure", duration:"Same Day",    desc:"We provision your infrastructure, install OpenClaw, layer NVIDIA NemoClaw guardrails, configure Composio OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included." },
+            { num:"01", Icon:Users,     title:"Kickoff Call",    duration:"20–45 min",   desc:"We map your integrations — email, calendar, CRM, Slack — identify your highest-leverage workflows, and recommend the right agent framework for each one. You tell us what to automate. We handle everything else." },
+            { num:"02", Icon:Lock,      title:"Deploy & Secure", duration:"Same Day",    desc:"We provision your infrastructure, install the right framework — OpenClaw, Hermes, Claude Agent SDK, OpenAI Agents, n8n and more — layer enterprise guardrails, configure OAuth middleware, and wire every integration. Docker sandboxing and firewall hardening included." },
             { num:"03", Icon:RefreshCw, title:"14-Day Hypercare",duration:"Full Support",desc:"You get a dedicated Slack channel with direct access to our team. We tune workflows, expand permissions as trust builds, fix edge cases, and make sure your agent earns its keep from day one." },
           ].map((step,i) => (
             <div data-step key={i} className="step-row" style={{ display:"flex", gap:"3rem", padding:"3rem 0", borderBottom: i<2 ? `1px solid ${BORDER}` : "none", alignItems:"flex-start" }}>
@@ -555,10 +570,10 @@ export default function LocalClaw() {
           <div>
             <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600" }}>ENTERPRISE SECURITY</p>
             <h2 data-security-left style={{ ...display, fontSize:"clamp(2rem,4vw,3.2rem)", fontWeight:"700", marginBottom:"1.4rem", lineHeight:"1.08" }}>
-              Secured with<br /><em style={{ color:GOLD, fontStyle:"italic" }}>NVIDIA NemoClaw</em>
+              Secured on<br /><em style={{ color:GOLD, fontStyle:"italic" }}>every framework.</em>
             </h2>
             <p style={{ ...sans, color:MUTED, lineHeight:"1.78", marginBottom:"2.2rem", fontSize:"0.92rem" }}>
-              Most OpenClaw deployments have security gaps — exposed credentials, no audit trail, no sandbox. Every LocalClaw deployment ships with NVIDIA's NemoClaw guardrails baked in from day one.
+              Most self-installed agents have security gaps — exposed credentials, no audit trail, no sandbox. Whatever framework you run, every LocalClaw deployment ships with enterprise guardrails baked in from day one — including NVIDIA NemoClaw policy enforcement where it applies.
             </p>
             <div style={{ display:"flex", flexDirection:"column", gap:"0.9rem" }}>
               {["Credentials never exposed — Composio OAuth middleware handles all tokens","Docker sandboxing prevents arbitrary code execution","Firewall hardening and exec allowlists configured from day one","Read-only permissions by default — access expands as trust builds","Instant kill switch to revoke any integration immediately","Full audit trail on every agent action"].map((item,i) => (
@@ -571,7 +586,7 @@ export default function LocalClaw() {
           </div>
           <div data-security-right style={{ display:"flex", flexDirection:"column", gap:"1.4rem" }}>
             {[
-              { Icon:Eye,         tag:"ALREADY RUNNING OPENCLAW?", title:"We will audit your setup.",  body:"Most self-installs have security gaps. We audit your existing deployment, add NemoClaw guardrails, harden your firewall, and migrate you to managed care." },
+              { Icon:Eye,         tag:"ALREADY RUNNING AN AGENT?", title:"We will audit your setup.",  body:"OpenClaw, Hermes, a custom build — whatever you're running, we audit it, add guardrails, harden your infrastructure, and migrate you to managed care." },
               { Icon:CheckCircle, tag:"100% SATISFACTION",          title:"Guaranteed or refunded.",    body:"If you are not happy with your agent deployment, we will refund you — no questions asked. We are here to build, not to nickel and dime." },
             ].map(({ Icon,tag,title,body },i) => (
               <div key={i} style={{ background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, padding:"2rem", borderRadius:"2px" }}>
@@ -589,26 +604,22 @@ export default function LocalClaw() {
 
       {/* ── PRICING ── */}
       <section id="pricing" style={{ padding:"100px 6%" }}>
-        <div style={{ maxWidth:"1100px", margin:"0 auto" }}>
+        <div style={{ maxWidth:"1320px", margin:"0 auto" }}>
           <p style={{ ...sans, fontSize:"0.68rem", letterSpacing:"0.22em", color:GOLD, marginBottom:"1rem", fontWeight:"600", textAlign:"center" }}>PLANS & PRICING</p>
           <h2 style={{ ...display, fontSize:"clamp(2rem,4.5vw,3.2rem)", fontWeight:"700", marginBottom:"0.8rem", textAlign:"center", lineHeight:"1.08" }}>Choose your deployment.</h2>
           <p style={{ ...sans, color:MUTED, textAlign:"center", marginBottom:"4rem", fontSize:"0.92rem" }}>One-time setup fee. Monthly retainer keeps your agent tuned, updated, and running.</p>
-          <div data-pricing className="pricing-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:"1px", background:GOLD_BORDER }}>
-            {[
-              { name:"Starter Agent",  tag:"SOLO OPERATORS", setup:"$997",   monthly:"$149/mo", highlight:false, desc:"One agent for one operator. Email triage, calendar management, daily briefings via Telegram.", features:["1 Executive Agent","Email + Calendar integration","Daily morning briefing","Telegram interface","NemoClaw security layer","14-day hypercare","Dedicated Slack channel"] },
-              { name:"Business Engine",tag:"MOST POPULAR",   setup:"$1,997", monthly:"$299/mo", highlight:true,  desc:"Two to three agents for your core team — Owner, Sales, and Ops running in parallel with shared context.", features:["2–3 Executive Agents","CRM + Email + Calendar","Sales follow-up automation","Slack + WhatsApp interface","NemoClaw security layer","14-day hypercare","Priority support channel"] },
-              { name:"Full Stack",     tag:"ENTERPRISE",     setup:"$3,500", monthly:"$499/mo", highlight:false, desc:"Full agent deployment for multi-location businesses, law firms, clinics, and growing teams.", features:["5+ Executive Agents","Full integration stack","Custom workflow engineering","KPI dashboard setup","NemoClaw enterprise layer","30-day hypercare","Dedicated account manager"] },
-            ].map((plan,i) => (
-              <div data-pricing-card key={i} style={{ background: plan.highlight ? "#100E06" : BG2, padding:"2.8rem 2.2rem", position:"relative", borderTop:`2px solid ${plan.highlight ? GOLD : "transparent"}` }}>
+          <div data-pricing className="pricing-grid" style={{ display:"grid", gridTemplateColumns:`repeat(${PLANS.length},1fr)`, gap:"1px", background:GOLD_BORDER }}>
+            {PLANS.map((plan) => (
+              <div data-pricing-card key={plan.key} style={{ background: plan.highlight ? "#100E06" : BG2, padding:"2.8rem 2rem", position:"relative", borderTop:`2px solid ${plan.highlight ? GOLD : "transparent"}`, display:"flex", flexDirection:"column" }}>
                 {plan.highlight && <div style={{ position:"absolute", top:0, left:"50%", transform:"translateX(-50%) translateY(-50%)", background:GOLD, color:BG, ...sans, fontSize:"0.6rem", letterSpacing:"0.18em", fontWeight:"700", padding:"4px 14px", whiteSpace:"nowrap" }}>MOST POPULAR</div>}
                 <div style={{ ...sans, fontSize:"0.65rem", letterSpacing:"0.18em", color:GOLD, marginBottom:"0.7rem", fontWeight:"600" }}>{plan.tag}</div>
                 <div style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.5rem" }}>{plan.name}</div>
                 <div style={{ marginBottom:"1.6rem" }}>
-                  <span style={{ ...display, fontSize:"2.5rem", fontWeight:"700", color:GOLD }}>{plan.setup}</span>
-                  <span style={{ ...sans, color:DIM, fontSize:"0.83rem" }}> setup + {plan.monthly}</span>
+                  <span style={{ ...display, fontSize:"2.4rem", fontWeight:"700", color:GOLD }}>{usd(plan.setup)}</span>
+                  <span style={{ ...sans, color:DIM, fontSize:"0.83rem" }}> setup + {usd(plan.monthly)}/mo</span>
                 </div>
                 <div style={{ ...sans, color:MUTED, fontSize:"0.87rem", lineHeight:"1.65", marginBottom:"1.8rem", paddingBottom:"1.8rem", borderBottom:`1px solid ${BORDER}` }}>{plan.desc}</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:"0.85rem", marginBottom:"2.2rem" }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:"0.85rem", marginBottom:"2.2rem", flex:1 }}>
                   {plan.features.map((f,j) => (
                     <div key={j} style={{ display:"flex", gap:"0.75rem", alignItems:"flex-start" }}>
                       <CheckCircle size={13} color={GOLD} strokeWidth={1.5} style={{ flexShrink:0, marginTop:"3px" }} />
@@ -616,22 +627,22 @@ export default function LocalClaw() {
                     </div>
                   ))}
                 </div>
-                {/* Dual-path CTAs */}
+                {/* Dual-path CTAs: $97 discovery deposit, or pay setup + first month now */}
                 <div style={{ display:"flex", flexDirection:"column", gap:"0.6rem" }}>
                   <a
-                    href={`/intake?plan=${plan.tag === "SOLO OPERATORS" ? "starter" : plan.tag === "MOST POPULAR" ? "business" : "fullstack"}`}
+                    href={`/intake?plan=discovery&interest=${plan.key}`}
                     className={plan.highlight ? "btn-primary" : "btn-secondary"}
                     style={{ display:"block", textAlign:"center" }}
                   >
-                    BOOK DISCOVERY CALL · $97
+                    BOOK DISCOVERY CALL · {usd(DISCOVERY.amount)}
                   </a>
                   <a
-                    href={`/intake?plan=${plan.tag === "SOLO OPERATORS" ? "starter" : plan.tag === "MOST POPULAR" ? "business" : "fullstack"}`}
+                    href={`/intake?plan=${plan.key}`}
                     style={{ ...sans, display:"block", textAlign:"center", color:DIM, fontSize:"0.77rem", textDecoration:"none", padding:"0.35rem 0", letterSpacing:"0.04em", transition:"color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.color = GOLD}
                     onMouseLeave={e => e.currentTarget.style.color = DIM}
                   >
-                    Ready to go? Pay {plan.setup} + {plan.monthly} upfront →
+                    Ready to go? Start now — {usd(plan.setup)} + {usd(plan.monthly)}/mo →
                   </a>
                 </div>
               </div>
@@ -643,7 +654,7 @@ export default function LocalClaw() {
               "$97 deposit credited to your setup fee",
               "30-day satisfaction guarantee",
               "Cancel before kickoff — full refund",
-              "Additional agents +$850 each",
+              `Additional agents +${usd(ADDITIONAL_AGENT_PRICE)} each`,
             ].map((t,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
                 <CheckCircle size={13} color={GOLD} strokeWidth={2} style={{ flexShrink:0 }} />
@@ -663,7 +674,7 @@ export default function LocalClaw() {
             {[
               { quote:"My agent handles my inbox before I wake up. By 9am I know exactly what needs attention. It feels like an EA that works overnight.", name:"DANIEL K.", title:"Real Estate Broker" },
               { quote:"We deployed the Business Engine for our clinic. Appointment follow-ups run automatically. Our no-show rate dropped in the first two weeks.", name:"AMARA T.", title:"Clinic Director" },
-              { quote:"The NemoClaw security layer was the deciding factor. Our CISO reviewed and approved it same day. That never happens with other vendors.", name:"SELENA M.", title:"Managing Partner, Law Firm" },
+              { quote:"The security layer was the deciding factor. Our CISO reviewed and approved it same day. That never happens with other vendors.", name:"SELENA M.", title:"Managing Partner, Law Firm" },
               { quote:"Setup was same day. I was chatting with my agent on Telegram by evening. ROI was clear within the first week of automated lead follow-ups.", name:"IBRAHIM O.", title:"Agency Founder" },
               { quote:"LocalClaw gave us an operating layer we did not know we needed. Our team runs leaner and responds faster than we ever did manually.", name:"NAOMI A.", title:"Operations Director" },
               { quote:"Three months in, our supplier communications are fully automated. I have not missed a single renewal since we deployed.", name:"VICTOR E.", title:"Restaurant Group Owner" },
@@ -693,7 +704,7 @@ export default function LocalClaw() {
             Your agent is<br /><em className="shimmer-text" style={{ fontStyle:"italic" }}>ready to deploy.</em>
           </h2>
           <p data-cta-sub style={{ ...sans, color:MUTED, maxWidth:"500px", margin:"0 auto 1.2rem", lineHeight:"1.78", fontSize:"0.96rem" }}>
-            Reserve your spot with a $97 discovery deposit. We scope your deployment on a 15-minute call and go live within 24 hours.
+            Reserve your spot with a $97 discovery deposit. We scope your deployment, recommend the right frameworks on a 15-minute call, and go live within 24 hours.
           </p>
           <p style={{ ...sans, color:DIM, maxWidth:"420px", margin:"0 auto 2.8rem", lineHeight:"1.7", fontSize:"0.83rem" }}>
             Your $97 is credited in full toward your setup fee. If we're not the right fit, you get it back — no questions asked.
@@ -722,7 +733,7 @@ export default function LocalClaw() {
           <ClawIcon size={28} color={GOLD} />
           <span className="lc-logo-text" style={{ fontSize:"1.4rem" }}>LocalClaw</span>
         </div>
-        <div style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>Powered by OpenClaw + NVIDIA NemoClaw</div>
+        <div style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>Every AI agent framework · One partner</div>
         <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.77rem", textDecoration:"none" }}>@Th3Alch3mist_ on X</a>
       </footer>
 

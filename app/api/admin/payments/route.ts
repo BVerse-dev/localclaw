@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import Stripe from "stripe";
 import { getSupabase } from "@/lib/supabase";
+import { planFromAmount, isPlanKey } from "@/lib/plans";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-02-25.clover" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_unset", { apiVersion: "2026-02-25.clover" });
 
-function isAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("lc_admin");
-  return cookie?.value === process.env.ADMIN_PASSWORD;
-}
+export const runtime = "nodejs";
+
+const isAuthed = isAdminRequest;
 
 // GET — fetch payment stats + recent Stripe charges + sync status
 export async function GET(req: NextRequest) {
@@ -144,10 +145,8 @@ export async function POST(req: NextRequest) {
       if (!leadId) continue;
 
       const amount = session.amount_total || 0;
-      let plan = "discovery";
-      if (amount >= 350000) plan = "fullstack";
-      else if (amount >= 199700) plan = "business";
-      else if (amount >= 99700) plan = "starter";
+      const tagged = session.metadata?.plan;
+      const plan = tagged === "discovery" || isPlanKey(tagged) ? tagged : planFromAmount(amount);
 
       const customerId = typeof session.customer === "string" ? session.customer : null;
 

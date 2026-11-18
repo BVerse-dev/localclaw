@@ -7,9 +7,16 @@ import {
   PLAN_META,
   BUSINESS_TYPES,
 } from "@/lib/tool-registry";
+import { isPlanKey, frameworkFromDetails, type PlanKey } from "@/lib/plans";
+import { isAdminRequest } from "@/lib/admin-auth";
+
+export const runtime = "nodejs";
+
+const unauthorized = () => NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
 // ── GET: List all agents + generate config from a submission ─────────────────
 export async function GET(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorized();
   const sp = req.nextUrl.searchParams;
   const action = sp.get("action");
   const db = getSupabase();
@@ -45,10 +52,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Determine plan from budget field
-    const planKey = mapBudgetToPlan(sub.budget);
+    const planKey = mapBudgetToPlan(sub.budget, sub.plan);
     const businessType = detectBusinessType(sub.industry);
     const agentName = generateAgentName(sub.business);
     const slug = slugify(sub.business);
+    const framework = frameworkFromDetails(sub.details);
 
     // Get tools for this plan + industry
     const planTools = getToolsForPlan(planKey);
@@ -103,19 +111,21 @@ export async function GET(req: NextRequest) {
           industry: industryTools,
         },
         envVars: { required: requiredEnvVars, optional: optionalEnvVars },
-        deployCommand: `./onboard.sh --name "${sub.business}" --type ${businessType} --plan ${planKey} --owner "${sub.name}" --email "${sub.email}" --phone "${sub.phone || ""}"`,
+        framework,
+        // single-quoted so names like O'Brien or "$100 Deals" can't break / inject into the shell
+        deployCommand: `./onboard.sh --name ${shq(sub.business)} --type ${businessType} --plan ${planKey} --framework ${framework.cli} --owner ${shq(sub.name)} --email ${shq(sub.email)} --phone ${shq(sub.phone || "")}`,
       },
     });
   }
 
   // ── TOOL REGISTRY ──
   if (action === "tools") {
-    const plan = (sp.get("plan") || "fullstack") as "starter" | "business" | "fullstack";
+    const plan = (isPlanKey(sp.get("plan")) ? sp.get("plan") : "fullstack") as PlanKey;
     return NextResponse.json({
       tools: getToolsForPlan(plan),
       categories: Object.entries(TOOL_REGISTRY.reduce((acc, t) => {
         if (!acc[t.category]) acc[t.category] = [];
-        if (t.plans.includes(plan)) acc[t.category].push(t);
+        if (t.plans.includes(plan === "command" ? "fullstack" : plan)) acc[t.category].push(t);
         return acc;
       }, {} as Record<string, typeof TOOL_REGISTRY>)),
     });
@@ -126,6 +136,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST: Save/deploy an agent ──────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  if (!isAdminRequest(req)) return unauthorized();
   const body = await req.json();
   const { action } = body;
   const db = getSupabase();
@@ -216,9 +227,17 @@ export async function POST(req: NextRequest) {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function mapBudgetToPlan(budget: string | null): "starter" | "business" | "fullstack" {
+/** POSIX single-quote a value for safe copy-paste into a shell. */
+function shq(v: string): string {
+  return `'${String(v).replace(/'/g, `'\\''`)}'`;
+}
+
+function mapBudgetToPlan(budget: string | null, paidPlan?: string | null): PlanKey {
+  if (isPlanKey(paidPlan)) return paidPlan; // what they actually paid for wins
   if (!budget) return "starter";
   const b = budget.toLowerCase();
+  if (isPlanKey(b)) return b;
+  if (b.includes("command") || b.includes("4500") || b.includes("799")) return "command";
   if (b.includes("full") || b.includes("3500") || b.includes("499")) return "fullstack";
   if (b.includes("business") || b.includes("1997") || b.includes("299")) return "business";
   return "starter";
@@ -259,7 +278,7 @@ interface GenerateParams {
   ownerName: string;
   ownerEmail: string;
   ownerPhone: string;
-  plan: "starter" | "business" | "fullstack";
+  plan: PlanKey;
   industry: string;
   automations: string[];
   details: string;
@@ -434,7 +453,7 @@ Action needed: [specific ask]
 ## ACTIVE CHANNELS: ${channels}
 ## HEARTBEAT: Every ${heartbeat}
 ## PLAN: ${p.plan.toUpperCase()} — ${planMeta.price}
-${p.plan === "fullstack" ? "\n## SUB-AGENTS: Researcher + Scheduler + Closer (active)\n## NEMOCLAW: Active — all outbound messages scanned\n" : ""}
+${p.plan === "fullstack" || p.plan === "command" ? "\n## SUB-AGENTS: Researcher + Scheduler + Closer (active)\n## NEMOCLAW: Active — all outbound messages scanned\n" : ""}
 `;
 
   const USER = `# USER — ${p.businessName}

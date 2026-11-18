@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { getSupabase } from "@/lib/supabase";
 
-function isAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("lc_admin");
-  return cookie?.value === process.env.ADMIN_PASSWORD;
-}
+export const runtime = "nodejs";
+
+const isAuthed = isAdminRequest;
 
 // GET — list all skills, or skills for a specific agent
 export async function GET(req: NextRequest) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         category: category || "custom",
         instructions,
         user_invocable: userInvocable || false,
-        plans: plans || ["starter", "business", "fullstack"],
+        plans: plans || ["starter", "business", "fullstack", "command"],
         required_tools: requiredTools || [],
         is_template: false,
       })

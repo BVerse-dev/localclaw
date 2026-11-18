@@ -1,4 +1,4 @@
-# PLAN FEATURES — Full Stack ($699/mo)
+# PLAN FEATURES — Full Stack ($499/mo)
 # Inject this block as {{PLAN_FEATURES}} in AGENTS.md
 
 ---

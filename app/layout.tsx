@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { PLANS, DISCOVERY, usd } from "@/lib/plans";
 
 const SITE_URL = "https://localclawagents.com";
 const SITE_NAME = "LocalClaw";
-const SITE_TITLE = "LocalClaw — AI Agents for Local Businesses";
-const SITE_DESC = "LocalClaw deploys autonomous AI agents that handle your inbox, close leads, book appointments, and post content — 24/7. Powered by OpenClaw + NVIDIA NemoClaw. No technical knowledge required. Live in under 24 hours.";
+const SITE_TITLE = "LocalClaw — The One-Stop AI Agent Partner for Business";
+const SITE_DESC = "LocalClaw deploys, secures and manages AI agents on every major framework — OpenClaw, Hermes, Claude Agent SDK, OpenAI Agents, n8n and more. Agents that handle your inbox, close leads, book appointments and post content 24/7. No technical knowledge required. Live in under 24 hours.";
 const OG_IMAGE = `${SITE_URL}/opengraph-image`;
 
 export const viewport: Viewport = {
@@ -42,8 +43,17 @@ export const metadata: Metadata = {
     "AI appointment booking",
     "AI email management",
     "AI social media automation",
+    "AI agent agency",
+    "AI agent framework",
+    "multi-agent systems",
     "OpenClaw",
+    "Hermes Agent",
     "NVIDIA NemoClaw",
+    "Claude Agent SDK",
+    "OpenAI Agents SDK",
+    "n8n AI agents",
+    "CrewAI",
+    "LangGraph",
     "AI for real estate",
     "AI for law firms",
     "AI for clinics",
@@ -115,7 +125,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "LocalClaw — AI Agents for Local Businesses",
+        alt: "LocalClaw — The One-Stop AI Agent Partner for Business",
         type: "image/png",
       },
     ],
@@ -198,13 +208,13 @@ const organizationSchema = {
 const serviceSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
-  name: "AI Agent Deployment for Local Businesses",
+  name: "AI Agent Deployment & Management — Every Framework",
   provider: {
     "@type": "Organization",
     name: "LocalClaw",
     url: SITE_URL,
   },
-  description: "We deploy autonomous AI agents for local businesses — handling email, leads, appointments, social media, and CRM automation. Powered by OpenClaw framework with NVIDIA NemoClaw enterprise security. Live in under 24 hours.",
+  description: "We deploy, secure and manage autonomous AI agents for businesses on any framework — OpenClaw, Hermes, Claude Agent SDK, OpenAI Agents, n8n, CrewAI and custom builds — handling email, leads, appointments, social media, and CRM automation with enterprise guardrails. Live in under 24 hours.",
   serviceType: "AI Business Automation",
   areaServed: {
     "@type": "Place",
@@ -213,50 +223,20 @@ const serviceSchema = {
   hasOfferCatalog: {
     "@type": "OfferCatalog",
     name: "AI Agent Plans",
-    itemListElement: [
-      {
-        "@type": "Offer",
-        name: "Starter Agent",
-        description: "One AI agent for solo operators. Email triage, calendar management, daily briefings via Telegram.",
-        price: "997",
+    itemListElement: PLANS.map((p) => ({
+      "@type": "Offer",
+      name: p.name,
+      description: p.desc,
+      price: String(p.setup),
+      priceCurrency: "USD",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: String(p.monthly),
         priceCurrency: "USD",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "149",
-          priceCurrency: "USD",
-          unitText: "MONTH",
-          referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
-        },
+        unitText: "MONTH",
+        referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
       },
-      {
-        "@type": "Offer",
-        name: "Business Engine",
-        description: "2-3 AI agents for your core team. CRM, email, calendar, sales follow-up, Slack + WhatsApp interface.",
-        price: "1997",
-        priceCurrency: "USD",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "299",
-          priceCurrency: "USD",
-          unitText: "MONTH",
-          referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
-        },
-      },
-      {
-        "@type": "Offer",
-        name: "Full Stack",
-        description: "5+ AI agents for enterprise. Full integration stack, custom workflows, KPI dashboard, dedicated account manager.",
-        price: "3500",
-        priceCurrency: "USD",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "499",
-          priceCurrency: "USD",
-          unitText: "MONTH",
-          referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
-        },
-      },
-    ],
+    })),
   },
 };
 
@@ -288,7 +268,15 @@ const faqSchema = {
       name: "What is LocalClaw?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "LocalClaw deploys autonomous AI agents for local businesses. These agents handle email triage, lead capture, appointment booking, social media posting, CRM automation, and more — running 24/7 without any technical knowledge required from the business owner.",
+        text: "LocalClaw is a one-stop AI agent partner. We deploy, secure and manage AI agents on every major framework — OpenClaw, Hermes, Claude Agent SDK, OpenAI Agents, n8n and more. These agents handle email triage, lead capture, appointment booking, social media posting, CRM automation, and more — running 24/7 without any technical knowledge required from the business owner.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Which AI agent frameworks does LocalClaw support?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "We are framework-agnostic. We deploy and manage OpenClaw, Hermes Agent, NVIDIA NemoClaw, Claude Agent SDK, OpenAI Agents SDK, n8n, CrewAI, LangGraph and custom-built agents — and recommend the best fit for each workflow. Already running an agent? We audit and migrate it to managed care.",
       },
     },
     {
@@ -312,7 +300,7 @@ const faqSchema = {
       name: "How much does LocalClaw cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "LocalClaw offers three plans: Starter ($997 setup + $149/month) for solo operators, Business Engine ($1,997 setup + $299/month) for core teams, and Full Stack ($3,500 setup + $499/month) for enterprise. All plans include a $97 refundable discovery deposit and 30-day satisfaction guarantee.",
+        text: `LocalClaw offers ${PLANS.length} plans: ${PLANS.map((p) => `${p.name} (${usd(p.setup)} setup + ${usd(p.monthly)}/month)`).join(", ")}. Start with a ${usd(DISCOVERY.amount)} refundable discovery deposit credited toward setup. Every plan includes a 30-day satisfaction guarantee.`,
       },
     },
     {
@@ -320,7 +308,7 @@ const faqSchema = {
       name: "Is LocalClaw secure?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Every LocalClaw deployment ships with NVIDIA NemoClaw enterprise security. This includes OAuth credential handling, Docker sandboxing, firewall hardening, read-only permissions by default, instant kill switches, and full audit trails on every agent action.",
+        text: "Yes. Every LocalClaw deployment ships with enterprise guardrails regardless of framework — including NVIDIA NemoClaw policy enforcement where it applies. This includes OAuth credential handling, Docker sandboxing, firewall hardening, read-only permissions by default, instant kill switches, and full audit trails on every agent action.",
       },
     },
     {

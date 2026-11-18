@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabase } from "@/lib/supabase";
+import { planFromAmount, isPlanKey } from "@/lib/plans";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2026-02-25.clover" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_unset", { apiVersion: "2026-02-25.clover" });
 
 export const runtime = "nodejs";
 
@@ -68,12 +69,22 @@ async function logEvent(
   });
 }
 
-// ── Helper: determine plan from amount (cents) ──────────────────────────────
-function planFromAmount(amount: number): string {
-  if (amount >= 350000) return "fullstack";
-  if (amount >= 199700) return "business";
-  if (amount >= 99700) return "starter";
-  return "discovery";
+// ── Helper: find lead by our own intake id (client_reference_id / metadata) ─
+async function findLeadById(id: string | null | undefined) {
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { data } = await getSupabase()
+    .from("intake_submissions")
+    .select("id, status, payment_status, stripe_customer_id, email")
+    .eq("id", id)
+    .limit(1);
+  return data?.[0] || null;
+}
+
+// ── Helper: resolve plan — explicit metadata wins, amount is a fallback ─────
+function resolvePlan(metadata: Stripe.Metadata | null | undefined, amountCents: number): string {
+  const tagged = metadata?.plan;
+  if (tagged === "discovery" || isPlanKey(tagged)) return tagged;
+  return planFromAmount(amountCents);
 }
 
 // ── Helper: send email alert ─────────────────────────────────────────────────
@@ -102,12 +113,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await buffer(req.body!);
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (webhookSecret && !webhookSecret.startsWith("whsec_PASTE")) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(body.toString()) as Stripe.Event;
-      console.warn("⚠️ Webhook signature not verified — set STRIPE_WEBHOOK_SECRET");
+    if (!webhookSecret || webhookSecret.startsWith("whsec_PASTE")) {
+      // Never trust unsigned events — anyone could POST a fake "paid" event.
+      console.error("STRIPE_WEBHOOK_SECRET is not configured — rejecting webhook");
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
     }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
     console.error("Stripe signature verification failed:", err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -125,9 +136,12 @@ export async function POST(req: NextRequest) {
         const amount = session.amount_total || 0;
         const currency = session.currency || "usd";
         const customerId = typeof session.customer === "string" ? session.customer : null;
-        const plan = planFromAmount(amount);
+        const plan = resolvePlan(session.metadata, amount);
+        const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
 
-        const lead = await findLeadByEmail(email);
+        const lead =
+          (await findLeadById(session.client_reference_id || session.metadata?.lead_id)) ||
+          (await findLeadByEmail(email));
 
         if (lead) {
           const updates: Record<string, unknown> = {
@@ -142,6 +156,7 @@ export async function POST(req: NextRequest) {
             plan,
             updated_at: new Date().toISOString(),
           };
+          if (subscriptionId) updates.subscription_id = subscriptionId;
           if (["new", "contacted"].includes(lead.status)) updates.status = "onboarded";
 
           await getSupabase().from("intake_submissions").update(updates).eq("id", lead.id);
@@ -161,6 +176,7 @@ export async function POST(req: NextRequest) {
             paid_at: new Date().toISOString(),
             last_payment_at: new Date().toISOString(),
             plan,
+            ...(subscriptionId ? { subscription_id: subscriptionId } : {}),
           });
           console.log(`✅ New lead from payment: ${email}`);
         }
@@ -229,12 +245,12 @@ export async function POST(req: NextRequest) {
         const customerId = typeof sub.customer === "string" ? sub.customer : null;
         if (!customerId) break;
 
-        const lead = await findLeadByCustomer(customerId);
+        const lead = (await findLeadByCustomer(customerId)) || (await findLeadById(sub.metadata?.lead_id));
         if (!lead) { console.log(`No lead for customer ${customerId}`); break; }
 
         const item = sub.items?.data?.[0];
         const monthlyAmount = item?.price?.unit_amount || 0;
-        const subPlan = item?.price?.nickname || planFromAmount(monthlyAmount);
+        const subPlan = resolvePlan(sub.metadata, monthlyAmount);
         const periodEnd = (sub as unknown as { current_period_end?: number }).current_period_end
           ? new Date((sub as unknown as { current_period_end: number }).current_period_end * 1000).toISOString()
           : null;
@@ -248,6 +264,7 @@ export async function POST(req: NextRequest) {
         await getSupabase().from("intake_submissions").update({
           subscription_status: subStatus,
           subscription_id: sub.id,
+          stripe_customer_id: customerId,
           subscription_plan: subPlan,
           subscription_current_period_end: periodEnd,
           monthly_amount: monthlyAmount,

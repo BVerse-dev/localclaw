@@ -1,4 +1,4 @@
-# PLAN FEATURES — Business ($349/mo)
+# PLAN FEATURES — Business ($299/mo)
 # Inject this block as {{PLAN_FEATURES}} in AGENTS.md
 
 ---

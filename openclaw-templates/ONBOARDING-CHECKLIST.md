@@ -71,7 +71,8 @@ Complete this before connecting to the server. This is information gathering.
 - [ ] Staff contacts for routing (name, role, how to reach)
 
 ### 1.6 Channel Decisions
-- [ ] Plan tier confirmed: starter / business / fullstack
+- [ ] Plan tier confirmed: starter / business / fullstack / command
+- [ ] Agent framework confirmed (openclaw / hermes / claude-sdk / openai-agents / crewai / langgraph / n8n / custom)
 - [ ] For Starter: confirmed WhatsApp OR Telegram (not both)
 - [ ] For Business/Full Stack: WhatsApp number available for business use?
 - [ ] WhatsApp Business API access confirmed (or will need setup)
