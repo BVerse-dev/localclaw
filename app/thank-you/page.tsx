@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getPlan, planPriceLabel, type Plan } from "@/lib/plans";
 
 // ── Brand tokens (identical to LocalClawClient) ───────────────────────────────
 const BG         = "#080704";
@@ -57,28 +58,41 @@ function AnimatedCheck() {
 }
 
 // ── Next-step cards ───────────────────────────────────────────────────────────
-const STEPS = [
-  {
-    num:   "01",
-    title: "Check your email",
-    desc:  "A Stripe receipt is on its way confirming your $97 deposit. Your spot is officially held.",
-  },
-  {
-    num:   "02",
-    title: "We reach out within 2 hours",
-    desc:  "The LocalClaw team will contact you to schedule your 15-minute scoping call — at your convenience.",
-  },
-  {
-    num:   "03",
-    title: "Live in under 24 hours",
-    desc:  "After the call we handle everything — VPS setup, agent config, integrations. You just show up.",
-  },
-];
+function getSteps(plan?: Plan) {
+  return [
+    {
+      num:   "01",
+      title: "Check your email",
+      desc:  plan
+        ? `A Stripe receipt is on its way confirming your ${plan.name} setup fee and first month. Your subscription is active.`
+        : "A Stripe receipt is on its way confirming your $97 deposit. Your spot is officially held.",
+    },
+    {
+      num:   "02",
+      title: "We reach out within 2 hours",
+      desc:  plan
+        ? "The LocalClaw team will contact you to schedule your kickoff call, map your workflows, and confirm the right agent frameworks."
+        : "The LocalClaw team will contact you to schedule your 15-minute scoping call and recommend the right agent frameworks for you.",
+    },
+    {
+      num:   "03",
+      title: "Live in under 24 hours",
+      desc:  "After the call we handle everything — infrastructure, framework setup, guardrails, integrations. You just show up.",
+    },
+  ];
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ThankYouPage() {
   const stepsRef   = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [plan, setPlan] = useState<Plan | undefined>(undefined);
+  const STEPS = getSteps(plan);
+
+  // Which plan was purchased (set by /api/checkout success_url)
+  useEffect(() => {
+    setPlan(getPlan(new URLSearchParams(window.location.search).get("plan")));
+  }, []);
 
   // Nav shadow on scroll
   useEffect(() => {
@@ -184,7 +198,9 @@ export default function ThankYouPage() {
 
             {/* Sub */}
             <p className="ty-in" style={{ ...sans, color:MUTED, maxWidth:"480px", lineHeight:"1.85", fontSize:"0.96rem", marginBottom:"0.8rem", animationDelay:"0.35s" }}>
-              Your $97 deposit has been received and is credited in full toward your setup fee. Here's exactly what happens next.
+              {plan
+                ? <>Welcome to <strong style={{ color:CREAM }}>{plan.name}</strong> ({planPriceLabel(plan)}). Your payment has been received. Here&apos;s exactly what happens next.</>
+                : <>Your $97 deposit has been received and is credited in full toward your setup fee. Here&apos;s exactly what happens next.</>}
             </p>
 
             {/* Divider */}
@@ -280,7 +296,7 @@ export default function ThankYouPage() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Powered by OpenClaw + NVIDIA NemoClaw</div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner</div>
           <a
             href="https://twitter.com/Th3Alch3mist_"
             target="_blank"

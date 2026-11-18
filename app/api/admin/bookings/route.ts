@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequest } from "@/lib/admin-auth";
 import { getSupabase } from "@/lib/supabase";
 
-function isAuthed(req: NextRequest): boolean {
-  const cookie = req.cookies.get("lc_admin");
-  return cookie?.value === process.env.ADMIN_PASSWORD;
-}
+export const runtime = "nodejs";
+
+const isAuthed = isAdminRequest;
 
 interface CalBooking {
   id: number;

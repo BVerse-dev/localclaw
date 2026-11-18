@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # =============================================================================
-# LocalClaw — OpenClaw Agent Onboarding Script
+# LocalClaw — Multi-Framework Agent Onboarding Script
 # Usage:
 #   ./onboard.sh --name "Business Name" --type restaurant --plan starter \
-#                --phone +1234567890 --owner "John Doe" [--channel whatsapp]
+#                --phone +1234567890 --owner "John Doe" [--channel whatsapp] \
+#                [--framework openclaw|hermes|claude-sdk|openai-agents|crewai|langgraph|n8n|custom]
 #   ./onboard.sh --off --name "Business Name"
 #   ./onboard.sh --list
 # =============================================================================
@@ -12,7 +13,8 @@ set -euo pipefail
 
 # --- Configuration -----------------------------------------------------------
 TEMPLATES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-AGENTS_BASE="${HOME}/.openclaw/agents"
+AGENTS_BASE="${LOCALCLAW_AGENTS_BASE:-${HOME}/.openclaw/agents}"
+FRAMEWORKS="openclaw hermes claude-sdk openai-agents crewai langgraph n8n custom"
 LOCALCLAW_ALERT="https://localclawagents.com/api/alerts"
 LOCALCLAW_EMAIL="localclawagents@gmail.com"
 CAL_LINK="https://cal.com/bverse/15min"
@@ -48,14 +50,15 @@ slugify() {
 usage() {
   cat <<EOF
 
-${BOLD}LocalClaw — OpenClaw Agent Onboarding${NC}
+${BOLD}LocalClaw — Multi-Framework Agent Onboarding${NC}
 
 USAGE:
   ${BOLD}Onboard a new agent:${NC}
     ./onboard.sh --name "Business Name" --type TYPE --plan PLAN \\
                  --phone +1234567890 --owner "Owner Name" \\
                  [--channel whatsapp|telegram] [--city "City"] \\
-                 [--email owner@email.com] [--timezone "America/New_York"]
+                 [--email owner@email.com] [--timezone "America/New_York"] \\
+                 [--framework openclaw]
 
   ${BOLD}Disable an agent:${NC}
     ./onboard.sh --off --name "Business Name"
@@ -72,7 +75,7 @@ USAGE:
 REQUIRED ARGS:
   --name    "Business Name"         Business name (will be slugified for directory)
   --type    restaurant|real-estate|law-firm|home-services|medical|retail|general
-  --plan    starter|business|fullstack
+  --plan    starter|business|fullstack|command
   --phone   +1234567890             Client's primary contact phone (WhatsApp or Telegram)
   --owner   "Owner Name"            Business owner's full name
 
@@ -82,6 +85,9 @@ OPTIONAL ARGS:
   --email   owner@example.com       Owner email for alerts (default: $LOCALCLAW_EMAIL)
   --timezone "America/New_York"     Business timezone (default: America/New_York)
   --state   "FL"                    State abbreviation (default: unknown)
+  --framework NAME                  Agent runtime (default: openclaw). One of:
+                                    openclaw, hermes, claude-sdk, openai-agents,
+                                    crewai, langgraph, n8n, custom
 
 BUSINESS TYPES:
   restaurant      Restaurants, cafes, food & beverage
@@ -93,9 +99,14 @@ BUSINESS TYPES:
   general         Any other service business
 
 PLANS:
-  starter     \$149/mo — 1 channel, lead capture, booking, FAQ, daily heartbeat
-  business    \$349/mo — 3 channels, CRM sync, follow-ups, 6hr heartbeat
-  fullstack   \$699/mo — all channels, sub-agents, NemoClaw, 30min heartbeat
+  starter     \$997 + \$149/mo — 1 channel, lead capture, booking, FAQ, daily heartbeat
+  business    \$1,997 + \$299/mo — 3 channels, CRM sync, follow-ups, 6hr heartbeat
+  fullstack   \$3,500 + \$499/mo — all channels, sub-agents, NemoClaw, 30min heartbeat
+  command     \$4,500 + \$799/mo — Full Stack + multi-framework orchestration, 15min heartbeat
+
+FRAMEWORKS:
+  Persona files are identical for every framework. Non-OpenClaw frameworks get a
+  runtime/ folder (SETUP.md, system-prompt.md, .env.example) — see frameworks/README.md
 
 EOF
 }
@@ -137,6 +148,16 @@ list_agents() {
   echo ""
 }
 
+# --- Read an agent's framework (defaults to openclaw for older agents) ------
+agent_framework() {
+  local dir="$1"
+  if [[ -f "${dir}/framework.json" ]] && command -v python3 &>/dev/null; then
+    python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("framework","openclaw"))' "${dir}/framework.json" 2>/dev/null || echo "openclaw"
+  else
+    echo "openclaw"
+  fi
+}
+
 # --- Disable an agent --------------------------------------------------------
 disable_agent() {
   local name="$1"
@@ -146,8 +167,8 @@ disable_agent() {
 
   [[ -d "$agent_dir" ]] || die "Agent '$slug' not found at $agent_dir"
 
-  # Disable via openclaw CLI
-  if command -v openclaw &>/dev/null; then
+  # Disable via openclaw CLI (OpenClaw agents only — other runtimes honour the .disabled marker)
+  if [[ "$(agent_framework "$agent_dir")" == "openclaw" ]] && command -v openclaw &>/dev/null; then
     openclaw agents disable "$slug" 2>/dev/null || warn "openclaw CLI disable command failed — marking via file"
   fi
 
@@ -168,7 +189,7 @@ enable_agent() {
 
   rm -f "${agent_dir}/.disabled"
 
-  if command -v openclaw &>/dev/null; then
+  if [[ "$(agent_framework "$agent_dir")" == "openclaw" ]] && command -v openclaw &>/dev/null; then
     openclaw agents enable "$slug" 2>/dev/null || warn "openclaw CLI enable command failed — file marker removed"
   fi
 
@@ -191,9 +212,14 @@ show_status() {
     echo -e "  Status: ${GREEN}ACTIVE${NC}"
   fi
 
+  local framework
+  framework=$(agent_framework "$agent_dir")
+  echo "  Framework: $framework"
   echo "  Directory: $agent_dir"
   echo "  Files:"
-  for f in SOUL.md IDENTITY.md AGENTS.md USER.md TOOLS.md MEMORY.md HEARTBEAT.md openclaw.json; do
+  local runtime_files="openclaw.json"
+  [[ "$framework" != "openclaw" ]] && runtime_files="framework.json runtime/SETUP.md runtime/system-prompt.md"
+  for f in SOUL.md IDENTITY.md AGENTS.md USER.md TOOLS.md MEMORY.md HEARTBEAT.md $runtime_files; do
     if [[ -f "${agent_dir}/${f}" ]]; then
       echo -e "    ${GREEN}✓${NC} $f"
     else
@@ -201,7 +227,7 @@ show_status() {
     fi
   done
 
-  if command -v openclaw &>/dev/null; then
+  if [[ "$framework" == "openclaw" ]] && command -v openclaw &>/dev/null; then
     echo ""
     echo "  OpenClaw status:"
     openclaw agents status "$slug" 2>/dev/null || info "  (openclaw CLI unavailable)"
@@ -212,17 +238,20 @@ show_status() {
 fill_template() {
   local file="$1"
   shift
-  # Args are pairs: PLACEHOLDER VALUE
-  while [[ $# -ge 2 ]]; do
-    local placeholder="$1"
-    local value="$2"
-    # Escape special chars in value for sed
-    local escaped_value
-    escaped_value=$(printf '%s\n' "$value" | sed 's/[[\.*^$()+?{|]/\\&/g; s/\//\\\//g')
-    sed -i.bak "s/{{${placeholder}}}/${escaped_value}/g" "$file"
-    shift 2
-  done
-  rm -f "${file}.bak"
+  # Args are pairs: PLACEHOLDER VALUE. Uses python3 for literal replacement —
+  # sed can't handle multi-line values (e.g. PLAN_FEATURES_LIST) or special chars safely.
+  command -v python3 &>/dev/null || die "python3 is required to fill templates"
+  python3 - "$file" "$@" <<'PYEOF'
+import sys
+path, args = sys.argv[1], sys.argv[2:]
+with open(path, encoding="utf-8") as f:
+    content = f.read()
+for _ in range(2):  # second pass fills placeholders nested inside injected values
+    for i in range(0, len(args) - 1, 2):
+        content = content.replace("{{" + args[i] + "}}", args[i + 1])
+with open(path, "w", encoding="utf-8") as f:
+    f.write(content)
+PYEOF
 }
 
 # --- Determine heartbeat settings by plan ------------------------------------
@@ -231,6 +260,7 @@ get_heartbeat_interval() {
     starter)   echo "24h" ;;
     business)  echo "6h" ;;
     fullstack) echo "30m" ;;
+    command)   echo "15m" ;;
     *)         echo "24h" ;;
   esac
 }
@@ -240,6 +270,7 @@ get_heartbeat_cron() {
     starter)   echo "0 8 * * *" ;;
     business)  echo "0 6,12,18,0 * * *" ;;
     fullstack) echo "*/30 * * * *" ;;
+    command)   echo "*/15 * * * *" ;;
     *)         echo "0 8 * * *" ;;
   esac
 }
@@ -249,6 +280,51 @@ generate_webhook_id() {
   local slug="$1"
   local event="$2"
   echo "${slug}-${event}-$(date +%s | tail -c 6)"
+}
+
+# --- Scaffold a non-OpenClaw runtime ----------------------------------------
+scaffold_runtime() {
+  local framework="$1" agent_dir="$2" slug="$3"
+  local guide="${TEMPLATES_DIR}/frameworks/${framework}.md"
+  [[ -f "$guide" ]] || die "Framework guide not found: $guide"
+
+  info "Scaffolding ${framework} runtime..."
+  mkdir -p "${agent_dir}/runtime"
+  cp "$guide" "${agent_dir}/runtime/SETUP.md"
+
+  # One system prompt, assembled in the same load order OpenClaw uses
+  {
+    echo "<!-- Generated by LocalClaw onboard.sh for ${slug} (${framework}). Regenerate after editing the source .md files. -->"
+    for f in SOUL.md IDENTITY.md AGENTS.md USER.md TOOLS.md MEMORY.md HEARTBEAT.md; do
+      echo ""
+      echo "<!-- ===== ${f} ===== -->"
+      cat "${agent_dir}/${f}"
+    done
+  } > "${agent_dir}/runtime/system-prompt.md"
+
+  local model_keys
+  case "$framework" in
+    claude-sdk)    model_keys="ANTHROPIC_API_KEY=" ;;
+    openai-agents) model_keys="OPENAI_API_KEY=" ;;
+    *)             model_keys="ANTHROPIC_API_KEY=
+OPENAI_API_KEY=" ;;
+  esac
+
+  cat > "${agent_dir}/runtime/.env.example" <<ENVEX
+# ${slug} — ${framework} runtime. Copy to .env and fill in. Never commit .env.
+${model_keys}
+WHATSAPP_TOKEN=
+WHATSAPP_PHONE_ID=
+TELEGRAM_BOT_TOKEN=
+OWNER_TELEGRAM_CHAT_ID=
+LOCALCLAW_API_KEY=
+N8N_WEBHOOK_TOKEN=
+CAL_API_KEY=
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+ENVEX
+
+  success "Runtime scaffolded at ${agent_dir}/runtime (follow runtime/SETUP.md)"
 }
 
 # --- Main onboarding function ------------------------------------------------
@@ -263,6 +339,7 @@ onboard() {
   local email="$LOCALCLAW_EMAIL"
   local timezone="America/New_York"
   local state="FL"
+  local framework="openclaw"
 
   # Parse args
   while [[ $# -gt 0 ]]; do
@@ -277,6 +354,7 @@ onboard() {
       --email)     email="$2";     shift 2 ;;
       --timezone)  timezone="$2";  shift 2 ;;
       --state)     state="$2";     shift 2 ;;
+      --framework) framework="$2"; shift 2 ;;
       *) die "Unknown argument: $1" ;;
     esac
   done
@@ -296,9 +374,12 @@ onboard() {
 
   # Validate plan
   case "$plan" in
-    starter|business|fullstack) ;;
-    *) die "Invalid --plan '$plan'. Must be one of: starter, business, fullstack" ;;
+    starter|business|fullstack|command) ;;
+    *) die "Invalid --plan '$plan'. Must be one of: starter, business, fullstack, command" ;;
   esac
+
+  # Validate framework
+  [[ " $FRAMEWORKS " == *" $framework "* ]] || die "Invalid --framework '$framework'. Must be one of: $FRAMEWORKS"
 
   # Derive values
   local slug
@@ -356,7 +437,7 @@ onboard() {
       instagram_enabled="true"
       primary_channel="whatsapp"
       ;;
-    fullstack)
+    fullstack|command)
       whatsapp_enabled="true"
       telegram_enabled="true"
       instagram_enabled="true"
@@ -372,7 +453,7 @@ onboard() {
   local scheduler_enabled="false"
   local closer_enabled="false"
   local nemoclaw_enabled="false"
-  [[ "$plan" == "fullstack" ]] && {
+  [[ "$plan" == "fullstack" || "$plan" == "command" ]] && {
     researcher_enabled="true"
     scheduler_enabled="true"
     closer_enabled="true"
@@ -390,8 +471,9 @@ onboard() {
   local plan_display=""
   case "$plan" in
     starter)   plan_display="Starter (\$149/mo)" ;;
-    business)  plan_display="Business (\$349/mo)" ;;
-    fullstack) plan_display="Full Stack (\$699/mo)" ;;
+    business)  plan_display="Business (\$299/mo)" ;;
+    fullstack) plan_display="Full Stack (\$499/mo)" ;;
+    command)   plan_display="Agent Command Center (\$799/mo)" ;;
   esac
 
   # --- Start output ---
@@ -400,6 +482,7 @@ onboard() {
   echo -e "  ${BOLD}Slug:${NC}      $slug"
   echo -e "  ${BOLD}Type:${NC}      $type"
   echo -e "  ${BOLD}Plan:${NC}      $plan_display"
+  echo -e "  ${BOLD}Framework:${NC} $framework"
   echo -e "  ${BOLD}Owner:${NC}     $owner"
   echo -e "  ${BOLD}Phone:${NC}     $phone"
   echo -e "  ${BOLD}City:${NC}      $city"
@@ -444,82 +527,88 @@ onboard() {
     cp "${TEMPLATES_DIR}/base/${f}" "${agent_dir}/${f}"
   done
 
-  # Copy openclaw-client.json as openclaw.json
-  cp "${TEMPLATES_DIR}/openclaw-client.json" "${agent_dir}/openclaw.json"
+  # Copy openclaw-client.json as openclaw.json (OpenClaw runtime only)
+  local runtime_config=()
+  if [[ "$framework" == "openclaw" ]]; then
+    cp "${TEMPLATES_DIR}/openclaw-client.json" "${agent_dir}/openclaw.json"
+    runtime_config=("openclaw.json")
+  fi
 
   # --- Fill placeholders in all files ---
   local all_files=()
-  for f in "${base_files[@]}" "openclaw.json"; do
+  for f in "${base_files[@]}" "${runtime_config[@]+"${runtime_config[@]}"}"; do
     all_files+=("${agent_dir}/${f}")
   done
 
   info "Filling placeholder values..."
+  local fill_args=(
+    "AGENT_NAME"              "$agent_name"
+    "AGENT_SLUG"              "$slug"
+    "BUSINESS_NAME"           "$name"
+    "BUSINESS_TYPE"           "$type"
+    "OWNER_NAME"              "$owner"
+    "OWNER_PHONE"             "$phone"
+    "OWNER_BUSINESS_PHONE"    "$phone"
+    "OWNER_PERSONAL_PHONE"    "[SET IN USER.md]"
+    "OWNER_EMAIL"             "$email"
+    "OWNER_TELEGRAM"          "[SET AFTER TELEGRAM SETUP]"
+    "OWNER_TELEGRAM_CHAT_ID"  "[SET AFTER TELEGRAM SETUP]"
+    "OWNER_PREFERRED_CONTACT" "Telegram"
+    "OWNER_LANGUAGE"          "English"
+    "OWNER_PRIORITIES"        "[Captured during onboarding call — fill in after intake]"
+    "OWNER_DEALBREAKERS"      "[Fill in during onboarding call]"
+    "CITY"                    "$city"
+    "STATE"                   "$state"
+    "TIMEZONE"                "$timezone"
+    "BUSINESS_HOURS"          "$business_hours"
+    "OPEN_TIME"               "$open_time"
+    "BUSINESS_ADDRESS"        "[SET IN USER.md]"
+    "BUSINESS_PHONE"          "$phone"
+    "BUSINESS_EMAIL"          "$email"
+    "BUSINESS_WEBSITE"        "[SET IN USER.md]"
+    "PLAN_NAME"               "$plan_display"
+    "PLAN_FEATURES_LIST"      "$plan_features"
+    "HEARTBEAT_INTERVAL"      "$heartbeat_interval"
+    "HEARTBEAT_CRON"          "$heartbeat_cron"
+    "CLIENT_PHONE"            "$phone"
+    "N8N_LEAD_WEBHOOK"        "$n8n_lead_webhook"
+    "N8N_BOOKING_WEBHOOK"     "$n8n_booking_webhook"
+    "N8N_QUOTE_WEBHOOK"       "$n8n_quote_webhook"
+    "N8N_COMPLAINT_WEBHOOK"   "$n8n_complaint_webhook"
+    "N8N_AFTERHOURS_WEBHOOK"  "$n8n_afterhours_webhook"
+    "N8N_HEARTBEAT_WEBHOOK"   "$n8n_heartbeat_webhook"
+    "N8N_FOLLOWUP_WEBHOOK"    "$n8n_followup_webhook"
+    "N8N_CRM_WEBHOOK"         "$n8n_crm_webhook"
+    "N8N_WORKFLOW_ID"         "$n8n_lead_webhook"
+    "CAL_USERNAME"            "bverse"
+    "CAL_EVENT_TYPE"          "15min"
+    "CAL_LINK"                "bverse/15min"
+    "WHATSAPP_ENABLED"        "$whatsapp_enabled"
+    "TELEGRAM_ENABLED"        "$telegram_enabled"
+    "INSTAGRAM_ENABLED"       "$instagram_enabled"
+    "GMAIL_ENABLED"           "$gmail_enabled"
+    "DISCORD_ENABLED"         "$discord_enabled"
+    "SLACK_ENABLED"           "$slack_enabled"
+    "PRIMARY_CHANNEL"         "$primary_channel"
+    "STARTER_CHANNEL"         "$primary_channel"
+    "RESEARCHER_ENABLED"      "$researcher_enabled"
+    "SCHEDULER_ENABLED"       "$scheduler_enabled"
+    "CLOSER_ENABLED"          "$closer_enabled"
+    "NEMOCLAW_ENABLED"        "$nemoclaw_enabled"
+    "NEMOCLAW_MODE"           "flag"
+    "ESCALATION_THRESHOLD"    "$escalation_threshold"
+    "ESCALATION_HOURS"        "$business_hours"
+    "ESCALATION_CHANNEL"      "Telegram"
+    "RESPONSE_TIME"           "2 hours"
+    "CREATED_AT"              "$created_at"
+    "BILLING_EMAIL"           "$email"
+    "RENEWAL_DATE"            "[SET AT BILLING]"
+    "AGENT_EMOJI"             "🦞"
+    "CREATURE_CONCEPT"        "A sharp, fast, always-on business claw"
+    "CUSTOM_PERSONA_BRIEF"    "[FILL DURING ONBOARDING]"
+  )
   for file in "${all_files[@]}"; do
-    fill_template "$file" \
-      "AGENT_NAME"              "$agent_name" \
-      "AGENT_SLUG"              "$slug" \
-      "BUSINESS_NAME"           "$name" \
-      "BUSINESS_TYPE"           "$type" \
-      "OWNER_NAME"              "$owner" \
-      "OWNER_PHONE"             "$phone" \
-      "OWNER_BUSINESS_PHONE"    "$phone" \
-      "OWNER_PERSONAL_PHONE"    "[SET IN USER.md]" \
-      "OWNER_EMAIL"             "$email" \
-      "OWNER_TELEGRAM"          "[SET AFTER TELEGRAM SETUP]" \
-      "OWNER_TELEGRAM_CHAT_ID"  "[SET AFTER TELEGRAM SETUP]" \
-      "OWNER_PREFERRED_CONTACT" "Telegram" \
-      "OWNER_LANGUAGE"          "English" \
-      "OWNER_PRIORITIES"        "[Captured during onboarding call — fill in after intake]" \
-      "OWNER_DEALBREAKERS"      "[Fill in during onboarding call]" \
-      "CITY"                    "$city" \
-      "STATE"                   "$state" \
-      "TIMEZONE"                "$timezone" \
-      "BUSINESS_HOURS"          "$business_hours" \
-      "OPEN_TIME"               "$open_time" \
-      "BUSINESS_ADDRESS"        "[SET IN USER.md]" \
-      "BUSINESS_PHONE"          "$phone" \
-      "BUSINESS_EMAIL"          "$email" \
-      "BUSINESS_WEBSITE"        "[SET IN USER.md]" \
-      "PLAN_NAME"               "$plan_display" \
-      "PLAN_FEATURES_LIST"      "$plan_features" \
-      "HEARTBEAT_INTERVAL"      "$heartbeat_interval" \
-      "HEARTBEAT_CRON"          "$heartbeat_cron" \
-      "CLIENT_PHONE"            "$phone" \
-      "N8N_LEAD_WEBHOOK"        "$n8n_lead_webhook" \
-      "N8N_BOOKING_WEBHOOK"     "$n8n_booking_webhook" \
-      "N8N_QUOTE_WEBHOOK"       "$n8n_quote_webhook" \
-      "N8N_COMPLAINT_WEBHOOK"   "$n8n_complaint_webhook" \
-      "N8N_AFTERHOURS_WEBHOOK"  "$n8n_afterhours_webhook" \
-      "N8N_HEARTBEAT_WEBHOOK"   "$n8n_heartbeat_webhook" \
-      "N8N_FOLLOWUP_WEBHOOK"    "$n8n_followup_webhook" \
-      "N8N_CRM_WEBHOOK"         "$n8n_crm_webhook" \
-      "N8N_WORKFLOW_ID"         "$n8n_lead_webhook" \
-      "CAL_USERNAME"            "bverse" \
-      "CAL_EVENT_TYPE"          "15min" \
-      "CAL_LINK"                "bverse/15min" \
-      "WHATSAPP_ENABLED"        "$whatsapp_enabled" \
-      "TELEGRAM_ENABLED"        "$telegram_enabled" \
-      "INSTAGRAM_ENABLED"       "$instagram_enabled" \
-      "GMAIL_ENABLED"           "$gmail_enabled" \
-      "DISCORD_ENABLED"         "$discord_enabled" \
-      "SLACK_ENABLED"           "$slack_enabled" \
-      "PRIMARY_CHANNEL"         "$primary_channel" \
-      "STARTER_CHANNEL"         "$primary_channel" \
-      "RESEARCHER_ENABLED"      "$researcher_enabled" \
-      "SCHEDULER_ENABLED"       "$scheduler_enabled" \
-      "CLOSER_ENABLED"          "$closer_enabled" \
-      "NEMOCLAW_ENABLED"        "$nemoclaw_enabled" \
-      "NEMOCLAW_MODE"           "flag" \
-      "ESCALATION_THRESHOLD"    "$escalation_threshold" \
-      "ESCALATION_HOURS"        "$business_hours" \
-      "ESCALATION_CHANNEL"      "Telegram" \
-      "RESPONSE_TIME"           "2 hours" \
-      "CREATED_AT"              "$created_at" \
-      "BILLING_EMAIL"           "$email" \
-      "RENEWAL_DATE"            "[SET AT BILLING]" \
-      "AGENT_EMOJI"             "🦞" \
-      "CREATURE_CONCEPT"        "A sharp, fast, always-on business claw" \
-      "CUSTOM_PERSONA_BRIEF"    "[FILL DURING ONBOARDING]"
+    fill_template "$file" "${fill_args[@]}"
   done
 
   # --- Inject INDUSTRY_CONTEXT into SOUL.md ---
@@ -579,54 +668,76 @@ PYEOF
   fi
   rm -f "$tmp_plan"
 
-  # --- Register agent with OpenClaw CLI ---
-  info "Registering agent with OpenClaw..."
-  if command -v openclaw &>/dev/null; then
-    openclaw agents add \
-      --id "$slug" \
-      --name "$agent_name" \
-      --config "${agent_dir}/openclaw.json" \
-      --soul "${agent_dir}/SOUL.md" \
-      --identity "${agent_dir}/IDENTITY.md" \
-      --agents "${agent_dir}/AGENTS.md" \
-      --user "${agent_dir}/USER.md" \
-      --tools "${agent_dir}/TOOLS.md" \
-      --memory "${agent_dir}/MEMORY.md" \
-      --heartbeat "${agent_dir}/HEARTBEAT.md" \
-      2>/dev/null && success "Agent registered with OpenClaw CLI" \
-      || warn "openclaw CLI registration failed — you'll need to register manually"
-  else
-    warn "openclaw CLI not found in PATH — skipping registration. Run manually after installation."
-  fi
+  # Injected plan/industry blocks contain placeholders too — fill them now
+  fill_template "${agent_dir}/SOUL.md" "${fill_args[@]}"
+  fill_template "${agent_dir}/AGENTS.md" "${fill_args[@]}"
 
-  # --- Configure heartbeat ---
-  info "Configuring heartbeat (interval: $heartbeat_interval)..."
-  if command -v openclaw &>/dev/null; then
-    openclaw heartbeat set \
-      --agent "$slug" \
-      --cron "$heartbeat_cron" \
-      --timezone "$timezone" \
-      2>/dev/null && success "Heartbeat configured: $heartbeat_cron ($timezone)" \
-      || warn "Heartbeat configuration failed — set manually via: openclaw heartbeat set --agent $slug --cron \"$heartbeat_cron\""
-  else
-    warn "Set heartbeat manually: openclaw heartbeat set --agent $slug --cron \"$heartbeat_cron\" --timezone \"$timezone\""
-  fi
+  # --- Write framework manifest (every agent) ---
+  cat > "${agent_dir}/framework.json" <<FWJSON
+{
+  "framework": "$framework",
+  "agent_slug": "$slug",
+  "plan": "$plan",
+  "heartbeat_cron": "$heartbeat_cron",
+  "timezone": "$timezone",
+  "guardrails": $nemoclaw_enabled,
+  "created_at": "$created_at",
+  "runtime_notes": ""
+}
+FWJSON
 
-  # --- Set required environment variables ---
-  info "Setting environment variable stubs..."
-  if command -v openclaw &>/dev/null; then
-    openclaw env set --agent "$slug" \
-      WHATSAPP_TOKEN="[SET_THIS]" \
-      WHATSAPP_PHONE_ID="[SET_THIS]" \
-      TELEGRAM_BOT_TOKEN="[SET_THIS]" \
-      OWNER_TELEGRAM_CHAT_ID="[SET_THIS]" \
-      LOCALCLAW_API_KEY="[SET_THIS]" \
-      N8N_WEBHOOK_TOKEN="[SET_THIS]" \
-      CAL_API_KEY="[SET_THIS]" \
-      SUPABASE_URL="[SET_THIS]" \
-      SUPABASE_ANON_KEY="[SET_THIS]" \
-      2>/dev/null && success "Environment variable stubs created" \
-      || warn "Could not set env vars via CLI — set them manually"
+  if [[ "$framework" == "openclaw" ]]; then
+    # --- Register agent with OpenClaw CLI ---
+    info "Registering agent with OpenClaw..."
+    if command -v openclaw &>/dev/null; then
+      openclaw agents add \
+        --id "$slug" \
+        --name "$agent_name" \
+        --config "${agent_dir}/openclaw.json" \
+        --soul "${agent_dir}/SOUL.md" \
+        --identity "${agent_dir}/IDENTITY.md" \
+        --agents "${agent_dir}/AGENTS.md" \
+        --user "${agent_dir}/USER.md" \
+        --tools "${agent_dir}/TOOLS.md" \
+        --memory "${agent_dir}/MEMORY.md" \
+        --heartbeat "${agent_dir}/HEARTBEAT.md" \
+        2>/dev/null && success "Agent registered with OpenClaw CLI" \
+        || warn "openclaw CLI registration failed — you'll need to register manually"
+    else
+      warn "openclaw CLI not found in PATH — skipping registration. Run manually after installation."
+    fi
+
+    # --- Configure heartbeat ---
+    info "Configuring heartbeat (interval: $heartbeat_interval)..."
+    if command -v openclaw &>/dev/null; then
+      openclaw heartbeat set \
+        --agent "$slug" \
+        --cron "$heartbeat_cron" \
+        --timezone "$timezone" \
+        2>/dev/null && success "Heartbeat configured: $heartbeat_cron ($timezone)" \
+        || warn "Heartbeat configuration failed — set manually via: openclaw heartbeat set --agent $slug --cron \"$heartbeat_cron\""
+    else
+      warn "Set heartbeat manually: openclaw heartbeat set --agent $slug --cron \"$heartbeat_cron\" --timezone \"$timezone\""
+    fi
+
+    # --- Set required environment variables ---
+    info "Setting environment variable stubs..."
+    if command -v openclaw &>/dev/null; then
+      openclaw env set --agent "$slug" \
+        WHATSAPP_TOKEN="[SET_THIS]" \
+        WHATSAPP_PHONE_ID="[SET_THIS]" \
+        TELEGRAM_BOT_TOKEN="[SET_THIS]" \
+        OWNER_TELEGRAM_CHAT_ID="[SET_THIS]" \
+        LOCALCLAW_API_KEY="[SET_THIS]" \
+        N8N_WEBHOOK_TOKEN="[SET_THIS]" \
+        CAL_API_KEY="[SET_THIS]" \
+        SUPABASE_URL="[SET_THIS]" \
+        SUPABASE_ANON_KEY="[SET_THIS]" \
+        2>/dev/null && success "Environment variable stubs created" \
+        || warn "Could not set env vars via CLI — set them manually"
+    fi
+  else
+    scaffold_runtime "$framework" "$agent_dir" "$slug"
   fi
 
   # --- Write summary file ---
@@ -640,6 +751,7 @@ Business:  $name
 Slug:      $slug
 Type:      $type
 Plan:      $plan_display
+Framework: $framework
 Owner:     $owner
 Phone:     $phone
 City:      $city, $state
@@ -655,7 +767,8 @@ Files created:
   - TOOLS.md
   - MEMORY.md
   - HEARTBEAT.md
-  - openclaw.json
+  - framework.json
+  - $([[ "$framework" == "openclaw" ]] && echo "openclaw.json" || echo "runtime/ (SETUP.md, system-prompt.md, .env.example)")
 
 Heartbeat interval: $heartbeat_interval (cron: $heartbeat_cron)
 
@@ -699,6 +812,7 @@ SUMMARY
   echo -e "  ${GREEN}${BOLD}Agent created successfully!${NC}"
   echo ""
   echo -e "  ${BOLD}Directory:${NC}   $agent_dir"
+  echo -e "  ${BOLD}Framework:${NC}   $framework"
   echo -e "  ${BOLD}Heartbeat:${NC}   Every $heartbeat_interval"
   echo -e "  ${BOLD}Channels:${NC}    $([ "$whatsapp_enabled" == "true" ] && echo "WhatsApp " || echo "")$([ "$telegram_enabled" == "true" ] && echo "Telegram " || echo "")$([ "$instagram_enabled" == "true" ] && echo "Instagram " || echo "")$([ "$gmail_enabled" == "true" ] && echo "Gmail " || echo "")"
   echo ""
@@ -708,6 +822,7 @@ SUMMARY
   echo "  3. Connect messaging channels"
   echo "  4. Import n8n workflows from: $TEMPLATES_DIR/n8n/"
   echo "  5. Run test messages and verify heartbeat"
+  [[ "$framework" != "openclaw" ]] && echo "  6. Finish the ${framework} runtime setup: $agent_dir/runtime/SETUP.md"
   echo ""
   echo -e "  Full setup summary saved to: ${CYAN}$summary_file${NC}"
   echo -e "  Full onboarding checklist:   ${CYAN}$TEMPLATES_DIR/ONBOARDING-CHECKLIST.md${NC}"

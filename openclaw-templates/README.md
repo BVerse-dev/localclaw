@@ -1,4 +1,4 @@
-# LocalClaw — OpenClaw Multi-Tenant Agent Deployment System
+# LocalClaw — Multi-Framework Agent Deployment System
 
 **Version:** 1.0 | **Platform:** Hostinger VPS + OpenClaw | **Automation:** n8n
 **Support:** localclawagents@gmail.com | **Website:** https://localclawagents.com | **Book a call:** https://cal.com/bverse/15min
@@ -70,8 +70,13 @@ openclaw-templates/
 │
 ├── plans/                           ← Plan-tier capability definitions
 │   ├── starter.md                   ← $149/mo
-│   ├── business.md                  ← $349/mo
-│   └── fullstack.md                 ← $699/mo
+│   ├── business.md                  ← $299/mo
+│   ├── fullstack.md                 ← $499/mo
+│   └── command.md                   ← $799/mo (Agent Command Center)
+│
+├── frameworks/                      ← Runtime guides for non-OpenClaw agents
+│   ├── README.md                    ← Framework index (--framework values)
+│   └── hermes.md, claude-sdk.md, openai-agents.md, crewai.md, langgraph.md, n8n.md, custom.md
 │
 └── n8n/                             ← Ready-to-import n8n workflow JSONs
     ├── lead-capture-workflow.json
@@ -88,8 +93,12 @@ Each deployed client lives at:
 ├── TOOLS.md
 ├── MEMORY.md
 ├── HEARTBEAT.md
-└── openclaw.json
+├── framework.json                   ← Runtime manifest (framework, plan, heartbeat cron)
+└── openclaw.json                    ← OpenClaw agents only
+    runtime/                         ← Other frameworks: SETUP.md, system-prompt.md, .env.example
 ```
+
+Set `LOCALCLAW_AGENTS_BASE` to deploy agents somewhere other than `~/.openclaw/agents`.
 
 ---
 
@@ -101,7 +110,8 @@ Before running the script, have the following ready from the client's intake for
 
 - Business name
 - Business type (restaurant, real-estate, law-firm, home-services, medical, retail, general)
-- Plan (starter, business, fullstack)
+- Plan (starter, business, fullstack, command)
+- Agent framework (shown in the admin agent builder; default `openclaw`)
 - Owner's name
 - Owner's mobile number (will be primary channel number)
 - City and state
@@ -114,6 +124,7 @@ Before running the script, have the following ready from the client's intake for
   --name "Mario's Pizzeria" \
   --type restaurant \
   --plan business \
+  --framework openclaw \
   --phone "+13055551234" \
   --owner "Mario Rossi" \
   --city "Miami" \
@@ -205,7 +216,9 @@ Send test messages on each active channel. See ONBOARDING-CHECKLIST.md for the f
 
 ## Plan Tiers — Capability Mapping
 
-| Feature | Starter ($149) | Business ($349) | Full Stack ($699) |
+Agent Command Center ($799/mo) includes everything in Full Stack plus multi-framework orchestration, a 15-minute heartbeat, dedicated infrastructure and an uptime SLA — see `plans/command.md`.
+
+| Feature | Starter ($149) | Business ($299) | Full Stack ($499) |
 |---|---|---|---|
 | Channels | 1 (WhatsApp OR Telegram) | 3 (WhatsApp + Telegram + Instagram) | All 6 channels |
 | Lead capture | Yes | Yes | Yes |

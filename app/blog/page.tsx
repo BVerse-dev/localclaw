@@ -218,7 +218,7 @@ export default function BlogPage() {
           }}
         >
           AI Automation Insights<br />
-          <em className="shimmer-text" style={{ fontStyle: "italic" }}>for Local Businesses</em>
+          <em className="shimmer-text" style={{ fontStyle: "italic" }}>for Modern Businesses</em>
         </h1>
 
         <p
@@ -613,7 +613,7 @@ export default function BlogPage() {
           <ClawIcon size={28} color={GOLD} />
           <span className="lc-logo-text" style={{ fontSize: "1.4rem" }}>LocalClaw</span>
         </Link>
-        <div style={{ color: DIM, fontSize: "0.77rem" }}>Powered by OpenClaw + NVIDIA NemoClaw</div>
+        <div style={{ color: DIM, fontSize: "0.77rem" }}>Every AI agent framework · One partner</div>
         <a
           href="https://twitter.com/Th3Alch3mist_"
           target="_blank"

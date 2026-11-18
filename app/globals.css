@@ -199,7 +199,8 @@ body { background: #0A0A0A; overflow-x: hidden; }
   .features-big { grid-template-columns: 1fr !important; }
   .features-grid { grid-template-columns: repeat(2,1fr) !important; }
   .for-grid { grid-template-columns: repeat(2,1fr) !important; }
-  .pricing-grid { grid-template-columns: 1fr !important; max-width: 460px !important; margin-left: auto !important; margin-right: auto !important; }
+  .pricing-grid { grid-template-columns: repeat(2,1fr) !important; }
+  .frameworks-grid { grid-template-columns: repeat(2,1fr) !important; }
   .testimonials-grid { grid-template-columns: repeat(2,1fr) !important; }
   .security-grid { grid-template-columns: 1fr !important; gap: 3rem !important; }
 }
@@ -210,6 +211,8 @@ body { background: #0A0A0A; overflow-x: hidden; }
   .features-grid { grid-template-columns: 1fr !important; }
   .for-grid { grid-template-columns: 1fr !important; }
   .testimonials-grid { grid-template-columns: 1fr !important; }
+  .pricing-grid { grid-template-columns: 1fr !important; max-width: 460px !important; margin-left: auto !important; margin-right: auto !important; }
+  .frameworks-grid { grid-template-columns: 1fr !important; }
   .stats-grid { grid-template-columns: repeat(2,1fr) !important; }
   .step-row { flex-direction: column !important; gap: 1rem !important; }
   .connects-strip { flex-wrap: wrap !important; }

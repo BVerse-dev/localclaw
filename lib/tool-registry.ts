@@ -1,3 +1,4 @@
+import { getPlan, usd, type PlanKey } from "./plans";
 // ─── LocalClaw Tool Registry ────────────────────────────────────────────────
 // Maps every tool an agent might need, grouped by category.
 // Each tool has: id, name, description, requiredEnvVars, plans it's available on,
@@ -10,7 +11,7 @@ export interface Tool {
   category: ToolCategory;
   description: string;
   requiredEnvVars: string[];
-  plans: ("starter" | "business" | "fullstack")[];
+  plans: ("starter" | "business" | "fullstack")[]; // "command" inherits every fullstack tool
   setupUrl?: string;
   requiresClientKey: boolean;
   optional: boolean;
@@ -395,8 +396,9 @@ export const TOOL_REGISTRY: Tool[] = [
 
 // ── Helper functions ──
 
-export function getToolsForPlan(plan: "starter" | "business" | "fullstack"): Tool[] {
-  return TOOL_REGISTRY.filter(t => t.plans.includes(plan));
+export function getToolsForPlan(plan: PlanKey): Tool[] {
+  const tier = plan === "command" ? "fullstack" : plan;
+  return TOOL_REGISTRY.filter(t => t.plans.includes(tier));
 }
 
 export function getToolsForIndustry(industry: string): Tool[] {
@@ -412,15 +414,15 @@ export function getToolsForIndustry(industry: string): Tool[] {
   return TOOL_REGISTRY.filter(t => ids.includes(t.id));
 }
 
-export function getRequiredTools(plan: "starter" | "business" | "fullstack"): Tool[] {
+export function getRequiredTools(plan: PlanKey): Tool[] {
   return getToolsForPlan(plan).filter(t => !t.optional);
 }
 
-export function getOptionalTools(plan: "starter" | "business" | "fullstack"): Tool[] {
+export function getOptionalTools(plan: PlanKey): Tool[] {
   return getToolsForPlan(plan).filter(t => t.optional);
 }
 
-export function getToolsByCategory(plan: "starter" | "business" | "fullstack"): Record<ToolCategory, Tool[]> {
+export function getToolsByCategory(plan: PlanKey): Record<ToolCategory, Tool[]> {
   const tools = getToolsForPlan(plan);
   const grouped = {} as Record<ToolCategory, Tool[]>;
   for (const cat of Object.keys(TOOL_CATEGORIES) as ToolCategory[]) {
@@ -432,37 +434,19 @@ export function getToolsByCategory(plan: "starter" | "business" | "fullstack"): 
 
 // ── Plan metadata ──
 
-export const PLAN_META = {
-  starter: {
-    name: "Starter",
-    price: "$149/mo",
-    setup: "$997",
-    channels: 1,
-    heartbeat: "24h",
-    subAgents: false,
-    nemoclaw: false,
-    color: "#22C55E",
-  },
-  business: {
-    name: "Business",
-    price: "$349/mo",
-    setup: "$1,997",
-    channels: 3,
-    heartbeat: "6h",
-    subAgents: false,
-    nemoclaw: false,
-    color: "#3B82F6",
-  },
-  fullstack: {
-    name: "Full Stack",
-    price: "$699/mo",
-    setup: "$3,500",
-    channels: 6,
-    heartbeat: "30m",
-    subAgents: true,
-    nemoclaw: true,
-    color: "#C9922A",
-  },
+const priceOf = (k: PlanKey) => {
+  const p = getPlan(k)!;
+  return { name: p.name, price: `${usd(p.monthly)}/mo`, setup: usd(p.setup) };
+};
+
+export const PLAN_META: Record<PlanKey, {
+  name: string; price: string; setup: string; channels: number; heartbeat: string;
+  subAgents: boolean; nemoclaw: boolean; multiFramework: boolean; color: string;
+}> = {
+  starter:   { ...priceOf("starter"),   channels: 1,  heartbeat: "24h", subAgents: false, nemoclaw: false, multiFramework: false, color: "#22C55E" },
+  business:  { ...priceOf("business"),  channels: 3,  heartbeat: "6h",  subAgents: false, nemoclaw: false, multiFramework: true,  color: "#3B82F6" },
+  fullstack: { ...priceOf("fullstack"), channels: 6,  heartbeat: "30m", subAgents: true,  nemoclaw: true,  multiFramework: true,  color: "#C9922A" },
+  command:   { ...priceOf("command"),   channels: 99, heartbeat: "15m", subAgents: true,  nemoclaw: true,  multiFramework: true,  color: "#E11D48" },
 };
 
 // ── Business type metadata ──

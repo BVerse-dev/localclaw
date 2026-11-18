@@ -2,6 +2,7 @@
 import React, { Suspense, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { PLANS, FRAMEWORKS, DISCOVERY, getPlan, isPlanKey, planPriceLabel, usd } from "@/lib/plans";
 
 // ── Brand tokens (identical to main site) ─────────────────────────────────────
 const BG         = "#080704";
@@ -17,21 +18,10 @@ const BORDER     = "rgba(201,146,42,0.14)";
 const display: React.CSSProperties = { fontFamily:"'Cormorant Garamond', Georgia, serif" };
 const sans: React.CSSProperties    = { fontFamily:"'Inter', system-ui, sans-serif" };
 
-// ── Stripe Payment Links ──────────────────────────────────────────────────────
-const STRIPE: Record<string, string> = {
-  discovery:  "https://buy.stripe.com/dRm28tc1s3t0gUnaBI0sU02",
-  starter:    "https://buy.stripe.com/5kQ14p2qSd3AeMf1180sU04",
-  business:   "https://buy.stripe.com/aFa00l7Lce7EavZfW20sU05",
-  fullstack:  "https://buy.stripe.com/4gM9AV4z0d3AgUn7pw0sU07",
-};
-
-// Map plan param → budget radio value
-const PLAN_TO_BUDGET: Record<string, string> = {
-  starter:   "starter",
-  business:  "business",
-  fullstack: "fullstack",
-  discovery: "unsure",
-};
+// ── Plans & Stripe fallbacks (single source of truth: lib/plans.ts) ──────────
+function fallbackLink(key: string): string {
+  return getPlan(key)?.stripe.link || DISCOVERY.stripe.link;
+}
 
 // ── ClawIcon (same as main page) ──────────────────────────────────────────────
 function ClawIcon({ size = 36, color = GOLD }: { size?: number; color?: string }) {
@@ -94,9 +84,7 @@ const AUTOMATION_OPTIONS = [
 ];
 
 const BUDGET_OPTIONS = [
-  { label: "Starter — $997 setup + $149/mo", value: "starter" },
-  { label: "Business Engine — $1,997 setup + $299/mo", value: "business" },
-  { label: "Full Stack — $3,500 setup + $499/mo", value: "fullstack" },
+  ...PLANS.map(p => ({ label: `${p.name} — ${planPriceLabel(p)}`, value: p.key as string })),
   { label: "Not sure yet — help me decide", value: "unsure" },
 ];
 
@@ -111,26 +99,35 @@ const TEAM_OPTIONS = [
 // ─────────────────────────────────────────────────────────────────────────────
 function IntakeForm() {
   const searchParams = useSearchParams();
-  const planParam = searchParams.get("plan") || "discovery";
-  const stripeUrl = STRIPE[planParam] || STRIPE.discovery;
+  // ?plan=<planKey> → pay setup + first month now
+  // ?plan=discovery[&interest=<planKey>] → $97 discovery deposit
+  const rawPlan = searchParams.get("plan") || "discovery";
+  const isUpfront = isPlanKey(rawPlan);
+  const planParam = isUpfront ? rawPlan : "discovery";
+  const interest = searchParams.get("interest");
+  const initialBudget = isUpfront ? rawPlan : isPlanKey(interest) ? interest : "unsure";
+  const [checkoutUrl, setCheckoutUrl] = useState<string>(fallbackLink(planParam));
 
   const [scrolled, setScrolled] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [countdown, setCountdown] = useState(5);
   const [automations, setAutomations] = useState<string[]>([]);
-  const [selectedBudget, setSelectedBudget] = useState(PLAN_TO_BUDGET[planParam] || "unsure");
+  const [selectedBudget, setSelectedBudget] = useState<string>(initialBudget);
+  // Upfront buyers who switch tier in the form pay for the tier they picked.
+  const checkoutPlan = isUpfront && isPlanKey(selectedBudget) ? selectedBudget : planParam;
+  const checkoutPlanObj = getPlan(checkoutPlan);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Countdown → redirect to Stripe payment
   useEffect(() => {
     if (!submitted) return;
     if (countdown <= 0) {
-      window.location.href = stripeUrl;
+      window.location.href = checkoutUrl;
       return;
     }
     const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [submitted, countdown, stripeUrl]);
+  }, [submitted, countdown, checkoutUrl]);
 
   // Nav shadow on scroll
   useEffect(() => {
@@ -176,11 +173,15 @@ function IntakeForm() {
       industry: formData.get("industry"),
       teamSize: formData.get("teamSize"),
       budget: budgetVal,
-      plan: planParam,
+      plan: checkoutPlan,
       automations,
-      details: formData.get("details"),
+      details: [
+        formData.get("framework") && formData.get("framework") !== "unsure" ? `[Framework: ${formData.get("framework")}]` : "",
+        String(formData.get("details") || ""),
+      ].filter(Boolean).join("\n") || null,
     };
 
+    let leadId: string | undefined;
     try {
       const res = await fetch("/api/intake", {
         method: "POST",
@@ -190,10 +191,31 @@ function IntakeForm() {
 
       if (!res.ok) {
         console.error("Intake submission failed:", await res.text());
+      } else {
+        leadId = (await res.json()).id;
       }
     } catch (err) {
       console.error("Intake submission error:", err);
     }
+
+    // Create a tagged Stripe Checkout session (falls back to the static payment link)
+    const fallback = new URL(fallbackLink(checkoutPlan));
+    if (data.email) fallback.searchParams.set("prefilled_email", String(data.email));
+    let url = fallback.toString();
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: checkoutPlan, email: data.email, leadId }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.url) url = json.url;
+      }
+    } catch (err) {
+      console.error("Checkout session error:", err);
+    }
+    setCheckoutUrl(url);
 
     // Always show success + redirect (even if API call had issues,
     // the Cal.com booking is what matters most)
@@ -374,7 +396,9 @@ function IntakeForm() {
                 </h2>
 
                 <p style={{ ...sans, color:CREAM, fontSize:"1rem", lineHeight:"1.8", maxWidth:"440px", margin:"0 auto 0.6rem", fontWeight:"500" }}>
-                  One last step — secure your spot with a {planParam === "discovery" || planParam === "unsure" ? "$97 discovery deposit" : "payment"}.
+                  One last step — {checkoutPlanObj
+                    ? <>activate <strong style={{ color:GOLD }}>{checkoutPlanObj.name}</strong> ({planPriceLabel(checkoutPlanObj)}).</>
+                    : <>secure your spot with a {usd(DISCOVERY.amount)} discovery deposit.</>}
                 </p>
 
                 <p style={{ ...sans, color:MUTED, fontSize:"0.88rem", lineHeight:"1.7", maxWidth:"400px", margin:"0 auto 2rem" }}>
@@ -394,7 +418,7 @@ function IntakeForm() {
 
                 {/* Manual fallback button */}
                 <a
-                  href={stripeUrl}
+                  href={checkoutUrl}
                   className="btn-primary"
                   style={{ display:"inline-block", padding:"14px 36px", fontSize:"0.85rem", marginBottom:"1.5rem" }}
                 >
@@ -587,6 +611,15 @@ function IntakeForm() {
                     ))}
                   </div>
 
+                  <label style={labelStyle}>PREFERRED AGENT FRAMEWORK</label>
+                  <select name="framework" defaultValue="unsure" className="intake-input" style={{ ...inputStyle, marginBottom:"1.6rem", cursor:"pointer" }}>
+                    <option value="unsure" style={{ background:BG2 }}>Not sure — recommend the best fit for me</option>
+                    {FRAMEWORKS.map(f => (
+                      <option key={f.name} value={f.name} style={{ background:BG2 }}>{f.name} — {f.desc}</option>
+                    ))}
+                    <option value="Already running an agent — need audit / migration" style={{ background:BG2 }}>Already running an agent — need audit / migration</option>
+                  </select>
+
                   <label style={labelStyle}>ANYTHING ELSE WE SHOULD KNOW?</label>
                   <textarea
                     name="details"
@@ -603,7 +636,7 @@ function IntakeForm() {
                     {submitting ? "SUBMITTING..." : "SUBMIT & PROCEED TO PAYMENT →"}
                   </button>
                   <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"1.6rem" }}>
-                    {["$97 deposit credited to setup fee", "30-day satisfaction guarantee", "100% confidential"].map((t,i) => (
+                    {[checkoutPlanObj ? "Secure Stripe checkout" : "$97 deposit credited to setup fee", "30-day satisfaction guarantee", "100% confidential"].map((t,i) => (
                       <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
                         <Check size={12} />
                         <span style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>{t}</span>
@@ -631,7 +664,7 @@ function IntakeForm() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Powered by OpenClaw + NVIDIA NemoClaw</div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner</div>
           <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.76rem", textDecoration:"none" }}>
             @Th3Alch3mist_ on X
           </a>

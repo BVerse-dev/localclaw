@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Bot, Cpu, Play, Pause, Trash2, Copy, Check, ChevronRight, FileText, Settings2, Wrench, Terminal, Layers, LayoutDashboard, Rocket, CircleDot, Shield, Zap, RefreshCw, Download, Eye, EyeOff, Server, Clock, Users, Workflow, Package, BookOpen, Plus, X, Save, Search } from "lucide-react";
+import { getPlan, usd } from "@/lib/plans";
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
 const BG         = "#080704";
@@ -154,23 +155,16 @@ interface BookingData {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function budgetLabel(b: string | null) {
-  if (b === "starter") return "Starter — $997 + $149/mo";
-  if (b === "business") return "Business — $1,997 + $299/mo";
-  if (b === "fullstack") return "Full Stack — $3,500 + $499/mo";
+  const p = getPlan(b);
+  if (p) return `${p.name} — ${usd(p.setup)} + ${usd(p.monthly)}/mo`;
   if (b === "unsure") return "Not sure yet";
   return b || "—";
 }
 function budgetSetupValue(b: string | null): number {
-  if (b === "starter") return 997;
-  if (b === "business") return 1997;
-  if (b === "fullstack") return 3500;
-  return 0;
+  return getPlan(b)?.setup ?? 0;
 }
 function budgetMonthlyValue(b: string | null): number {
-  if (b === "starter") return 149;
-  if (b === "business") return 299;
-  if (b === "fullstack") return 499;
-  return 0;
+  return getPlan(b)?.monthly ?? 0;
 }
 
 function timeAgo(iso: string) {
@@ -262,10 +256,11 @@ interface GeneratedConfig {
   tools: { required: Array<{ id: string; name: string; icon: string; category: string; description: string; requiredEnvVars: string[]; requiresClientKey: boolean; optional: boolean; configNotes?: string }>; optional: Array<{ id: string; name: string; icon: string; category: string; description: string; requiredEnvVars: string[]; requiresClientKey: boolean; optional: boolean; configNotes?: string }>; industry: Array<{ id: string; name: string; icon: string }> };
   envVars: { required: Record<string, string>; optional: Record<string, string> };
   deployCommand: string;
+  framework?: { name: string; cli: string };
 }
 
-const PLAN_COLORS: Record<string, string> = { starter: "#22C55E", business: "#3B82F6", fullstack: "#C9922A" };
-const PLAN_NAMES: Record<string, string> = { starter: "Starter", business: "Business", fullstack: "Full Stack" };
+const PLAN_COLORS: Record<string, string> = { starter: "#22C55E", business: "#3B82F6", fullstack: "#C9922A", command: "#E11D48" };
+const PLAN_NAMES: Record<string, string> = { starter: "Starter", business: "Business", fullstack: "Full Stack", command: "Command Center" };
 const AGENT_STATUSES: Record<string, { color: string; label: string }> = {
   configured: { color: "#F59E0B", label: "Configured" },
   deploying:  { color: "#3B82F6", label: "Deploying" },
@@ -324,6 +319,7 @@ function planLabel(p: string | null) {
   if (p === "starter") return "Starter";
   if (p === "business") return "Business Engine";
   if (p === "fullstack") return "Full Stack";
+  if (p === "command") return "Agent Command Center";
   if (p === "discovery") return "Discovery ($97)";
   return p || "—";
 }
@@ -484,10 +480,17 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetch("/api/admin/submissions")
-      .then(res => { if (res.ok) setAuthed(true); })
+    fetch("/api/admin/auth")
+      .then(res => res.json())
+      .then(d => { if (d.authed) setAuthed(true); })
       .catch(() => {});
   }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/auth", { method: "DELETE" }).catch(() => {});
+    setAuthed(false);
+    setPassword("");
+  };
 
   // ── Fetch submissions ──
   const fetchSubmissions = useCallback(async () => {
@@ -982,6 +985,7 @@ export default function AdminPage() {
             )}
             <span style={{ ...sans, color:DIM, fontSize:"0.78rem" }}>{stats.total} total</span>
             <Link href="/" style={{ ...sans, color:DIM, fontSize:"0.78rem", textDecoration:"none" }}>← Site</Link>
+            <button onClick={handleLogout} style={{ ...sans, color:DIM, fontSize:"0.78rem", background:"none", border:"none", cursor:"pointer", padding:0 }}>Sign out</button>
           </div>
         </nav>
 
@@ -1231,7 +1235,7 @@ export default function AdminPage() {
                           </td>
                           <td style={{ ...sans, fontSize:"0.84rem", color:MUTED, padding:"14px 16px" }}>{s.business}</td>
                           <td style={{ ...sans, fontSize:"0.8rem", color:MUTED, padding:"14px 16px" }}>
-                            {s.budget === "starter" ? "$997" : s.budget === "business" ? "$1,997" : s.budget === "fullstack" ? "$3,500" : s.budget || "—"}
+                            {getPlan(s.budget) ? usd(getPlan(s.budget)!.setup) : s.budget || "—"}
                           </td>
                           <td style={{ padding:"14px 16px" }}>
                             {(() => { const pb = paymentBadge(s.payment_status, s.payment_amount); return (
@@ -1443,7 +1447,7 @@ export default function AdminPage() {
                 <div style={{ display:"flex", gap:"1rem", flexWrap:"wrap" }}>
                   {Object.entries(paymentData.stats.planRevenue).map(([plan, rev]) => {
                     const count = paymentData.stats.planCounts[plan] || 0;
-                    const colors: Record<string, string> = { discovery: "#F59E0B", starter: "#3B82F6", business: "#A855F7", fullstack: "#10B981" };
+                    const colors: Record<string, string> = { discovery: "#F59E0B", starter: "#3B82F6", business: "#A855F7", fullstack: "#10B981", command: "#E11D48" };
                     const color = colors[plan] || GOLD;
                     return (
                       <div key={plan} style={{ flex:"1", minWidth:"160px", padding:"1rem 1.2rem", background:BG3, border:`1px solid ${BORDER}`, borderRadius:"4px", borderTop:`3px solid ${color}` }}>
@@ -1966,7 +1970,7 @@ export default function AdminPage() {
                           <div>
                             <h3 style={{ ...display, fontSize:"1.2rem", fontWeight:"700", marginBottom:"2px" }}>{generatedConfig.agentName}</h3>
                             <div style={{ ...sans, fontSize:"0.72rem", color:MUTED }}>
-                              {generatedConfig.businessTypeMeta?.label} · <span style={{ color:PLAN_COLORS[generatedConfig.plan] || GOLD, fontWeight:"600" }}>{PLAN_NAMES[generatedConfig.plan]}</span> · {generatedConfig.planMeta?.price}
+                              {generatedConfig.businessTypeMeta?.label} · <span style={{ color:PLAN_COLORS[generatedConfig.plan] || GOLD, fontWeight:"600" }}>{PLAN_NAMES[generatedConfig.plan]}</span> · {generatedConfig.planMeta?.price}{generatedConfig.framework ? <> · Framework: <span style={{ color:CREAM, fontWeight:"600" }}>{generatedConfig.framework.name}</span></> : null}
                             </div>
                           </div>
                         </div>
@@ -2238,7 +2242,7 @@ export default function AdminPage() {
                       <div style={{ marginBottom:"1rem" }}>
                         <label style={{ ...sans, display:"block", fontSize:"0.68rem", letterSpacing:"0.14em", fontWeight:"600", color:MUTED, marginBottom:"0.5rem" }}>PLAN TIERS</label>
                         <div style={{ display:"flex", gap:"0.6rem" }}>
-                          {(["starter", "business", "fullstack"] as const).map(p => (
+                          {(["starter", "business", "fullstack", "command"] as const).map(p => (
                             <button key={p} onClick={() => setCustomSkillPlans(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])} style={{ ...sans, fontSize:"0.72rem", fontWeight:"600", padding:"6px 14px", borderRadius:"6px", border:`1px solid ${customSkillPlans.includes(p) ? PLAN_COLORS[p] : BORDER}`, background: customSkillPlans.includes(p) ? `${PLAN_COLORS[p]}15` : "transparent", color: customSkillPlans.includes(p) ? PLAN_COLORS[p] : DIM, cursor:"pointer" }}>
                               {PLAN_NAMES[p]}
                             </button>
@@ -2394,19 +2398,20 @@ export default function AdminPage() {
                   <h2 style={{ ...display, fontSize:"1.5rem", fontWeight:"700", marginBottom:"0.3rem" }}>Tool Registry</h2>
                   <p style={{ ...sans, fontSize:"0.82rem", color:DIM, marginBottom:"2rem" }}>Complete inventory of tools available per plan tier</p>
 
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:"16px" }}>
-                    {(["starter", "business", "fullstack"] as const).map(plan => {
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(240px, 1fr))", gap:"16px" }}>
+                    {(["starter", "business", "fullstack", "command"] as const).map(plan => {
                       const tools = [
                         ...(plan === "starter" ? ["WhatsApp OR Telegram", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Anthropic Claude", "LocalClaw Alerts"] : []),
                         ...(plan === "business" ? ["WhatsApp", "Telegram", "Instagram DMs", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Stripe Payments", "Postiz Social", "NanoBana Images", "Anthropic Claude", "OpenAI Fallback", "LocalClaw Alerts"] : []),
-                        ...(plan === "fullstack" ? ["WhatsApp", "Telegram", "Instagram DMs", "Gmail / Email", "Discord", "Slack", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Stripe Payments", "Postiz Social", "NanoBana Images", "Google Business", "NemoClaw Security", "Sentry Monitoring", "Anthropic Claude", "OpenAI GPT", "Tavily Search", "LocalClaw Alerts"] : []),
+                        ...(plan === "fullstack" || plan === "command" ? ["WhatsApp", "Telegram", "Instagram DMs", "Gmail / Email", "Discord", "Slack", "n8n Workflows", "Resend Email", "Supabase CRM", "Cal.com", "Stripe Payments", "Postiz Social", "NanoBana Images", "Google Business", "NemoClaw Security", "Sentry Monitoring", "Anthropic Claude", "OpenAI GPT", "Tavily Search", "LocalClaw Alerts"] : []),
+                        ...(plan === "command" ? ["Hermes Agent", "Claude Agent SDK", "OpenAI Agents SDK", "CrewAI / LangGraph", "Multi-agent Orchestrator", "Dedicated VPC", "Uptime SLA"] : []),
                       ];
                       return (
                         <div key={plan} style={{ background:BG2, border:`1px solid ${BORDER}`, borderRadius:"14px", overflow:"hidden" }}>
                           <div style={{ padding:"1.2rem 1.4rem", borderBottom:`1px solid ${BORDER}`, background:`${PLAN_COLORS[plan]}06` }}>
                             <div style={{ ...sans, fontSize:"0.82rem", fontWeight:"700", color:PLAN_COLORS[plan] }}>{PLAN_NAMES[plan]}</div>
                             <div style={{ ...sans, fontSize:"0.62rem", color:DIM, marginTop:"4px" }}>
-                              {plan === "starter" ? "$149/mo · 1 ch · 24h" : plan === "business" ? "$349/mo · 3 ch · 6h" : "$699/mo · All ch · 30m · Sub-agents"}
+                              {`${usd(getPlan(plan)!.monthly)}/mo · ${getPlan(plan)!.channels} · ${getPlan(plan)!.heartbeat}${plan === "fullstack" || plan === "command" ? " · Sub-agents" : ""}${plan === "command" ? " · Multi-framework" : ""}`}
                             </div>
                           </div>
                           <div style={{ padding:"1rem 1.4rem" }}>

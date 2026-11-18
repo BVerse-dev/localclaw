@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LocalClaw — AI Agents for Local Businesses",
+    name: "LocalClaw — The One-Stop AI Agent Partner",
     short_name: "LocalClaw",
-    description: "We deploy AI agents for local businesses that never sleep. Email triage, lead capture, appointment booking, social media — fully automated.",
+    description: "Every AI agent framework, one partner. OpenClaw, Hermes, Claude, OpenAI, n8n and more — deployed, secured and managed for your business.",
     start_url: "/",
     display: "standalone",
     background_color: "#0A0A0A",

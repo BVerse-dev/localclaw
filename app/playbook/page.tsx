@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { PLANS, usd, planPriceLabel } from "@/lib/plans";
 import {
   Clock, MessageSquare, CalendarCheck, DollarSign, Smartphone, ShieldCheck,
   Globe, Brain, Wrench, GitBranch,
@@ -432,9 +433,9 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-cover" id="cover">
           <div className="pb-cover-grid"></div>
           <div className="pb-container" style={{ position: "relative", zIndex: 1 }}>
-            <div className="pb-cover-badge">THE DEFINITIVE GUIDE &middot; 2026 EDITION</div>
+            <div className="pb-cover-badge">THE DEFINITIVE GUIDE &middot; OPENCLAW EDITION &middot; 2026</div>
             <h1>The LocalClaw<br /><em>Playbook</em></h1>
-            <p className="pb-cover-sub">A step-by-step guide to deploying autonomous AI agents for your local business using OpenClaw and NVIDIA NemoClaw. No technical degree required.</p>
+            <p className="pb-cover-sub">A step-by-step guide to deploying autonomous AI agents for your business using OpenClaw and NVIDIA NemoClaw — one of the many agent frameworks LocalClaw deploys and manages. No technical degree required.</p>
             <div className="pb-cover-meta">
               <div className="pb-cover-meta-item"><span>PUBLISHED BY</span><strong>LocalClaw &middot; @Th3Alch3mist_</strong></div>
               <div className="pb-cover-meta-item"><span>EDITION</span><strong>March 2026</strong></div>
@@ -1211,7 +1212,7 @@ done`}</pre></div>
                 <span className="pb-metric-label">Deployment</span>
               </div>
               <div className="pb-metric">
-                <span className="pb-metric-value">$149</span>
+                <span className="pb-metric-value">{usd(PLANS[0].monthly)}</span>
                 <span className="pb-metric-label">Starting Monthly</span>
               </div>
               <div className="pb-metric">
@@ -1223,32 +1224,26 @@ done`}</pre></div>
                 <span className="pb-metric-label">Code Required</span>
               </div>
             </div>
+            <p>OpenClaw is just one option. We also deploy and manage Hermes Agent, Claude Agent SDK, OpenAI Agents, n8n, CrewAI, LangGraph and custom builds — and recommend the right framework for each workflow.</p>
             <div className="pb-feature-grid pb-anim pb-stagger">
-              <div className="pb-feature-card">
-                <div className="pb-feature-icon"><Zap size={22} color="var(--gold)" /></div>
-                <h4>Starter</h4>
-                <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$997 setup + $149/mo</p>
-                <p>One agent deployed on the channel of your choice. Full OpenClaw + NemoClaw setup. Monthly support, tuning, and monitoring included.</p>
-              </div>
-              <div className="pb-feature-card" style={{ borderColor: "var(--gold-border)", background: "var(--gold-mid)" }}>
-                <div className="pb-feature-icon"><Rocket size={22} color="var(--gold)" /></div>
-                <h4>Business Engine</h4>
-                <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$1,997 setup + $299/mo</p>
-                <p>Multi-channel deployment across WhatsApp, Gmail &amp; Telegram. Three specialized agents. Advanced OpenShell policy. Weekly performance reports.</p>
-              </div>
-              <div className="pb-feature-card">
-                <div className="pb-feature-icon"><Building size={22} color="var(--gold)" /></div>
-                <h4>Full Stack</h4>
-                <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>$3,500 setup + $499/mo</p>
-                <p>Dedicated VPS, all channels, custom agents per department, NemoClaw enterprise policies, priority support, and monthly strategy calls.</p>
-              </div>
+              {PLANS.map((plan, i) => {
+                const Icon = [Zap, Rocket, Building, Brain][i] || Zap;
+                return (
+                  <div key={plan.key} className="pb-feature-card" style={plan.highlight ? { borderColor: "var(--gold-border)", background: "var(--gold-mid)" } : undefined}>
+                    <div className="pb-feature-icon"><Icon size={22} color="var(--gold)" /></div>
+                    <h4>{plan.name}</h4>
+                    <p style={{ color: "var(--gold)", fontFamily: "'Inter',sans-serif", fontSize: "0.85rem", fontWeight: 700, marginBottom: "0.8rem" }}>{planPriceLabel(plan)}</p>
+                    <p>{plan.desc}</p>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="pb-cta-section pb-anim-scale pb-anim">
               <h2>Your agent is<br /><em>ready to deploy.</em></h2>
-              <p>Book a free 15-minute strategy call. We scope your deployment and you go live same day — no technical setup required on your end.</p>
+              <p>Book a 15-minute discovery call ($97, credited toward setup). We scope your deployment and you go live same day — no technical setup required on your end.</p>
               <div className="pb-btn-row">
-                <a href="/intake?plan=discovery" className="pb-btn-primary">BOOK A FREE CALL</a>
+                <a href="/intake?plan=discovery" className="pb-btn-primary">BOOK A DISCOVERY CALL</a>
                 <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="pb-btn-secondary">DM @Th3Alch3mist_ on X</a>
               </div>
               <p style={{ fontSize: "0.78rem", marginTop: "1.5rem", color: "#7A6E62" }}>We schedule across all time zones. Most clients go live within 24 hours of their first call.</p>
@@ -1262,7 +1257,7 @@ done`}</pre></div>
             <ClawIcon size={24} />
             LocalClaw
           </Link>
-          <p>&copy; 2026 LocalClaw &middot; Powered by OpenClaw + NVIDIA NemoClaw</p>
+          <p>&copy; 2026 LocalClaw &middot; Every AI agent framework &middot; One partner</p>
           <a href="https://twitter.com/Th3Alch3mist_" style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.75rem", color: "#C9922A" }} target="_blank" rel="noopener noreferrer">@Th3Alch3mist_ on X</a>
         </footer>
 

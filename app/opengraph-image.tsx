@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "LocalClaw — AI Agents for Local Businesses";
+export const alt = "LocalClaw — The One-Stop AI Agent Partner for Business";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -106,7 +106,7 @@ export default async function Image() {
               display: "flex",
             }}
           >
-            AI Agents for Local Businesses
+            The One-Stop AI Agent Partner for Business
           </div>
 
           {/* Features row */}
@@ -117,7 +117,7 @@ export default async function Image() {
               marginTop: "16px",
             }}
           >
-            {["Lead Capture", "Appointment Booking", "Social Media", "24/7 Automation"].map((f) => (
+            {["OpenClaw", "Hermes", "Claude", "OpenAI", "n8n", "+ more"].map((f) => (
               <div
                 key={f}
                 style={{

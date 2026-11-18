@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog — AI Automation Insights for Local Businesses",
+  title: "Blog — AI Agent Insights for Business",
   description:
     "Expert guides, industry trends, and actionable strategies for automating your local business with AI agents. Learn how to close more leads, save time, and outperform your competition.",
   alternates: {
