@@ -740,6 +740,7 @@ export default function LocalClaw() {
           <span>Every AI agent framework · One partner</span>
           <a href="/terms" style={{ color:DIM }}>Terms</a>
           <a href="/refund-policy" style={{ color:DIM }}>Refund Policy</a>
+          <a href="/privacy" style={{ color:DIM }}>Privacy</a>
         </div>
         <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.77rem", textDecoration:"none" }}>@Th3Alch3mist_ on X</a>
       </footer>

@@ -1301,7 +1301,7 @@ done`}</pre></div>
             <ClawIcon size={24} />
             LocalClaw
           </Link>
-          <p>&copy; 2026 LocalClaw &middot; Every AI agent framework &middot; One partner &middot; <a href="/terms" style={{ color: "inherit" }}>Terms</a> &middot; <a href="/refund-policy" style={{ color: "inherit" }}>Refund Policy</a></p>
+          <p>&copy; 2026 LocalClaw &middot; Every AI agent framework &middot; One partner &middot; <a href="/terms" style={{ color: "inherit" }}>Terms</a> &middot; <a href="/refund-policy" style={{ color: "inherit" }}>Refund Policy</a> &middot; <a href="/privacy" style={{ color: "inherit" }}>Privacy</a></p>
           <a href="https://twitter.com/Th3Alch3mist_" style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.75rem", color: "#C9922A" }} target="_blank" rel="noopener noreferrer">@Th3Alch3mist_ on X</a>
         </footer>
 

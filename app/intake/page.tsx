@@ -649,7 +649,7 @@ function IntakeForm() {
                       style={{ marginTop:"3px", accentColor:GOLD, width:16, height:16, flexShrink:0 }}
                     />
                     <span style={{ ...sans, fontSize:"0.82rem", color:MUTED, lineHeight:1.6 }}>
-                      I agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color:GOLD }}>Terms of Service</a> and <a href="/refund-policy" target="_blank" rel="noopener" style={{ color:GOLD }}>Refund Policy</a>, and I understand that <strong style={{ color:CREAM }}>all payments are final and non-refundable</strong>. Monthly plans can be cancelled anytime to stop future billing.
+                      I agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color:GOLD }}>Terms of Service</a> and <a href="/refund-policy" target="_blank" rel="noopener" style={{ color:GOLD }}>Refund Policy</a>, acknowledge the <a href="/privacy" target="_blank" rel="noopener" style={{ color:GOLD }}>Privacy Policy</a>, and I understand that <strong style={{ color:CREAM }}>all payments are final and non-refundable</strong>. Monthly plans can be cancelled anytime to stop future billing.
                     </span>
                   </label>
                   {agreeError && <p style={{ ...sans, color:"#EF4444", fontSize:"0.8rem", marginTop:"-0.8rem", marginBottom:"1rem" }}>Please accept the Terms of Service and Refund Policy to continue.</p>}
@@ -685,7 +685,7 @@ function IntakeForm() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a><a href="/privacy" style={{ color:"inherit", marginLeft:"1rem" }}>Privacy</a></div>
           <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.76rem", textDecoration:"none" }}>
             @Th3Alch3mist_ on X
           </a>

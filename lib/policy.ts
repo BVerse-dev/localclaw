@@ -135,7 +135,7 @@ export const TERMS: PolicySection[] = [
   {
     heading: "8. Data and security",
     body: [
-      "We process your business data only to provide the services. We use OAuth connections where available, scoped permissions, sandboxing, and audit logging. You retain ownership of your data and may request its export or deletion when your services end.",
+      "We process your business data only to provide the services. We use OAuth connections where available, scoped permissions, sandboxing, and audit logging. You retain ownership of your data and may request its export or deletion when your services end. Our Privacy Policy (localclawagents.com/privacy) explains how we handle personal information.",
     ],
   },
   {
@@ -160,6 +160,95 @@ export const TERMS: PolicySection[] = [
     heading: "12. Changes and contact",
     body: [
       "We may update these Terms; the version you accepted at purchase applies to that purchase, and continued use after an update means you accept the new version for future billing. Questions: localclawagents@gmail.com.",
+    ],
+  },
+];
+
+export const PRIVACY_URL = `${COMPANY.site}/privacy`;
+
+export const PRIVACY_POLICY: PolicySection[] = [
+  {
+    heading: "1. Who we are",
+    body: [
+      "LocalClaw is operated by BVERSE INC (\"LocalClaw\", \"we\", \"us\"). We are the controller of the personal information described in this policy, except where we process data inside your AI agents on your behalf — there, you are the controller and we act as your processor (see section 7).",
+      "Contact for any privacy question or request: localclawagents@gmail.com.",
+    ],
+  },
+  {
+    heading: "2. Information we collect",
+    body: [
+      "Information you give us: when you complete our intake form we collect your name, email address, phone number, business name, industry, team size, the plan and automations you are interested in, your preferred agent framework, and anything you write in the details field. If you email us or book a call, we keep that correspondence and booking information.",
+      "Purchase and agreement records: when you pay, we receive from Stripe your name, email, phone number, billing address, the plan purchased, amounts, and payment status. We record your acceptance of our Terms of Service and Refund Policy, including the policy version, the date and time, your IP address, and your browser's user agent.",
+      "Payment card details are entered directly into Stripe's checkout and are never received or stored by LocalClaw.",
+      "Website usage: our hosting provider records standard technical logs (such as IP address, browser type, and pages requested) for security and reliability, and we use Vercel Web Analytics, which measures aggregate page views without cookies and without identifying you across sites.",
+      "Service data: when we deploy agents for you, we access the business accounts and data you connect (for example email, calendar, CRM, and messaging channels) and the messages your agents handle, including personal information about your own customers.",
+    ],
+  },
+  {
+    heading: "3. How we use information",
+    body: [
+      "We use personal information to: respond to your enquiry and scope your deployment; process payments and send receipts and confirmations; deliver, secure, monitor, and support your AI agents; communicate with you about your service and billing; keep records of your purchase and acceptance of our terms, including to respond to payment disputes and chargebacks; detect and prevent fraud and abuse; comply with legal, tax, and accounting obligations; and improve our website and services.",
+      "We do not sell your personal information, and we do not use it for third-party advertising.",
+      "Our legal bases (where applicable law requires them) are: performing our contract with you, our legitimate interests in running and protecting our business (including defending disputes), compliance with legal obligations, and your consent where we ask for it.",
+    ],
+  },
+  {
+    heading: "4. Who we share information with",
+    body: [
+      "We share personal information only with service providers that help us run LocalClaw, under contracts that limit their use of it: Vercel (website hosting and analytics), Supabase (database), Stripe (payments, fraud prevention, and dispute handling), Resend (email delivery), and Cal.com (call scheduling). Fonts and icons are loaded from Google Fonts and jsDelivr, which receive your IP address when you load our pages.",
+      "To run your agents, the data your agents process is sent to the AI model providers, agent frameworks, hosting, and messaging platforms used in your deployment (for example Anthropic, OpenAI, NVIDIA, Meta/WhatsApp, Telegram, and the server provider hosting your agents), as agreed with you during onboarding.",
+      "We may also disclose information to a card issuer or payment network when responding to a dispute on your payment; to professional advisers; when required by law or to protect our rights, users, or the public; or to a successor if our business is sold or reorganised.",
+      "Information is shared by secure, encrypted API connections or within the provider's own platform — never by unencrypted email of bulk data.",
+    ],
+  },
+  {
+    heading: "5. How we protect information",
+    body: [
+      "We protect information with encryption in transit (TLS), encryption at rest provided by our infrastructure providers, access controls limited to staff who need access, signed and expiring administrator sessions, OAuth connections instead of shared passwords wherever possible, least-privilege permissions for agents, sandboxed agent environments, and audit logs of agent actions. No system is perfectly secure; if we become aware of a breach affecting your personal information, we will notify you and any regulator as required by law.",
+    ],
+  },
+  {
+    heading: "6. How long we keep information",
+    body: [
+      "Enquiries from people who do not become clients: up to 24 months after our last contact, then deleted. Client account and service records: for the duration of your service and up to 24 months afterwards. Purchase, payment, and terms-acceptance records: 7 years, to meet tax and accounting obligations and to respond to payment disputes. Data processed inside your agents: deleted or returned to you within 30 days after your service ends, unless you ask us to delete it sooner.",
+    ],
+  },
+  {
+    heading: "7. Data we process for clients",
+    body: [
+      "When your agents handle personal information about your customers, you decide what is collected and why, and we process it only to provide the service to you and on your instructions. You are responsible for having a lawful basis and giving your customers any notices required for that processing. We will help you respond to your customers' privacy requests about data held in your agents.",
+    ],
+  },
+  {
+    heading: "8. Your rights",
+    body: [
+      "Depending on where you live (including under the UK and EU GDPR and US state laws such as the CCPA), you may have the right to access, correct, delete, or receive a copy of your personal information, to object to or restrict certain processing, and to withdraw consent. We do not sell or share personal information for cross-context behavioural advertising.",
+      "To make a request, email localclawagents@gmail.com from the address associated with your account. We will respond within 30 days and may need to verify your identity. Some records (for example, payment and terms-acceptance records) may be retained where we are legally required or entitled to keep them.",
+      "If you are in the UK or EU and are unhappy with how we handle your information, you can complain to your local data protection authority (in the UK, the Information Commissioner's Office). We would appreciate the chance to resolve your concern first.",
+    ],
+  },
+  {
+    heading: "9. Cookies",
+    body: [
+      "Our public website does not use advertising or tracking cookies, and our analytics are cookie-free. We set a strictly necessary cookie only when an administrator signs in. Stripe sets its own cookies on its checkout pages to process payments securely and prevent fraud; see Stripe's privacy policy for details.",
+    ],
+  },
+  {
+    heading: "10. International transfers",
+    body: [
+      "Our service providers may process information in the United States, the United Kingdom, the European Economic Area, and other countries. Where required, transfers are protected by appropriate safeguards such as standard contractual clauses.",
+    ],
+  },
+  {
+    heading: "11. Children",
+    body: [
+      "Our services are for businesses and are not directed at anyone under 18. We do not knowingly collect personal information from children.",
+    ],
+  },
+  {
+    heading: "12. Changes to this policy",
+    body: [
+      "We may update this policy from time to time. We will post the new version on this page with a new effective date and, for material changes, notify clients by email.",
     ],
   },
 ];
