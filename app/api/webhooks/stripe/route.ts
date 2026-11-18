@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getSupabase } from "@/lib/supabase";
 import { planFromAmount, isPlanKey } from "@/lib/plans";
+import { sendPurchaseConfirmation } from "@/lib/emails";
+import { stageDisputeEvidence } from "@/lib/disputes";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_unset", { apiVersion: "2026-02-25.clover" });
 
@@ -124,6 +126,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency: Stripe retries deliveries — never process (or email) the same event twice
+  try {
+    const { data: seen } = await getSupabase().from("payment_events").select("id").eq("stripe_event_id", event.id).limit(1);
+    if (seen?.length) return NextResponse.json({ received: true, duplicate: true });
+  } catch (e) {
+    console.error("Idempotency check failed (continuing):", e);
+  }
+
   try {
     switch (event.type) {
 
@@ -181,11 +191,30 @@ export async function POST(req: NextRequest) {
           console.log(`✅ New lead from payment: ${email}`);
         }
 
-        await logEvent("checkout.session.completed", event.id, email, lead?.id || null, amount, currency, "completed", null, { plan, sessionId: session.id });
+        // Customer confirmation with the billing policy restated (chargeback prevention + evidence)
+        const confirmationSent = await sendPurchaseConfirmation({
+          to: email,
+          name: session.customer_details?.name,
+          planKey: plan,
+          amountCents: amount,
+          currency,
+          sessionId: session.id,
+          depositCredited: session.metadata?.deposit_credit === "applied",
+        }).catch((e) => { console.error(e); return false; });
 
-        sendAlert(
+        await logEvent("checkout.session.completed", event.id, email, lead?.id || null, amount, currency, "completed", null, {
+          plan,
+          sessionId: session.id,
+          tosConsent: session.consent?.terms_of_service || null,
+          termsVersion: session.metadata?.terms_version || null,
+          termsAcceptedAt: session.metadata?.terms_accepted_at || null,
+          termsAcceptedIp: session.metadata?.terms_accepted_ip || null,
+          confirmationEmail: confirmationSent ? "sent" : "not_sent",
+        });
+
+        await sendAlert(
           `💰 Payment: $${(amount / 100).toFixed(2)} — ${plan}`,
-          `Customer: ${email}\nAmount: $${(amount / 100).toFixed(2)} ${currency.toUpperCase()}\nPlan: ${plan}\nTime: ${new Date().toLocaleString()}\n\nView: /admin`
+          `Customer: ${email}\nAmount: $${(amount / 100).toFixed(2)} ${currency.toUpperCase()}\nPlan: ${plan}\nTerms accepted: ${session.consent?.terms_of_service || (session.metadata?.terms_accepted_at ? "intake form" : "unknown")}\nConfirmation email: ${confirmationSent ? "sent" : "NOT sent"}\nTime: ${new Date().toLocaleString()}\n\nView: /admin`
         ).catch(console.error);
         break;
       }
@@ -375,6 +404,69 @@ export async function POST(req: NextRequest) {
         ).catch(console.error);
 
         console.log(`🔄 Refund: ${email} — $${((charge.amount_refunded || 0) / 100).toFixed(2)}`);
+        break;
+      }
+
+      // ══════════════════════════════════════════════════════════════════════
+      // DISPUTES — stage evidence automatically, alert immediately
+      // ══════════════════════════════════════════════════════════════════════
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute;
+        let summary = "";
+        let leadId: string | null = null;
+        try {
+          const res = await stageDisputeEvidence(stripe, dispute);
+          summary = res.summary;
+          leadId = res.leadId;
+        } catch (e) {
+          console.error("Staging dispute evidence failed:", e);
+          summary = `Automatic evidence staging FAILED: ${e instanceof Error ? e.message : String(e)} — gather evidence manually.`;
+        }
+
+        if (leadId) {
+          const { error } = await getSupabase().from("intake_submissions")
+            .update({ payment_status: "disputed", updated_at: new Date().toISOString() }).eq("id", leadId);
+          if (error) console.error("Could not mark lead disputed:", error);
+        }
+
+        await logEvent(event.type, event.id, null, leadId, dispute.amount, dispute.currency, dispute.status, dispute.reason, {
+          disputeId: dispute.id, reason: dispute.reason, dueBy: dispute.evidence_details?.due_by || null,
+        });
+
+        await sendAlert(
+          `🚨 DISPUTE OPENED: $${(dispute.amount / 100).toFixed(2)} — ${dispute.reason}`,
+          `A customer has disputed a payment. Evidence has been STAGED but NOT submitted.\n\n${summary}\n\nNEXT STEPS:\n1. Open https://dashboard.stripe.com/disputes/${dispute.id}\n2. Review the staged evidence; add any emails or call notes with the customer\n3. Click Submit before the due date\n\nTip: pause the customer's agents and subscription while the dispute is open (Terms section 4).`
+        ).catch(console.error);
+        break;
+      }
+
+      case "charge.dispute.updated":
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute;
+        const leadId = (dispute.metadata?.lead_id as string) || null;
+        if (event.type === "charge.dispute.closed" && leadId && (dispute.status === "won" || dispute.status === "lost")) {
+          const { error } = await getSupabase().from("intake_submissions")
+            .update({ payment_status: dispute.status === "won" ? "dispute_won" : "dispute_lost", updated_at: new Date().toISOString() }).eq("id", leadId);
+          if (error) console.error("Could not update dispute outcome:", error);
+        }
+        await logEvent(event.type, event.id, null, leadId, dispute.amount, dispute.currency, dispute.status, dispute.reason, { disputeId: dispute.id });
+        if (event.type === "charge.dispute.closed") {
+          await sendAlert(
+            `${dispute.status === "won" ? "✅ Dispute WON" : "❌ Dispute " + dispute.status.toUpperCase()}: $${(dispute.amount / 100).toFixed(2)}`,
+            `Dispute ${dispute.id} closed with status: ${dispute.status}\nReason: ${dispute.reason}\nhttps://dashboard.stripe.com/disputes/${dispute.id}`
+          ).catch(console.error);
+        }
+        break;
+      }
+
+      case "radar.early_fraud_warning.created": {
+        const efw = event.data.object as Stripe.Radar.EarlyFraudWarning;
+        const chargeId = typeof efw.charge === "string" ? efw.charge : efw.charge.id;
+        await logEvent(event.type, event.id, null, null, 0, "usd", "warning", efw.fraud_type, { chargeId, actionable: efw.actionable });
+        await sendAlert(
+          `⚠️ Early fraud warning on charge ${chargeId}`,
+          `The card issuer flagged charge ${chargeId} as possible fraud (${efw.fraud_type}). A dispute may follow.\n\nIs this a real client you have been in contact with? If the card looks stolen, consider pausing service now — the cardholder (not your client) may dispute.\n\nhttps://dashboard.stripe.com/payments/${chargeId}`
+        ).catch(console.error);
         break;
       }
 

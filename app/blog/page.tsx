@@ -613,7 +613,7 @@ export default function BlogPage() {
           <ClawIcon size={28} color={GOLD} />
           <span className="lc-logo-text" style={{ fontSize: "1.4rem" }}>LocalClaw</span>
         </Link>
-        <div style={{ color: DIM, fontSize: "0.77rem" }}>Every AI agent framework · One partner</div>
+        <div style={{ color: DIM, fontSize: "0.77rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
         <a
           href="https://twitter.com/Th3Alch3mist_"
           target="_blank"

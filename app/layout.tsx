@@ -300,7 +300,7 @@ const faqSchema = {
       name: "How much does LocalClaw cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `LocalClaw offers ${PLANS.length} plans: ${PLANS.map((p) => `${p.name} (${usd(p.setup)} setup + ${usd(p.monthly)}/month)`).join(", ")}. Start with a ${usd(DISCOVERY.amount)} refundable discovery deposit credited toward setup. Every plan includes a 30-day satisfaction guarantee.`,
+        text: `LocalClaw offers ${PLANS.length} plans: ${PLANS.map((p) => `${p.name} (${usd(p.setup)} setup + ${usd(p.monthly)}/month)`).join(", ")}. Start with a ${usd(DISCOVERY.amount)} discovery deposit, credited in full toward setup. All payments are final and non-refundable; monthly plans can be cancelled anytime.`,
       },
     },
     {
@@ -316,7 +316,7 @@ const faqSchema = {
       name: "What is the refund policy?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "LocalClaw offers a 30-day satisfaction guarantee. If you're not happy with your agent deployment, you get a full refund — no questions asked. The $97 discovery deposit is also fully credited toward your setup fee.",
+        text: "All LocalClaw payments are final and non-refundable, including the $97 discovery deposit (which is credited in full toward your setup fee). Monthly plans can be cancelled at any time to stop future billing; your agents stay active until the end of the paid period. If anything in your agreed scope isn't working as described, we fix it at no extra cost. Full details: https://localclawagents.com/refund-policy",
       },
     },
   ],

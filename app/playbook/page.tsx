@@ -390,24 +390,25 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <a className="pb-nav-link" href="#toc" onClick={closeSidebar}><span className="pb-nav-num">&mdash;</span>Contents</a>
         <div className="pb-nav-section">FOUNDATIONS</div>
         <a className="pb-nav-link" href="#ch1" onClick={closeSidebar}><span className="pb-nav-num">01</span>Why AI Agents Now</a>
-        <a className="pb-nav-link" href="#ch2" onClick={closeSidebar}><span className="pb-nav-num">02</span>What Is OpenClaw</a>
-        <a className="pb-nav-link" href="#ch3" onClick={closeSidebar}><span className="pb-nav-num">03</span>What Is NemoClaw</a>
-        <a className="pb-nav-link" href="#ch4" onClick={closeSidebar}><span className="pb-nav-num">04</span>The LocalClaw Stack</a>
+        <a className="pb-nav-link" href="#frameworks" onClick={closeSidebar}><span className="pb-nav-num">02</span>Framework Landscape</a>
+        <a className="pb-nav-link" href="#ch2" onClick={closeSidebar}><span className="pb-nav-num">03</span>What Is OpenClaw</a>
+        <a className="pb-nav-link" href="#ch3" onClick={closeSidebar}><span className="pb-nav-num">04</span>What Is NemoClaw</a>
+        <a className="pb-nav-link" href="#ch4" onClick={closeSidebar}><span className="pb-nav-num">05</span>The LocalClaw Stack</a>
         <div className="pb-nav-section">INSTALLATION</div>
-        <a className="pb-nav-link" href="#ch5" onClick={closeSidebar}><span className="pb-nav-num">05</span>Pre-Install Checklist</a>
-        <a className="pb-nav-link" href="#ch6" onClick={closeSidebar}><span className="pb-nav-num">06</span>Installing OpenClaw</a>
-        <a className="pb-nav-link" href="#ch7" onClick={closeSidebar}><span className="pb-nav-num">07</span>First Onboarding</a>
-        <a className="pb-nav-link" href="#ch8" onClick={closeSidebar}><span className="pb-nav-num">08</span>Installing NemoClaw</a>
-        <a className="pb-nav-link" href="#ch9" onClick={closeSidebar}><span className="pb-nav-num">09</span>OpenShell Policies</a>
+        <a className="pb-nav-link" href="#ch5" onClick={closeSidebar}><span className="pb-nav-num">06</span>Pre-Install Checklist</a>
+        <a className="pb-nav-link" href="#ch6" onClick={closeSidebar}><span className="pb-nav-num">07</span>Installing OpenClaw</a>
+        <a className="pb-nav-link" href="#ch7" onClick={closeSidebar}><span className="pb-nav-num">08</span>First Onboarding</a>
+        <a className="pb-nav-link" href="#ch8" onClick={closeSidebar}><span className="pb-nav-num">09</span>Installing NemoClaw</a>
+        <a className="pb-nav-link" href="#ch9" onClick={closeSidebar}><span className="pb-nav-num">10</span>OpenShell Policies</a>
         <div className="pb-nav-section">GOING LIVE</div>
-        <a className="pb-nav-link" href="#ch10" onClick={closeSidebar}><span className="pb-nav-num">10</span>Connecting Channels</a>
-        <a className="pb-nav-link" href="#ch11" onClick={closeSidebar}><span className="pb-nav-num">11</span>Building Your Agent</a>
-        <a className="pb-nav-link" href="#ch12" onClick={closeSidebar}><span className="pb-nav-num">12</span>Agent Recipes</a>
-        <a className="pb-nav-link" href="#ch13" onClick={closeSidebar}><span className="pb-nav-num">13</span>Privacy Router</a>
+        <a className="pb-nav-link" href="#ch10" onClick={closeSidebar}><span className="pb-nav-num">11</span>Connecting Channels</a>
+        <a className="pb-nav-link" href="#ch11" onClick={closeSidebar}><span className="pb-nav-num">12</span>Building Your Agent</a>
+        <a className="pb-nav-link" href="#ch12" onClick={closeSidebar}><span className="pb-nav-num">13</span>Agent Recipes</a>
+        <a className="pb-nav-link" href="#ch13" onClick={closeSidebar}><span className="pb-nav-num">14</span>Privacy Router</a>
         <div className="pb-nav-section">OPERATIONS</div>
-        <a className="pb-nav-link" href="#ch14" onClick={closeSidebar}><span className="pb-nav-num">14</span>Monitoring &amp; Logs</a>
-        <a className="pb-nav-link" href="#ch15" onClick={closeSidebar}><span className="pb-nav-num">15</span>Troubleshooting</a>
-        <a className="pb-nav-link" href="#ch16" onClick={closeSidebar}><span className="pb-nav-num">16</span>What Comes Next</a>
+        <a className="pb-nav-link" href="#ch14" onClick={closeSidebar}><span className="pb-nav-num">15</span>Monitoring &amp; Logs</a>
+        <a className="pb-nav-link" href="#ch15" onClick={closeSidebar}><span className="pb-nav-num">16</span>Troubleshooting</a>
+        <a className="pb-nav-link" href="#ch16" onClick={closeSidebar}><span className="pb-nav-num">17</span>What Comes Next</a>
       </nav>
 
       {/* MOBILE HEADER */}
@@ -435,11 +436,11 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
           <div className="pb-container" style={{ position: "relative", zIndex: 1 }}>
             <div className="pb-cover-badge">THE DEFINITIVE GUIDE &middot; OPENCLAW EDITION &middot; 2026</div>
             <h1>The LocalClaw<br /><em>Playbook</em></h1>
-            <p className="pb-cover-sub">A step-by-step guide to deploying autonomous AI agents for your business using OpenClaw and NVIDIA NemoClaw — one of the many agent frameworks LocalClaw deploys and manages. No technical degree required.</p>
+            <p className="pb-cover-sub">LocalClaw deploys and manages AI agents on every major framework — OpenClaw, Hermes, Claude, OpenAI, n8n and more. This edition is the hands-on guide to the most popular stack: OpenClaw secured with NVIDIA NemoClaw. No technical degree required.</p>
             <div className="pb-cover-meta">
               <div className="pb-cover-meta-item"><span>PUBLISHED BY</span><strong>LocalClaw &middot; @Th3Alch3mist_</strong></div>
-              <div className="pb-cover-meta-item"><span>EDITION</span><strong>March 2026</strong></div>
-              <div className="pb-cover-meta-item"><span>CHAPTERS</span><strong>16 &middot; Comprehensive</strong></div>
+              <div className="pb-cover-meta-item"><span>EDITION</span><strong>November 2026</strong></div>
+              <div className="pb-cover-meta-item"><span>CHAPTERS</span><strong>17 &middot; Comprehensive</strong></div>
               <div className="pb-cover-meta-item"><span>LEVEL</span><strong>Beginner &rarr; Advanced</strong></div>
             </div>
           </div>
@@ -452,25 +453,26 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
               <span className="pb-chapter-num">TABLE OF CONTENTS</span>
               <h2>What&apos;s Inside</h2>
               <div className="pb-chapter-divider"></div>
-              <p>Everything you need — from understanding what AI agents are, to deploying a fully secured, multi-channel agent that works for your business 24 hours a day.</p>
+              <p>Everything you need — from understanding what AI agents are and choosing the right framework, to deploying a fully secured, multi-channel agent that works for your business 24 hours a day.</p>
             </div>
             <div className="pb-toc-grid pb-anim pb-stagger">
-              <a href="#ch1" className="pb-toc-row"><span className="pb-toc-row-num">01</span><span className="pb-toc-row-title">Why Local Businesses Need AI Agents Now</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch2" className="pb-toc-row"><span className="pb-toc-row-num">02</span><span className="pb-toc-row-title">What Is OpenClaw? The Agent Engine</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch3" className="pb-toc-row"><span className="pb-toc-row-num">03</span><span className="pb-toc-row-title">What Is NemoClaw? The Security Shield</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch4" className="pb-toc-row"><span className="pb-toc-row-num">04</span><span className="pb-toc-row-title">The LocalClaw Stack — How It All Fits Together</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch5" className="pb-toc-row"><span className="pb-toc-row-num">05</span><span className="pb-toc-row-title">Pre-Installation Checklist</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch6" className="pb-toc-row"><span className="pb-toc-row-num">06</span><span className="pb-toc-row-title">Installing OpenClaw on Mac, Windows &amp; Linux</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch7" className="pb-toc-row"><span className="pb-toc-row-num">07</span><span className="pb-toc-row-title">Running Your First Onboarding</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch8" className="pb-toc-row"><span className="pb-toc-row-num">08</span><span className="pb-toc-row-title">Installing the NemoClaw Security Layer</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch9" className="pb-toc-row"><span className="pb-toc-row-num">09</span><span className="pb-toc-row-title">OpenShell Policy Setup</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch10" className="pb-toc-row"><span className="pb-toc-row-num">10</span><span className="pb-toc-row-title">Connecting Your Channels</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch11" className="pb-toc-row"><span className="pb-toc-row-num">11</span><span className="pb-toc-row-title">Building Your First Business Agent</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch12" className="pb-toc-row"><span className="pb-toc-row-num">12</span><span className="pb-toc-row-title">Real-World Agent Recipes for Local Businesses</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch13" className="pb-toc-row"><span className="pb-toc-row-num">13</span><span className="pb-toc-row-title">The Privacy Router — Keeping Sensitive Data Local</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch14" className="pb-toc-row"><span className="pb-toc-row-num">14</span><span className="pb-toc-row-title">Monitoring &amp; Audit Logs</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch15" className="pb-toc-row"><span className="pb-toc-row-num">15</span><span className="pb-toc-row-title">Troubleshooting Common Issues</span><span className="pb-toc-row-arrow">&rarr;</span></a>
-              <a href="#ch16" className="pb-toc-row"><span className="pb-toc-row-num">16</span><span className="pb-toc-row-title">What Comes Next — LocalClaw Managed Services</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch1" className="pb-toc-row"><span className="pb-toc-row-num">01</span><span className="pb-toc-row-title">Why Every Business Needs AI Agents Now</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#frameworks" className="pb-toc-row"><span className="pb-toc-row-num">02</span><span className="pb-toc-row-title">The Agent Framework Landscape — Choosing the Right Engine</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch2" className="pb-toc-row"><span className="pb-toc-row-num">03</span><span className="pb-toc-row-title">What Is OpenClaw? The Agent Engine</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch3" className="pb-toc-row"><span className="pb-toc-row-num">04</span><span className="pb-toc-row-title">What Is NemoClaw? The Security Shield</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch4" className="pb-toc-row"><span className="pb-toc-row-num">05</span><span className="pb-toc-row-title">The LocalClaw Stack — Every Framework, One Managed Platform</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch5" className="pb-toc-row"><span className="pb-toc-row-num">06</span><span className="pb-toc-row-title">Pre-Installation Checklist</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch6" className="pb-toc-row"><span className="pb-toc-row-num">07</span><span className="pb-toc-row-title">Installing OpenClaw on Mac, Windows &amp; Linux</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch7" className="pb-toc-row"><span className="pb-toc-row-num">08</span><span className="pb-toc-row-title">Running Your First Onboarding</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch8" className="pb-toc-row"><span className="pb-toc-row-num">09</span><span className="pb-toc-row-title">Installing the NemoClaw Security Layer</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch9" className="pb-toc-row"><span className="pb-toc-row-num">10</span><span className="pb-toc-row-title">OpenShell Policy Setup</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch10" className="pb-toc-row"><span className="pb-toc-row-num">11</span><span className="pb-toc-row-title">Connecting Your Channels</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch11" className="pb-toc-row"><span className="pb-toc-row-num">12</span><span className="pb-toc-row-title">Building Your First Business Agent</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch12" className="pb-toc-row"><span className="pb-toc-row-num">13</span><span className="pb-toc-row-title">Real-World Agent Recipes for Your Business</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch13" className="pb-toc-row"><span className="pb-toc-row-num">14</span><span className="pb-toc-row-title">The Privacy Router — Keeping Sensitive Data Local</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch14" className="pb-toc-row"><span className="pb-toc-row-num">15</span><span className="pb-toc-row-title">Monitoring &amp; Audit Logs</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch15" className="pb-toc-row"><span className="pb-toc-row-num">16</span><span className="pb-toc-row-title">Troubleshooting Common Issues</span><span className="pb-toc-row-arrow">&rarr;</span></a>
+              <a href="#ch16" className="pb-toc-row"><span className="pb-toc-row-num">17</span><span className="pb-toc-row-title">What Comes Next — LocalClaw Managed Services</span><span className="pb-toc-row-arrow">&rarr;</span></a>
             </div>
           </div>
         </section>
@@ -480,7 +482,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
               <span className="pb-chapter-num">CHAPTER 01</span>
-              <h2>Why Local Businesses<br />Need AI Agents Now</h2>
+              <h2>Why Every Business<br />Needs AI Agents Now</h2>
               <div className="pb-chapter-divider"></div>
               <p>Your competitor three blocks away is about to deploy an AI agent that answers every lead in under 60 seconds, books appointments at 2am, and never takes a day off. Here&apos;s what that means for you.</p>
             </div>
@@ -488,14 +490,14 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
               <div className="pb-callout-label">THE REALITY CHECK</div>
               <p>48% of small business inquiries go unanswered within the first hour. That&apos;s the hour where the customer decides who to call next.</p>
             </div>
-            <p>The local business landscape has shifted permanently. The question is no longer <strong>&ldquo;should I use AI?&rdquo;</strong> — it&apos;s <strong>&ldquo;how fast can I deploy before my competitor does?&rdquo;</strong></p>
+            <p>The business landscape has shifted permanently — for the corner clinic and the growing enterprise alike. The question is no longer <strong>&ldquo;should I use AI?&rdquo;</strong> — it&apos;s <strong>&ldquo;how fast can I deploy before my competitor does?&rdquo;</strong></p>
             <div className="pb-feature-grid pb-anim pb-stagger" style={{ marginTop: "2rem" }}>
               <div className="pb-feature-card"><div className="pb-feature-icon"><Clock size={22} color="var(--gold)" /></div><h4>24/7 Availability</h4><p>Customers contact businesses at all hours. An AI agent never sleeps, never misses a message, and responds in seconds — not hours.</p></div>
               <div className="pb-feature-card"><div className="pb-feature-icon"><MessageSquare size={22} color="var(--gold)" /></div><h4>Instant Lead Response</h4><p>Speed to lead is everything. Responding within 5 minutes increases conversion by 900% vs responding in 30 minutes.</p></div>
               <div className="pb-feature-card"><div className="pb-feature-icon"><CalendarCheck size={22} color="var(--gold)" /></div><h4>Automated Booking</h4><p>No more back-and-forth. The agent checks your calendar, proposes slots, confirms the booking — fully automatically.</p></div>
               <div className="pb-feature-card"><div className="pb-feature-icon"><DollarSign size={22} color="var(--gold)" /></div><h4>Lower Operating Cost</h4><p>A single AI agent handles what would normally require a part-time hire — at a fraction of the monthly cost.</p></div>
               <div className="pb-feature-card"><div className="pb-feature-icon"><Smartphone size={22} color="var(--gold)" /></div><h4>Multi-Channel Presence</h4><p>One agent across WhatsApp, Gmail, Telegram, and Instagram DMs simultaneously. Stay present everywhere your customers are.</p></div>
-              <div className="pb-feature-card"><div className="pb-feature-icon"><ShieldCheck size={22} color="var(--gold)" /></div><h4>Enterprise Security</h4><p>With NemoClaw, your customer data stays protected. Policy-based controls ensure your agent does only what you allow.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><ShieldCheck size={22} color="var(--gold)" /></div><h4>Enterprise Security</h4><p>With guardrails like NVIDIA NemoClaw, your customer data stays protected. Policy-based controls ensure your agent does only what you allow — whatever framework it runs on.</p></div>
             </div>
             <div className="pb-metrics-bar pb-anim">
               <div className="pb-metric">
@@ -517,7 +519,44 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
             </div>
             <div className="pb-callout pb-callout-info pb-anim">
               <div className="pb-callout-label">WHO THIS PLAYBOOK IS FOR</div>
-              <p>Local business owners, operations managers, and agency owners who want to deploy AI agents. You do not need to know how to code. Every step in this guide is designed for non-technical people.</p>
+              <p>Business owners, operations leaders, and agency owners who want to deploy AI agents — from solo operators to multi-location teams. You do not need to know how to code. Every step in this guide is designed for non-technical people.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* FRAMEWORKS */}
+        <section className="pb-section" id="frameworks">
+          <div className="pb-container">
+            <div className="pb-chapter-header pb-anim">
+              <span className="pb-chapter-num">CHAPTER 02</span>
+              <h2>The Agent Framework Landscape<br /><em>Choosing the Right Engine</em></h2>
+              <div className="pb-chapter-divider"></div>
+              <p>There is no longer one way to build an AI agent. New frameworks launch every few months, each with different strengths. The winning strategy isn&apos;t picking the &ldquo;best&rdquo; one — it&apos;s matching each job to the right tool and running them under one secure, managed stack.</p>
+            </div>
+            <div className="pb-table-wrap pb-anim">
+              <table>
+                <thead><tr><th>FRAMEWORK</th><th>BEST FOR</th><th>TYPICAL ROLE</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>OpenClaw</strong></td><td>Always-on assistants living in WhatsApp, Telegram, Gmail</td><td>Executive assistant, front desk, lead capture</td></tr>
+                  <tr><td><strong>Hermes Agent</strong></td><td>Agents that build memory and reusable skills over time</td><td>Long-running assistant that improves on your processes</td></tr>
+                  <tr><td><strong>NVIDIA NemoClaw</strong></td><td>Guardrails, policy enforcement and private routing</td><td>Security layer around OpenClaw agents</td></tr>
+                  <tr><td><strong>Claude Agent SDK</strong></td><td>Careful reasoning, long documents, high-trust work</td><td>Legal &amp; compliance review, ops and coding agents</td></tr>
+                  <tr><td><strong>OpenAI Agents SDK</strong></td><td>Customer-facing chat &amp; voice, multi-agent hand-offs</td><td>Support desk, voice receptionist</td></tr>
+                  <tr><td><strong>n8n</strong></td><td>Predictable step-by-step processes your team can see and edit</td><td>Back-office automation, CRM sync, reporting</td></tr>
+                  <tr><td><strong>CrewAI / LangGraph</strong></td><td>Teams of specialised agents and stateful workflows</td><td>Research &rarr; draft &rarr; review pipelines</td></tr>
+                  <tr><td><strong>Custom builds</strong></td><td>Deep integration with your internal systems</td><td>Bespoke agents for unique workflows</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="pb-feature-grid pb-anim pb-stagger">
+              <div className="pb-feature-card"><div className="pb-feature-icon"><GitBranch size={22} color="var(--gold)" /></div><h4>Match the Job, Not the Hype</h4><p>An agent answering WhatsApp leads at 2am has different needs from one reconciling invoices. Choose per workflow, not per vendor.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><ShieldCheck size={22} color="var(--gold)" /></div><h4>One Set of Guardrails</h4><p>Whatever the framework, every agent should share the same rules: scoped permissions, approval for risky actions, and a full audit trail.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Brain size={22} color="var(--gold)" /></div><h4>Shared Memory</h4><p>Agents on different frameworks should read and write the same customer record, so customers never feel bounced between bots.</p></div>
+              <div className="pb-feature-card"><div className="pb-feature-icon"><Wrench size={22} color="var(--gold)" /></div><h4>Stay Flexible</h4><p>Avoid lock-in. When a better model or framework arrives, you should be able to migrate a role without rebuilding your business.</p></div>
+            </div>
+            <div className="pb-callout pb-callout-info pb-anim">
+              <div className="pb-callout-label">WHY THIS EDITION FOCUSES ON OPENCLAW</div>
+              <p>OpenClaw + NemoClaw is the most popular starting point for businesses that live in messaging apps, so the rest of this playbook walks through it step by step. If another framework fits you better, LocalClaw deploys and manages that too — the persona files, guardrails and channel setup you&apos;ll learn here carry over.</p>
             </div>
           </div>
         </section>
@@ -526,10 +565,10 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch2">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 02</span>
+              <span className="pb-chapter-num">CHAPTER 03</span>
               <h2>What Is OpenClaw?<br /><em>The Agent Engine</em></h2>
               <div className="pb-chapter-divider"></div>
-              <p>OpenClaw is an open-source, self-hosted gateway that connects your messaging apps — WhatsApp, Telegram, Gmail, Discord — to an always-available AI agent. Think of it as the engine under the hood.</p>
+              <p>OpenClaw is one of the frameworks LocalClaw deploys — and the one this edition covers in depth. It&apos;s an open-source, self-hosted gateway that connects your messaging apps — WhatsApp, Telegram, Gmail, Discord — to an always-available AI agent. Think of it as the engine under the hood.</p>
             </div>
             <div className="pb-arch-diagram pb-anim-scale pb-anim">
               <div style={{ marginBottom: "2rem", fontFamily: "'Inter',sans-serif", fontSize: "0.7rem", letterSpacing: "0.15em", color: "#7A6E62" }}>HOW OPENCLAW WORKS</div>
@@ -564,10 +603,10 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch3">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 03</span>
+              <span className="pb-chapter-num">CHAPTER 04</span>
               <h2>What Is NemoClaw?<br /><em>The Security Shield</em></h2>
               <div className="pb-chapter-divider"></div>
-              <p>NemoClaw is NVIDIA&apos;s open-source security wrapper for OpenClaw. It adds a policy enforcement layer — called OpenShell — that controls exactly what your agent can see, do, and send.</p>
+              <p>NemoClaw is NVIDIA&apos;s open-source security wrapper for OpenClaw — and the model for the guardrails LocalClaw applies to every agent, whatever framework it runs on. It adds a policy enforcement layer — called OpenShell — that controls exactly what your agent can see, do, and send.</p>
             </div>
             <div className="pb-callout pb-callout-warn pb-anim">
               <div className="pb-callout-label">WHY THIS MATTERS</div>
@@ -612,10 +651,10 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch4">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 04</span>
-              <h2>The LocalClaw Stack<br /><em>How It All Fits Together</em></h2>
+              <span className="pb-chapter-num">CHAPTER 05</span>
+              <h2>The LocalClaw Stack<br /><em>Every Framework, One Platform</em></h2>
               <div className="pb-chapter-divider"></div>
-              <p>LocalClaw combines OpenClaw (the engine) and NemoClaw (the shield) into a fully managed, secure agent deployment for your business. Here&apos;s the complete picture.</p>
+              <p>LocalClaw runs the right framework for each job — OpenClaw, Hermes, Claude, OpenAI, n8n and more — behind one set of channels, one guardrail layer, and one dashboard. Here&apos;s the complete picture.</p>
             </div>
             <div className="pb-arch-diagram pb-anim-scale pb-anim">
               <div style={{ marginBottom: "2.5rem", fontFamily: "'Inter',sans-serif", fontSize: "0.7rem", letterSpacing: "0.15em", color: "#7A6E62" }}>THE COMPLETE LOCALCLAW STACK</div>
@@ -624,17 +663,22 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
                 <div className="pb-arch-box">Gmail</div><div className="pb-arch-box">Calendar</div><div className="pb-arch-box">Instagram</div>
               </div>
               <div className="pb-arch-row"><div className="pb-arch-arrow">&darr; Customer messages arrive</div></div>
-              <div className="pb-arch-row"><div className="pb-arch-box gold">OpenClaw Gateway (your server or VPS)</div></div>
+              <div className="pb-arch-row"><div className="pb-arch-box gold">LocalClaw Orchestrator (routes each request to the right agent)</div></div>
+              <div className="pb-arch-row"><div className="pb-arch-arrow">&darr;</div></div>
+              <div className="pb-arch-row">
+                <div className="pb-arch-box green">OpenClaw</div><div className="pb-arch-box green">Hermes</div>
+                <div className="pb-arch-box green">Claude SDK</div><div className="pb-arch-box green">OpenAI Agents</div><div className="pb-arch-box green">n8n</div>
+              </div>
               <div className="pb-arch-row"><div className="pb-arch-arrow">&darr; Policy check</div></div>
-              <div className="pb-arch-row"><div className="pb-arch-box blue">NemoClaw / OpenShell Security Layer</div></div>
+              <div className="pb-arch-row"><div className="pb-arch-box blue">Guardrails Layer (NemoClaw / OpenShell &amp; equivalents)</div></div>
               <div className="pb-arch-row"><div className="pb-arch-arrow">&darr; Approved actions only</div></div>
-              <div className="pb-arch-row"><div className="pb-arch-box green">Your Business Agent (SOUL.md)</div></div>
+              <div className="pb-arch-row"><div className="pb-arch-box green">Your Business Agents (shared persona &amp; memory)</div></div>
               <div className="pb-arch-row"><div className="pb-arch-arrow">&darr; Response + Logs</div></div>
               <div className="pb-arch-row"><div className="pb-arch-box gold">LocalClaw Dashboard &middot; Analytics &middot; Insights</div></div>
             </div>
             <div className="pb-callout pb-callout-gold pb-anim">
               <div className="pb-callout-label">THE LOCALCLAW ADVANTAGE</div>
-              <p>You don&apos;t have to manage any of this yourself. LocalClaw deploys, configures, and maintains the entire stack for you — same day. You get the dashboard, the agent, and the security without touching a single line of code.</p>
+              <p>You don&apos;t have to manage any of this yourself. LocalClaw picks the frameworks, deploys, configures, and maintains the entire stack for you — same day. You get the dashboard, the agent, and the security without touching a single line of code.</p>
             </div>
           </div>
         </section>
@@ -643,7 +687,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch5">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 05</span>
+              <span className="pb-chapter-num">CHAPTER 06</span>
               <h2>Pre-Installation<br /><em>Checklist</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>Before you install anything, run through this checklist. Most failures happen because of one skipped prerequisite.</p>
@@ -680,7 +724,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch6">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 06</span>
+              <span className="pb-chapter-num">CHAPTER 07</span>
               <h2>Installing OpenClaw<br /><em>Mac &middot; Windows &middot; Linux</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>OpenClaw installs as a global npm package. One command, any operating system. The whole process takes under 2 minutes.</p>
@@ -715,7 +759,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch7">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 07</span>
+              <span className="pb-chapter-num">CHAPTER 08</span>
               <h2>Running Your First<br /><em>Onboarding</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>The <code>openclaw onboard</code> command walks you through the entire setup with a guided terminal wizard — AI provider, model selection, channels, and daemon installation. Takes about 5 minutes.</p>
@@ -758,7 +802,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch8">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 08</span>
+              <span className="pb-chapter-num">CHAPTER 09</span>
               <h2>Installing NemoClaw<br /><em>The Security Layer</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>NemoClaw wraps your OpenClaw install with NVIDIA&apos;s OpenShell policy engine. Install it before connecting any live channels. This is your agent&apos;s firewall.</p>
@@ -793,7 +837,7 @@ code{font-family:var(--mono);font-size:0.85em;background:rgba(201,146,42,0.1);co
         <section className="pb-section" id="ch9">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 09</span>
+              <span className="pb-chapter-num">CHAPTER 10</span>
               <h2>OpenShell Policy Setup<br /><em>Protecting Your Business</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>OpenShell policies are YAML files that define the exact boundaries of what your agent is allowed to do. Every action your agent attempts is checked against this file before it executes. If it&apos;s not in the policy — it doesn&apos;t happen.</p>
@@ -854,7 +898,7 @@ logging:
         <section className="pb-section" id="ch10">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 10</span>
+              <span className="pb-chapter-num">CHAPTER 11</span>
               <h2>Connecting Your<br /><em>Channels</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>OpenClaw supports every channel your customers use. Connect one or all of them — your agent handles them all through the same Gateway with a shared memory and context.</p>
@@ -895,7 +939,7 @@ logging:
         <section className="pb-section" id="ch11">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 11</span>
+              <span className="pb-chapter-num">CHAPTER 12</span>
               <h2>Building Your First<br /><em>Business Agent</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>Every OpenClaw agent is defined by a <code>SOUL.md</code> file — a plain text document describing who your agent is, what it knows, and exactly how it should behave. No coding required. The more detailed, the better.</p>
@@ -969,7 +1013,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
         <section className="pb-section" id="ch12">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 12</span>
+              <span className="pb-chapter-num">CHAPTER 13</span>
               <h2>Real-World Agent<br /><em>Recipes</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>Five ready-to-deploy agent templates for the most common local business use cases. Copy the SOUL.md core, fill in your business details, and go live in minutes.</p>
@@ -1061,7 +1105,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
         <section className="pb-section" id="ch13">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 13</span>
+              <span className="pb-chapter-num">CHAPTER 14</span>
               <h2>The Privacy Router<br /><em>Keeping Sensitive Data Local</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>NemoClaw&apos;s Privacy Router evaluates every agent request and decides in real time whether to process it on a local NVIDIA Nemotron model or route it to a cloud AI. Your data never goes where it shouldn&apos;t.</p>
@@ -1116,7 +1160,7 @@ Keep responses: Short and conversational. 1-3 sentences per message.
         <section className="pb-section" id="ch14">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 14</span>
+              <span className="pb-chapter-num">CHAPTER 15</span>
               <h2>Monitoring<br /><em>&amp; Audit Logs</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>Every action your agent takes is logged. This is how you see what it&apos;s doing, catch problems early, and stay in complete control of an autonomous system running on your behalf.</p>
@@ -1153,7 +1197,7 @@ done`}</pre></div>
         <section className="pb-section" id="ch15">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 15</span>
+              <span className="pb-chapter-num">CHAPTER 16</span>
               <h2>Troubleshooting<br /><em>Common Issues</em></h2>
               <div className="pb-chapter-divider"></div>
               <p>The most common problems and their exact fixes. Most issues resolve in under 5 minutes. Run through these in order before reaching out for support.</p>
@@ -1201,10 +1245,10 @@ done`}</pre></div>
         <section className="pb-section" id="ch16">
           <div className="pb-container">
             <div className="pb-chapter-header pb-anim">
-              <span className="pb-chapter-num">CHAPTER 16</span>
+              <span className="pb-chapter-num">CHAPTER 17</span>
               <h2>What Comes Next<br /><em>LocalClaw Managed Services</em></h2>
               <div className="pb-chapter-divider"></div>
-              <p>You&apos;ve seen the full stack — from OpenClaw installation to a secured, multi-channel AI agent running for your business. The question now is: do you want to run this yourself, or have it done for you today?</p>
+              <p>You&apos;ve seen the full stack — from OpenClaw installation to a secured, multi-channel AI agent running for your business. LocalClaw does the same for every other framework too. The question now is: do you want to run this yourself, or have it done for you today?</p>
             </div>
             <div className="pb-metrics-bar pb-anim">
               <div className="pb-metric">
@@ -1257,7 +1301,7 @@ done`}</pre></div>
             <ClawIcon size={24} />
             LocalClaw
           </Link>
-          <p>&copy; 2026 LocalClaw &middot; Every AI agent framework &middot; One partner</p>
+          <p>&copy; 2026 LocalClaw &middot; Every AI agent framework &middot; One partner &middot; <a href="/terms" style={{ color: "inherit" }}>Terms</a> &middot; <a href="/refund-policy" style={{ color: "inherit" }}>Refund Policy</a></p>
           <a href="https://twitter.com/Th3Alch3mist_" style={{ fontFamily: "'Inter',sans-serif", fontSize: "0.75rem", color: "#C9922A" }} target="_blank" rel="noopener noreferrer">@Th3Alch3mist_ on X</a>
         </footer>
 

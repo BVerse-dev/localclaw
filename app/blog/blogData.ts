@@ -256,7 +256,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "## Hour 2-6: Agent Configuration",
       "While you go back to running your business, our team configures your AI agent. This includes: setting up the agent's knowledge base with your business information, configuring email triage rules and response templates, connecting your calendar for appointment scheduling, setting up lead capture and qualification workflows, and configuring your preferred communication channel (Telegram, Slack, or WhatsApp).",
       "## Hour 6-10: Integration & Security",
-      "Your agent gets connected to your business tools through secure OAuth connections — we never see or store your passwords. Every agent runs on a dedicated VPS with NVIDIA NemoClaw security: Docker sandboxing, firewall hardening, read-only permissions by default, and instant kill switches. Your data never leaves your controlled environment.",
+      "Your agent gets connected to your business tools through secure OAuth connections — we never see or store your passwords. Every agent runs on a dedicated VPS with enterprise guardrails (including NVIDIA NemoClaw): Docker sandboxing, firewall hardening, read-only permissions by default, and instant kill switches. Your data never leaves your controlled environment.",
       "## Hour 10-14: Testing & Refinement",
       "We run your agent through a comprehensive testing suite: simulated emails, mock lead inquiries, calendar edge cases, and stress tests. We refine the agent's behavior until it handles every scenario exactly the way you'd want.",
       "## Hour 14-18: Soft Launch",
@@ -300,7 +300,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "**7. Encrypted Data at Rest and in Transit.** All data is encrypted using AES-256 at rest and TLS 1.3 in transit. Your business data is protected whether it's being stored or being transmitted between services.",
       "## Why This Matters for Local Businesses",
       "You might think enterprise security is only for Fortune 500 companies. It's not. If you're a law firm handling client confidential information, a healthcare clinic with patient data, or a real estate agent with financial details — you need the same level of protection. HIPAA, attorney-client privilege, financial regulations — these guardrails help you stay compliant.",
-      "## The Security Audit Guarantee",
+      "## The Security Configuration Report",
       "Every LocalClaw client receives a security configuration report after deployment. This shows exactly what permissions your agent has, what services it connects to, what firewall rules are in place, and how to access your audit logs. No black boxes. No trust-us-bro. Just verifiable security.",
       "## The Bottom Line",
       "AI automation without security is a ticking time bomb. Whether your agents run on OpenClaw, Hermes, Claude, OpenAI or a custom stack, every LocalClaw deployment ships with the same enterprise guardrails — including NVIDIA NemoClaw where it applies — regardless of your plan. Because your business data deserves the same protection that Fortune 500 companies get."
@@ -444,7 +444,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "## The Hidden ROI",
       "Numbers don't capture everything. What's the value of never missing a lead at 2 AM? What's the value of walking into every call fully prepared? What's the value of starting your day with a clear inbox and a prioritized task list? What's the value of reclaiming 15 hours per week for your family, your health, or your strategic planning?",
       "## The Risk",
-      "LocalClaw offers a 30-day satisfaction guarantee. If you're not happy, you get a full refund. The $97 discovery deposit is credited to your setup fee. There's literally zero financial risk to trying it."
+      "Start with a $97 discovery deposit, credited in full toward your setup fee. On the discovery call we scope your deployment and recommend the right agent frameworks — and you get the exact deliverables, timeline and price in writing before you commit to a plan. No surprises, no hidden fees."
     ],
     cta: {
       text: "See Your ROI — Start Today",
@@ -474,7 +474,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "**Post-Visit Follow-Up.** After each visit, the AI agent sends personalized follow-ups: prescription reminders, follow-up appointment scheduling, satisfaction surveys, and review requests. This improves patient outcomes and builds your online reputation.",
       "**Insurance Verification Prep.** The AI agent collects insurance information before the visit, categorizes it by provider, and flags any potential issues — reducing check-in time and claim denials.",
       "## Security and Compliance",
-      "Patient data security isn't optional. Every LocalClaw healthcare deployment uses NVIDIA NemoClaw enterprise security with encrypted data handling, isolated Docker containers, and full audit trails. While we don't claim HIPAA certification directly, our security architecture is built on the same principles that HIPAA-compliant systems use.",
+      "Patient data security isn't optional. Every LocalClaw healthcare deployment uses enterprise guardrails (including NVIDIA NemoClaw) with encrypted data handling, isolated Docker containers, and full audit trails. While we don't claim HIPAA certification directly, our security architecture is built on the same principles that HIPAA-compliant systems use.",
       "## The Financial Impact",
       "The average clinic loses $200 per no-show. If AI reminders prevent just 10 no-shows per month, that's $2,000/month recovered. Add in the revenue from after-hours bookings and reduced front desk overtime, and the ROI becomes overwhelming.",
       "## Getting Started",
@@ -543,7 +543,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "**Follow-Up Sequences.** After initial contact, the agent maintains engagement: consultation reminders, document request follow-ups, retainer agreement reminders, and satisfaction check-ins. Nothing falls through the cracks.",
       "**Post-Retention Client Management.** Once retained, the agent handles appointment reminders, document collection, status update requests, and billing reminders — freeing your staff to focus on legal work.",
       "## Confidentiality and Security",
-      "Attorney-client privilege isn't negotiable. LocalClaw law firm deployments use NVIDIA NemoClaw enterprise security with encrypted communications, isolated data containers, and complete audit trails. Your client data never touches shared infrastructure.",
+      "Attorney-client privilege isn't negotiable. LocalClaw law firm deployments use enterprise guardrails (including NVIDIA NemoClaw) with encrypted communications, isolated data containers, and complete audit trails. Your client data never touches shared infrastructure.",
       "## The Business Impact",
       "If faster intake response captures just 5 additional clients per month at a $3,000 average case value, that's $15,000/month in additional revenue. With a $149/month agent cost, the investment pays for itself eight times over — every single month."
     ],
@@ -608,11 +608,11 @@ export const BLOG_POSTS: BlogPost[] = [
       "**5. How Do They Handle Failures?** AI isn't perfect. What happens when the agent encounters something it can't handle? Good providers have graceful escalation paths. Bad providers let errors pile up silently.",
       "**6. What Integrations Are Included?** Email, calendar, and CRM are the minimum. Ask about WhatsApp, Slack, Telegram, social media platforms, and custom integrations. The more connected your agent is, the more value it delivers.",
       "**7. What's the True Monthly Cost?** Some providers advertise low base prices but charge per-message, per-integration, or per-automation. Get the total cost for your expected usage — not the starting price.",
-      "**8. Is There a Satisfaction Guarantee?** Any provider confident in their product will offer a refund period. If they won't let you try before committing, ask yourself why.",
+      "**8. Is the Scope Clear Before You Pay?** A serious provider puts the deliverables, timeline, and what \"done\" looks like in writing before taking payment. If the scope is vague, the result will be too.",
       "## Red Flags to Watch For",
       "Vague descriptions of \"AI-powered\" without specifics. No mention of security whatsoever. Requirements for technical setup on your end. Per-message or per-action pricing that makes costs unpredictable. No customer support beyond a knowledge base. Claims that sound too good to be true.",
       "## Why LocalClaw Checks Every Box",
-      "We built LocalClaw specifically for local businesses because we saw the gap: enterprise AI tools are too complex, and consumer AI tools aren't powerful enough. Every deployment includes full managed setup (under 24 hours), NVIDIA NemoClaw enterprise security, complete audit trails, sub-60-second response times, 10,000+ integrations, transparent pricing, and a 30-day satisfaction guarantee.",
+      "We built LocalClaw because we saw the gap: enterprise AI tools are too complex, consumer AI tools aren't powerful enough, and most providers lock you into a single framework. LocalClaw is framework-agnostic — OpenClaw, Hermes, Claude, OpenAI, n8n and more — and every deployment includes full managed setup (under 24 hours), enterprise guardrails including NVIDIA NemoClaw, complete audit trails, sub-60-second response times, 10,000+ integrations, transparent pricing, and a written scope of work before you pay.",
       "## The Decision Framework",
       "Write down your three biggest time-wasting tasks. Ask each provider: How would your AI agent handle these? The provider who gives you the most specific, actionable answer is the one who actually understands your business."
     ],
@@ -749,7 +749,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "## 6. Cross-Business Agent Networks",
       "Complementary businesses will connect their AI agents. A real estate agent's AI could coordinate directly with a mortgage broker's AI and a home inspector's AI — creating seamless referral and scheduling networks.",
       "## 7. Regulation Will Catch Up",
-      "Expect clear AI disclosure requirements, data handling standards, and industry-specific guidelines. Businesses using properly secured AI agents (like those with NemoClaw) will be ahead of compliance requirements. Those using unsecured tools will scramble.",
+      "Expect clear AI disclosure requirements, data handling standards, and industry-specific guidelines. Businesses using properly secured AI agents (with guardrails like NemoClaw) will be ahead of compliance requirements. Those using unsecured tools will scramble.",
       "## 8. The Cost Will Keep Dropping",
       "As AI infrastructure scales, the cost of running agents will decrease. What costs $149/month today might cost $49/month in 18 months. Early adopters benefit from learning curves and established workflows that can't be replicated overnight.",
       "## 9. Custom Industry Models",

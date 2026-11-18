@@ -587,7 +587,7 @@ export default function LocalClaw() {
           <div data-security-right style={{ display:"flex", flexDirection:"column", gap:"1.4rem" }}>
             {[
               { Icon:Eye,         tag:"ALREADY RUNNING AN AGENT?", title:"We will audit your setup.",  body:"OpenClaw, Hermes, a custom build — whatever you're running, we audit it, add guardrails, harden your infrastructure, and migrate you to managed care." },
-              { Icon:CheckCircle, tag:"100% SATISFACTION",          title:"Guaranteed or refunded.",    body:"If you are not happy with your agent deployment, we will refund you — no questions asked. We are here to build, not to nickel and dime." },
+              { Icon:CheckCircle, tag:"WE STAND BEHIND THE WORK",   title:"Built until it works.",      body:"Your scope is confirmed before we build. If anything in it isn't working as described, we fix, re-configure, or re-deploy at no extra cost — during hypercare and for as long as you're on a plan." },
             ].map(({ Icon,tag,title,body },i) => (
               <div key={i} style={{ background:GOLD_MID, border:`1px solid ${GOLD_BORDER}`, padding:"2rem", borderRadius:"2px" }}>
                 <div style={{ display:"flex", alignItems:"center", gap:"9px", marginBottom:"0.9rem" }}>
@@ -648,12 +648,15 @@ export default function LocalClaw() {
               </div>
             ))}
           </div>
+          <p style={{ ...sans, color:DIM, fontSize:"0.78rem", textAlign:"center", marginTop:"1.6rem" }}>
+            All payments are final and non-refundable. See our <a href="/refund-policy" style={{ color:GOLD }}>Refund Policy</a> and <a href="/terms" style={{ color:GOLD }}>Terms</a>.
+          </p>
           {/* Trust strip */}
           <div style={{ display:"flex", justifyContent:"center", gap:"2.5rem", flexWrap:"wrap", marginTop:"2.2rem", paddingTop:"2rem", borderTop:`1px solid ${BORDER}` }}>
             {[
               "$97 deposit credited to your setup fee",
-              "30-day satisfaction guarantee",
-              "Cancel before kickoff — full refund",
+              "Scope confirmed before we build",
+              "Cancel monthly anytime — no future charges",
               `Additional agents +${usd(ADDITIONAL_AGENT_PRICE)} each`,
             ].map((t,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.5rem" }}>
@@ -707,14 +710,14 @@ export default function LocalClaw() {
             Reserve your spot with a $97 discovery deposit. We scope your deployment, recommend the right frameworks on a 15-minute call, and go live within 24 hours.
           </p>
           <p style={{ ...sans, color:DIM, maxWidth:"420px", margin:"0 auto 2.8rem", lineHeight:"1.7", fontSize:"0.83rem" }}>
-            Your $97 is credited in full toward your setup fee. If we're not the right fit, you get it back — no questions asked.
+            Your $97 is credited in full toward your setup fee, and you'll know exactly what you're getting before you commit to a plan.
           </p>
           <div data-cta-btn className="cta-btns" style={{ display:"flex", gap:"1rem", justifyContent:"center", flexWrap:"wrap" }}>
             <a href="/intake?plan=discovery" className="btn-primary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>CLAIM YOUR SPOT · $97</a>
             <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize:"0.88rem", padding:"17px 42px" }}>QUESTIONS? DM US</a>
           </div>
           <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"2rem" }}>
-            {["$97 credited to setup fee", "30-day money-back guarantee", "Live in under 24 hours"].map((t,i) => (
+            {["$97 credited to setup fee", "Scope confirmed before we build", "Live in under 24 hours"].map((t,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
                 <CheckCircle size={12} color={GOLD} strokeWidth={2} />
                 <span style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>{t}</span>
@@ -733,7 +736,11 @@ export default function LocalClaw() {
           <ClawIcon size={28} color={GOLD} />
           <span className="lc-logo-text" style={{ fontSize:"1.4rem" }}>LocalClaw</span>
         </div>
-        <div style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>Every AI agent framework · One partner</div>
+        <div style={{ ...sans, color:DIM, fontSize:"0.77rem", display:"flex", gap:"1.2rem", flexWrap:"wrap", justifyContent:"center" }}>
+          <span>Every AI agent framework · One partner</span>
+          <a href="/terms" style={{ color:DIM }}>Terms</a>
+          <a href="/refund-policy" style={{ color:DIM }}>Refund Policy</a>
+        </div>
         <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.77rem", textDecoration:"none" }}>@Th3Alch3mist_ on X</a>
       </footer>
 

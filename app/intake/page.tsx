@@ -3,6 +3,7 @@ import React, { Suspense, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PLANS, FRAMEWORKS, DISCOVERY, getPlan, isPlanKey, planPriceLabel, usd } from "@/lib/plans";
+import { NON_REFUNDABLE_NOTICE, POLICY_VERSION } from "@/lib/policy";
 
 // ── Brand tokens (identical to main site) ─────────────────────────────────────
 const BG         = "#080704";
@@ -157,10 +158,13 @@ function IntakeForm() {
   };
 
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [agreeError, setAgreeError] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    if (!agreed) { setAgreeError(true); return; }
     setSubmitting(true);
 
     const formData = new FormData(formRef.current!);
@@ -175,6 +179,8 @@ function IntakeForm() {
       budget: budgetVal,
       plan: checkoutPlan,
       automations,
+      termsAccepted: true,
+      termsVersion: POLICY_VERSION,
       details: [
         formData.get("framework") && formData.get("framework") !== "unsure" ? `[Framework: ${formData.get("framework")}]` : "",
         String(formData.get("details") || ""),
@@ -206,7 +212,7 @@ function IntakeForm() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: checkoutPlan, email: data.email, leadId }),
+        body: JSON.stringify({ plan: checkoutPlan, email: data.email, leadId, termsAccepted: true }),
       });
       if (res.ok) {
         const json = await res.json();
@@ -400,6 +406,8 @@ function IntakeForm() {
                     ? <>activate <strong style={{ color:GOLD }}>{checkoutPlanObj.name}</strong> ({planPriceLabel(checkoutPlanObj)}).</>
                     : <>secure your spot with a {usd(DISCOVERY.amount)} discovery deposit.</>}
                 </p>
+
+                <p style={{ ...sans, color:DIM, fontSize:"0.76rem", lineHeight:"1.6", maxWidth:"420px", margin:"0 auto 0.8rem" }}>{NON_REFUNDABLE_NOTICE}</p>
 
                 <p style={{ ...sans, color:MUTED, fontSize:"0.88rem", lineHeight:"1.7", maxWidth:"400px", margin:"0 auto 2rem" }}>
                   You'll be redirected to checkout in <span style={{ color:GOLD, fontWeight:"700", fontSize:"1.05rem" }}>{countdown}</span> {countdown === 1 ? "second" : "seconds"}...
@@ -632,11 +640,24 @@ function IntakeForm() {
 
                 {/* ── Submit ── */}
                 <div data-form-section style={{ paddingTop:"0.5rem" }}>
+                  <label style={{ display:"flex", gap:"0.75rem", alignItems:"flex-start", cursor:"pointer", marginBottom:"1.4rem", padding:"1rem 1.1rem", border:`1px solid ${agreeError ? "#EF4444" : BORDER}`, background:GOLD_MID, borderRadius:"2px" }}>
+                    <input
+                      type="checkbox"
+                      name="terms"
+                      checked={agreed}
+                      onChange={e => { setAgreed(e.target.checked); setAgreeError(false); }}
+                      style={{ marginTop:"3px", accentColor:GOLD, width:16, height:16, flexShrink:0 }}
+                    />
+                    <span style={{ ...sans, fontSize:"0.82rem", color:MUTED, lineHeight:1.6 }}>
+                      I agree to the <a href="/terms" target="_blank" rel="noopener" style={{ color:GOLD }}>Terms of Service</a> and <a href="/refund-policy" target="_blank" rel="noopener" style={{ color:GOLD }}>Refund Policy</a>, and I understand that <strong style={{ color:CREAM }}>all payments are final and non-refundable</strong>. Monthly plans can be cancelled anytime to stop future billing.
+                    </span>
+                  </label>
+                  {agreeError && <p style={{ ...sans, color:"#EF4444", fontSize:"0.8rem", marginTop:"-0.8rem", marginBottom:"1rem" }}>Please accept the Terms of Service and Refund Policy to continue.</p>}
                   <button type="submit" className="intake-submit" disabled={submitting}>
                     {submitting ? "SUBMITTING..." : "SUBMIT & PROCEED TO PAYMENT →"}
                   </button>
                   <div style={{ display:"flex", justifyContent:"center", gap:"2rem", flexWrap:"wrap", marginTop:"1.6rem" }}>
-                    {[checkoutPlanObj ? "Secure Stripe checkout" : "$97 deposit credited to setup fee", "30-day satisfaction guarantee", "100% confidential"].map((t,i) => (
+                    {[checkoutPlanObj ? "Secure Stripe checkout" : "$97 deposit credited to setup fee", "Scope confirmed before you build", "100% confidential"].map((t,i) => (
                       <div key={i} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
                         <Check size={12} />
                         <span style={{ ...sans, color:DIM, fontSize:"0.77rem" }}>{t}</span>
@@ -664,7 +685,7 @@ function IntakeForm() {
             <ClawIcon size={26} color={GOLD} />
             <span className="lc-logo-text" style={{ fontSize:"1.3rem" }}>LocalClaw</span>
           </div>
-          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner</div>
+          <div style={{ ...sans, color:DIM, fontSize:"0.76rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
           <a href="https://twitter.com/Th3Alch3mist_" target="_blank" rel="noopener noreferrer" style={{ ...sans, color:GOLD, fontSize:"0.76rem", textDecoration:"none" }}>
             @Th3Alch3mist_ on X
           </a>

@@ -405,7 +405,7 @@ export default function BlogPostClient({ post, relatedPosts }: Props) {
               </Link>
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: "2rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
-              {["$97 credited to setup fee", "30-day money-back guarantee", "Live in under 24 hours"].map((t) => (
+              {["$97 credited to setup fee", "Scope confirmed before we build", "Live in under 24 hours"].map((t) => (
                 <div key={t} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                   <CheckCircle size={11} color={GOLD} strokeWidth={2} />
                   <span style={{ color: DIM, fontSize: "0.72rem" }}>{t}</span>
@@ -511,7 +511,7 @@ export default function BlogPostClient({ post, relatedPosts }: Props) {
           <ClawIcon size={28} color={GOLD} />
           <span className="lc-logo-text" style={{ fontSize: "1.4rem" }}>LocalClaw</span>
         </Link>
-        <div style={{ color: DIM, fontSize: "0.77rem" }}>Every AI agent framework · One partner</div>
+        <div style={{ color: DIM, fontSize: "0.77rem" }}>Every AI agent framework · One partner<a href="/terms" style={{ color:"inherit", marginLeft:"1rem" }}>Terms</a><a href="/refund-policy" style={{ color:"inherit", marginLeft:"1rem" }}>Refund Policy</a></div>
         <a
           href="https://twitter.com/Th3Alch3mist_"
           target="_blank"
