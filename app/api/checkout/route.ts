@@ -92,9 +92,9 @@ export async function POST(req: NextRequest) {
     allow_promotion_codes: true,
     automatic_tax: { enabled: true },
     phone_number_collection: { enabled: true },
-    // Chargeback defence: AVS address match + 3D Secure liability shift on fraud disputes
+    // Chargeback defence: AVS address match. 3D Secure is left on Stripe's default ("automatic"):
+    // it runs only when the bank or Radar asks for it — forcing it on every card blocked real buyers.
     billing_address_collection: "required",
-    payment_method_options: { card: { request_three_d_secure: "any" } },
     consent_collection: { terms_of_service: "required" },
     custom_text: {
       terms_of_service_acceptance: {
